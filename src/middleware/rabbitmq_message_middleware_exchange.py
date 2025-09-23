@@ -13,7 +13,7 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
         self._exchange_name = exchange_name
         self._route_keys = route_keys
 
-        connection = pika.BlockingConnection(pika.ConnectionParameters("localhost"))
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host=self._host,))
         self._channel = connection.channel()
 
         self._channel.queue_declare(queue="hello")

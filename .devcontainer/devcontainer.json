@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
-	"name": "Python 3.13-Slim",
+	"name": "Python 3 & RabbitMQ",
 	// Use a Docker Compose file instead of a single container image.
 	"dockerComposeFile": "docker-compose-dev.yaml",
 	// Name of the service container to connect to.

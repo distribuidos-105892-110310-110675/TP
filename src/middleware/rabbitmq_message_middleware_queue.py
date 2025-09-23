@@ -2,7 +2,7 @@ from typing import Callable, List
 
 import pika
 
-from middleware.middleware import MessageMiddlewareExchange, MessageMiddlewareQueue
+from middleware.middleware import MessageMiddlewareQueue
 
 
 class RabbitMQMessageMiddlewareQueue(MessageMiddlewareQueue):

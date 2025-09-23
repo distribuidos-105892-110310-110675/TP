@@ -1,14 +1,22 @@
 name: devcontainer
 
 services:
-  rabbitmq:
-    image: "rabbitmq:4-management"
+  rabbitmq-dev:
+    image: "rabbitmq:4-management" # can be slim image
     ports:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: user
-      RABBITMQ_DEFAULT_PASS: password
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - devcontainer_net
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   devcontainer:
     image: mcr.microsoft.com/devcontainers/python:3
@@ -16,7 +24,7 @@ services:
       - ../..:/workspaces:cached
     command: sleep infinity
     depends_on:
-      - rabbitmq
+      - rabbitmq-dev
     networks:
       - devcontainer_net
 

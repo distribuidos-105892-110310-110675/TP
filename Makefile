@@ -20,8 +20,5 @@ docker-compose-logs:
 .PHONY: docker-compose-logs
 
 tests:
-	echo "@TODO: implement test running"
 	pytest --verbose
-		
-	exit 1
 .PHONY: tests

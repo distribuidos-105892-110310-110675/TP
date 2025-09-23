@@ -12,7 +12,7 @@ def main():
             "SERVER_HOST",
             "SERVER_PORT",
             "DATA_PATH",
-            "BATCH_MAX_KIB",
+            "BATCH_MAX_SIZE",
         ]
     )
     initializer.init_log(config_params["LOGGING_LEVEL"])
@@ -23,7 +23,7 @@ def main():
         server_host=config_params["SERVER_HOST"],
         server_port=int(config_params["SERVER_PORT"]),
         data_path=config_params["DATA_PATH"],
-        batch_max_kib=int(config_params["BATCH_MAX_KIB"]),
+        batch_max_size=int(config_params["BATCH_MAX_SIZE"]),
     )
     client.run()
 

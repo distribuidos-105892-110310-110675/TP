@@ -90,7 +90,7 @@ class Server:
             logging.debug(
                 f"action: receive_chunk | result: success | chunk size: {len(chunk)}"
             )
-            if chunk.endswith(communication_protocol.END_MSG_DELIMITER.encode("utf-8")):
+            if chunk.endswith(communication_protocol.MSG_END_DELIMITER.encode("utf-8")):
                 all_data_received = True
 
             bytes_received += chunk

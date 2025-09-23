@@ -22,14 +22,14 @@ services:
       - CLIENT_ID=1
       - SERVER_HOST=server
       - SERVER_PORT=5000
-      - DATA_PATH=/agency-1.csv
-      - BATCH_MAX_KIB=8
+      - DATA_PATH=/data
+      - BATCH_MAX_SIZE=1
     networks:
       - custom_net
     volumes:
       - type: bind
-        source: ./.data/agency-1.csv
-        target: /agency-1.csv
+        source: ./.data
+        target: /data
         read_only: true
     deploy:
       restart_policy:
@@ -43,6 +43,6 @@ services:
 networks:
   custom_net:
     ipam:
-      driver: bridge
+      driver: default
       config:
         - subnet: 172.25.125.0/24

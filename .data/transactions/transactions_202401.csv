@@ -1,0 +1,4 @@
+transaction_id,store_id,payment_method_id,voucher_id,user_id,original_amount,discount_applied,final_amount,created_at
+ac6f851c-649f-42fb-a606-72be0fdcf8d2,5,1,,,63.5,0.0,63.5,2024-01-01 10:06:50
+d7856e66-c613-45c4-b9ca-7a3cec6c6db3,8,2,,,30.5,0.0,30.5,2024-01-01 10:06:52
+78015742-1f8b-4f9c-bde2-0e68b822890c,5,4,,,54.0,0.0,54.0,2024-01-01 10:06:53

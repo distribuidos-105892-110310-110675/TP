@@ -1,0 +1,4 @@
+pika
+types-pika
+isort
+pytest

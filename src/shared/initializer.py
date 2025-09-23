@@ -1,9 +1,10 @@
-from configparser import ConfigParser
 import logging
 import os
+from configparser import ConfigParser
+from typing import Dict, List
 
 
-def init_log(logging_level):
+def init_log(logging_level: str) -> None:
     """
     Python custom logging initialization
 
@@ -17,7 +18,7 @@ def init_log(logging_level):
     )
 
 
-def init_config(env_vars: list[str]) -> dict:
+def init_config(env_vars: List[str]) -> Dict:
     """
     Get environment variables as a dictionary
 

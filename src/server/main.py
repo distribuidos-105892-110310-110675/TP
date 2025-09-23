@@ -1,4 +1,5 @@
 import logging
+
 from server.server import Server
 from shared import initializer
 

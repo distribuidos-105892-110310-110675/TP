@@ -1,7 +1,7 @@
+import logging
 import signal
 import socket
-import logging
-from typing import Optional
+from typing import Any, Optional
 
 from shared import communication_protocol, constants
 
@@ -32,7 +32,7 @@ class Server:
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
-    def __sigterm_signal_handler(self, signum, frame):
+    def __sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
         logging.info("action: sigterm_signal_handler | result: in_progress")
 
         self.__set_server_as_not_running()
@@ -109,7 +109,7 @@ class Server:
 
     # ============================== PUBLIC ============================== #
 
-    def run(self):
+    def run(self) -> None:
         logging.info("action: server_startup | result: success")
 
         self.__set_server_as_running()

@@ -7,14 +7,21 @@ docker-build-image:
 .PHONY: docker-build-image
 
 docker-compose-up: docker-build-image
-	docker compose -f docker-compose-dev.yaml up -d --build --remove-orphans
+	docker compose -f docker-compose.yaml up -d --build --remove-orphans
 .PHONY: docker-compose-up
 
 docker-compose-down:
-	docker compose -f docker-compose-dev.yaml stop -t 3
-	docker compose -f docker-compose-dev.yaml down
+	docker compose -f docker-compose.yaml stop -t 3
+	docker compose -f docker-compose.yaml down
 .PHONY: docker-compose-down
 
 docker-compose-logs:
-	docker compose -f docker-compose-dev.yaml logs -f
+	docker compose -f docker-compose.yaml logs -f
 .PHONY: docker-compose-logs
+
+tests:
+	echo "@TODO: implement test running"
+	pytest --verbose
+		
+	exit 1
+.PHONY: tests

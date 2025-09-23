@@ -1,4 +1,5 @@
 import logging
+
 from client.client import Client
 from shared import initializer
 

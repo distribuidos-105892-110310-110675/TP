@@ -43,6 +43,6 @@ services:
 networks:
   custom_net:
     ipam:
-      driver: default
+      driver: bridge
       config:
         - subnet: 172.25.125.0/24

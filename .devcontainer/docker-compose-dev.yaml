@@ -1,0 +1,25 @@
+name: devcontainer
+
+services:
+  rabbitmq:
+    image: "rabbitmq:4-management"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+
+  devcontainer:
+    image: mcr.microsoft.com/devcontainers/python:3
+    volumes:
+      - ../..:/workspaces:cached
+    command: sleep infinity
+    depends_on:
+      - rabbitmq
+    networks:
+      - devcontainer_net
+
+networks:
+  devcontainer_net:
+    driver: bridge

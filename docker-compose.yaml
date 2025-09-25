@@ -61,6 +61,9 @@ services:
         condition: on-failure
         delay: 5s
         max_attempts: 1
+    depends_on:
+      server:
+        condition: service_started
 
   filter_by_hour:
     container_name: filter_by_hour
@@ -84,6 +87,9 @@ services:
         condition: on-failure
         delay: 5s
         max_attempts: 1
+    depends_on:
+      server:
+        condition: service_started
 
   filter_by_amount:
     container_name: filter_by_amount
@@ -106,6 +112,9 @@ services:
         condition: on-failure
         delay: 5s
         max_attempts: 1
+    depends_on:
+      server:
+        condition: service_started
 
 
 networks:

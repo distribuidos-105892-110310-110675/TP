@@ -62,6 +62,29 @@ services:
         delay: 5s
         max_attempts: 1
 
+  filter_by_hour:
+    container_name: filter_by_hour
+    image: filter_by_hour:latest
+    entrypoint: python3 -m filter_by_hour.main
+    working_dir: /filter_by_hour
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+      - MIN_HOUR=6
+      - MAX_HOUR=23
+    networks:
+      - custom_net
+    volumes:
+      - type: bind
+        source: ./.data/transactions
+        target: /filter_by_hour/data
+        read_only: true
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
+
 
 networks:
   custom_net:

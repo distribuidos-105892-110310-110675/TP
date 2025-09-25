@@ -1,8 +1,8 @@
 FROM python:3.13-slim
 
-WORKDIR /app
+COPY src/controllers/filters/filter_by_hour /filter_by_hour
+COPY src/shared /shared
 
-COPY src/controllers/filters/filter_by_hour/ .
-COPY .data/transactions/ /app/data/
+ENV PYTHONPATH=/
 
-CMD ["python", "main.py"]
+ENTRYPOINT ["/bin/sh"]

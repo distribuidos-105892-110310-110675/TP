@@ -13,7 +13,6 @@ class FilterByHour:
         self.input = input
 
     def __handle_sigterm_signal(self, signal, frame):
-        print("Caught SIGTERM. Exiting.")
         logging.info("Received SIGTERM, shutting down FilterByYear")
         self.running = False
 
@@ -52,9 +51,8 @@ class FilterByHour:
             if hour >= self.min_hour and hour < self.max_hour:
                 self.__produce_output(item)
             else:
-                print(f"Transaction: {item['transaction_id']} was filtered out")
                 logging.info(f"Transaction: {item['transaction_id']} was filtered out")
         self.running = False
 
     def __produce_output(self, item):
-        print(item)
+        logging.info(item)

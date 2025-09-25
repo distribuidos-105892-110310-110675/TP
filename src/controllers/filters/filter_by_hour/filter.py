@@ -31,9 +31,7 @@ class FilterByHour:
         with(open(self.input, newline='', encoding='utf-8')) as file:
             reader = csv.DictReader(file)
             for line in reader:
-                current = {'transaction_id': line['transaction_id'], 'store_id': line['store_id'], 'user_id': line['user_id'],
-                           'final_amount': line['final_amount'], 'created_at': line['created_at']}
-                items.append(current)
+                items.append(line)
                 if i % chunk == 0:
                     self.__filter_by_hour(items)
                     i = 0

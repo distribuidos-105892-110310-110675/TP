@@ -38,10 +38,7 @@ class FilterByYear:
         with(open(self.input, newline='', encoding='utf-8')) as file:
             reader = csv.DictReader(file)
             for line in reader:
-                current = {'transaction_id': line['transaction_id'], 'item_id': line['item_id'],
-                           'quantity': line['quantity'],
-                           'created_at': line['created_at']}
-                items.append(current)
+                items.append(line)
                 if i % chunk == 0:
                     self.__filter_by_year(items)
                     i = 0

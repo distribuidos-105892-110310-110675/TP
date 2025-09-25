@@ -1,33 +1,64 @@
 import logging
 import signal
+import csv
+from time import sleep
+
 
 class FilterByYear:
-    def __init__(self, years_to_filter: list[int]):
+    def __init__(self, input, years_to_filter: list[int]):
 
         self.years_to_filter = set(years_to_filter)
 
         signal.signal(signal.SIGTERM, self.__handle_sigterm_signal)
+        self.running = True
+        self.input = input
 
     def __handle_sigterm_signal(self, signal, frame):
+        print("Caught SIGTERM. Exiting.")
         logging.info("Received SIGTERM, shutting down FilterByYear")
+        self.running = False
         #close middleware connection
 
-    def start(self, chunk):
+    def start(self):
         # connect to middleware
         #set callback for input
         #start consuming from middleware
         logging.info("Starting FilterByYear.")
         # it should not return
-        return self.__filter_by_year(chunk)
+        self.__get_input()
+        while self.running:
+            sleep(1)
+
+
+
+    def __get_input(self):
+        chunk = 1
+        items = []
+        i = 0
+        with(open(self.input, newline='', encoding='utf-8')) as file:
+            reader = csv.DictReader(file)
+            for line in reader:
+                current = {'transaction_id': line['transaction_id'], 'item_id': line['item_id'],
+                           'quantity': line['quantity'],
+                           'created_at': line['created_at']}
+                items.append(current)
+                if i % chunk == 0:
+                    self.__filter_by_year(items)
+                    i = 0
+                    items = []
+            if len(items) > 0:
+                self.__filter_by_year(items)
+        file.close()
 
     def __filter_by_year(self, chunk):
-        filtered_items = []
         for item in chunk:
             year = int(item['created_at'].split(' ')[0].split('-')[0])
             if year in self.years_to_filter:
-                #send to next queue
-                filtered_items.append(item) # erase in the future
+                self.__produce_output(item)
             else:
+                print(f"Transaction: {item['transaction_id']} was filtered out")
                 logging.info(f"Transaction: {item['transaction_id']} was filtered out")
-        # should not return
-        return filtered_items
+        self.running = False
+
+    def __produce_output(self, item):
+        print(item)

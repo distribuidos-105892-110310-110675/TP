@@ -6,6 +6,7 @@ docker-build-image:
 	docker build -f ./src/client/Dockerfile -t "client:latest" .
 	docker build -f ./src/controllers/filters/filter_by_year/Dockerfile -t "filter_by_year:latest" .
 	docker build -f ./src/controllers/filters/filter_by_hour/Dockerfile -t "filter_by_hour:latest" .
+	docker build -f ./src/controllers/filters/filter_by_amount/Dockerfile -t "filter_by_amount:latest" .
 .PHONY: docker-build-image
 
 docker-compose-up: docker-build-image

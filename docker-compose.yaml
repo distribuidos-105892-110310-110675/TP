@@ -85,6 +85,28 @@ services:
         delay: 5s
         max_attempts: 1
 
+  filter_by_amount:
+    container_name: filter_by_amount
+    image: filter_by_amount:latest
+    entrypoint: python3 -m filter_by_amount.main
+    working_dir: /filter_by_amount
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+      - AMOUNT=75
+    networks:
+      - custom_net
+    volumes:
+      - type: bind
+        source: ./.data/transactions
+        target: /filter_by_amount/data
+        read_only: true
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
+
 
 networks:
   custom_net:

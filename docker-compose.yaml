@@ -40,6 +40,29 @@ services:
       server:
         condition: service_started
 
+  filter_by_year:
+    container_name: filter_by_year
+    image: filter_by_year:latest
+    entrypoint: python3 -m filter_by_year.main
+    working_dir: /filter_by_year
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+      - YEARS=2024,2025
+    networks:
+      - custom_net
+    volumes:
+      - type: bind
+        source: ./.data/transaction_items
+        target: /filter_by_year/data
+        read_only: true
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
+
+
 networks:
   custom_net:
     ipam:

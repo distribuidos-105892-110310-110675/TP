@@ -14,7 +14,6 @@ class FilterByYear:
         self.input = input
 
     def __handle_sigterm_signal(self, signal, frame):
-        print("Caught SIGTERM. Exiting.")
         logging.info("Received SIGTERM, shutting down FilterByYear")
         self.running = False
         #close middleware connection
@@ -53,9 +52,8 @@ class FilterByYear:
             if year in self.years_to_filter:
                 self.__produce_output(item)
             else:
-                print(f"Transaction: {item['transaction_id']} was filtered out")
                 logging.info(f"Transaction: {item['transaction_id']} was filtered out")
         self.running = False
 
     def __produce_output(self, item):
-        print(item)
+        logging.info(item)

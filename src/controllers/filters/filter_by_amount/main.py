@@ -1,6 +1,6 @@
-from src.controllers.filters.filter_by_amount.filter import FilterByAmount
+from filter import FilterByAmount
 
-FILE_PATH = '../../../../.data/transactions/transactions_202401.csv'
+FILE_PATH = 'data/transactions_202401.csv'
 
 def main():
     filter = FilterByAmount(75, FILE_PATH)

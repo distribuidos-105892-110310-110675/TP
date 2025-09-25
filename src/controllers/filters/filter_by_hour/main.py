@@ -1,6 +1,6 @@
-from src.controllers.filters.filter_by_hour.filter import FilterByHour
+from filter import FilterByHour
 
-FILE_PATH = '../../../../.data/transactions/transactions_202401.csv'
+FILE_PATH = 'data/transactions_202401.csv'
 
 def main():
     filter = FilterByHour(6, 23, FILE_PATH)

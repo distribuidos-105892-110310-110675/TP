@@ -3,7 +3,7 @@ import csv
 from filter import FilterByYear
 import logging
 
-FILE_PATH = '../../../../.data/transaction_items/transaction_items_202401.csv'
+FILE_PATH = 'data/transaction_items_202401.csv'
 
 def main():
     # config_params = init_config(["LOGGING_LEVEL", "YEARS"])

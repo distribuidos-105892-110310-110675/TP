@@ -52,7 +52,15 @@ El informe técnico detalla las decisiones de diseño y la implementación de ca
 
 ```bash
 
-docker build -t sd1-menu-cleaner:dev .
+docker build -t sd1-cleaner:dev .
+
+```
+
+### Correr por defecto ('menu_cleaner')
+
+```bash
+
+docker run --name menu_cleaner --rm -e CLEANER_SLEEP_SECS=1 sd1-cleaner:dev
 
 ```
 
@@ -60,7 +68,10 @@ docker build -t sd1-menu-cleaner:dev .
 
 ```bash
 
-docker run --name menu_cleaner --rm -e CLEANER_SLEEP_SECS=1 sd1-menu-cleaner:dev
+docker run --name <nombre_del_controlador> --rm \
+  -e CLEANER_SLEEP_SECS=1 \
+  sd1-cleaner:dev \
+  <nombre_del_controlador>.py
 
 ```
 
@@ -68,10 +79,25 @@ docker run --name menu_cleaner --rm -e CLEANER_SLEEP_SECS=1 sd1-menu-cleaner:dev
 
 ```bash
 
-docker run -d --name menu_cleaner -e CLEANER_SLEEP_SECS=1 sd1-menu-cleaner:dev
+docker run -d --name <nombre-del-controlador> \
+  -e CLEANER_SLEEP_SECS=1 \
+  sd1-cleaner:dev \
+  <nombre-del-controlador>.py
 
-docker logs -f menu_cleaner
+docker logs -f <nombre-del-controlador>
 
-docker stop menu_cleaner
+docker stop <nombre-del-controlador>
+
+```
+
+### Bajar todos los containers si quedaron corriendo
+
+```bash
+
+docker stop $(docker ps -aq)
+
+docker rm $(docker ps -aq)
+
+docker ps -a # Verificar que se bajaron todos.
 
 ```

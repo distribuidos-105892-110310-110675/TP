@@ -56,11 +56,11 @@ docker build -t sd1-cleaner:dev .
 
 ```
 
-### Correr por defecto ('menu_cleaner')
+### Correr por defecto ('menu_cleaner', 'q1_output_builder' y 'count_purchases')
 
 ```bash
 
-docker run --name menu_cleaner --rm -e CLEANER_SLEEP_SECS=1 sd1-cleaner:dev
+docker run --name <nombre_del_controlador> --rm -e CLEANER_SLEEP_SECS=1 sd1-cleaner:dev
 
 ```
 

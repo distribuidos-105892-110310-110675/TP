@@ -50,10 +50,9 @@ class MapMonthYear:
     def __map_year_to_month(self, items):
         for item in items:
             date = item['created_at'].split(' ')[0]
-            month = int(date.split('-')[1])
-            year = int(date.split('-')[0])
-            month_name = calendar.month_name[month]
-            item['month'] = month_name + ' ' + str(year)
+            month = (date.split('-')[1])
+            year = (date.split('-')[0])
+            item['year_month_created_at'] = year + '-' + month
             self.__produce_output(item)
 
     def __produce_output(self, item):

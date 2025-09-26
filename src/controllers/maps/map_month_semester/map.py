@@ -52,11 +52,10 @@ class MapMonthSemester:
             year = int(date.split('-')[0])
             month = int(date.split('-')[1])
             if month <= 6:
-                semester = "First"
+                semester = "H1"
             else:
-                semester = "Second"
-            semester += ' Semester'
-            item['semester'] = semester + ' ' + str(year)
+                semester = "H2"
+            item['year_half_created_at'] = str(year) + '-' + semester
             self.__produce_output(item)
 
     def __produce_output(self, item):

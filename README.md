@@ -45,3 +45,33 @@ El informe técnico detalla las decisiones de diseño y la implementación de ca
 ---
 
 ---
+
+## Levantar los containers de Docker de cada Controlador
+
+### Construir la imagen
+
+```bash
+
+docker build -t sd1-menu-cleaner:dev .
+
+```
+
+### Correr en primer plano (Para probar SIGINT)
+
+```bash
+
+docker run --name menu_cleaner --rm -e CLEANER_SLEEP_SECS=1 sd1-menu-cleaner:dev
+
+```
+
+### Correr en segundo plano (Para probar SIGTERM)
+
+```bash
+
+docker run -d --name menu_cleaner -e CLEANER_SLEEP_SECS=1 sd1-menu-cleaner:dev
+
+docker logs -f menu_cleaner
+
+docker stop menu_cleaner
+
+```

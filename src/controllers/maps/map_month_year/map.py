@@ -4,7 +4,7 @@ from time import sleep
 import csv
 import calendar
 
-class MapYearMonth:
+class MapMonthYear:
     def __init__(self, input):
         self.input = input
         self.running = True

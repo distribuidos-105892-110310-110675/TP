@@ -1,11 +1,20 @@
 import signal
 import logging
 from time import sleep
-import csv
+
+TRANSACTION_ITEMS = [
+    {"item_id": "6", "quantity": "1", "unit_price": "9.5", "subtotal": "9.5", "created_at": "2024-01-01 10:06:50"},
+    {"item_id": "4", "quantity": "3", "unit_price": "8.0", "subtotal": "24.0", "created_at": "2024-02-01 10:06:50"},
+    {"item_id": "8", "quantity": "3", "unit_price": "10.0", "subtotal": "30.0", "created_at": "2024-07-01 10:06:50"},
+    {"item_id": "2", "quantity": "3", "unit_price": "7.0", "subtotal": "21.0", "created_at": "2024-08-01 10:06:52"},
+    {"item_id": "6", "quantity": "1", "unit_price": "9.5", "subtotal": "9.5", "created_at": "2025-01-01 10:06:52"},
+    {"item_id": "1", "quantity": "1", "unit_price": "6.0", "subtotal": "6.0", "created_at": "2025-02-01 10:06:53"},
+    {"item_id": "4", "quantity": "3", "unit_price": "8.0", "subtotal": "24.0", "created_at": "2025-09-01 10:06:53"},
+    {"item_id": "4", "quantity": "3", "unit_price": "8.0", "subtotal": "24.0", "created_at": "2025-10-01 10:06:53"},
+]
 
 class MapMonthSemester:
-    def __init__(self, input):
-        self.input = input
+    def __init__(self):
         self.running = True
         signal.signal(signal.SIGTERM, self.__handle_sigterm_signal)
 
@@ -16,37 +25,12 @@ class MapMonthSemester:
 
     def start(self):
         logging.info("Starting MapYearMonth")
-        self.__get_input()
+        self.__map_month_to_semester(TRANSACTION_ITEMS)
         while self.running:
             sleep(1)
 
-    def __get_input(self):
-        chunk = 1
-        items = []
-        i = 0
-        with(open(self.input, newline='', encoding='utf-8')) as file:
-            reader = csv.DictReader(file)
-            for line in reader:
-                items.append(line)
-                if i % chunk == 0:
-                    self.__map_month_to_semester(items)
-                    i = 0
-                    items = []
-            new = {'transaction_id': '1234', 'store_id': '2', 'user_id': '0', 'final_amount': '100',
-                   'created_at': '2024-11-01 5:59:59'}
-            new2 = {'transaction_id': '1235', 'store_id': '2', 'user_id': '0', 'final_amount': '100',
-                    'created_at': '2024-08-01 23:00:01'}
-            new3 = {'transaction_id': '1236', 'store_id': '2', 'user_id': '0', 'final_amount': '100',
-                    'created_at': '2024-06-01 22:59:59'}
-            items.append(new)
-            items.append(new2)
-            items.append(new3)
-            if len(items) > 0:
-                self.__map_month_to_semester(items)
-        file.close()
-        self.running = False
-
     def __map_month_to_semester(self, items):
+        mapped = []
         for item in items:
             date = item['created_at'].split(' ')[0]
             year = int(date.split('-')[0])
@@ -56,7 +40,11 @@ class MapMonthSemester:
             else:
                 semester = "H2"
             item['year_half_created_at'] = str(year) + '-' + semester
-            self.__produce_output(item)
+            mapped.append(item)
+        self.__produce_output(mapped)
+        self.running = False
 
-    def __produce_output(self, item):
-        print(item)
+    def __produce_output(self, items):
+        print("MapMonthSemester producing output")
+        for item in items:
+            print(item)

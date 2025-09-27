@@ -116,7 +116,7 @@ class TestRabbitMQMessageMiddlewareQueue:
 
         assert raise_right_exception
 
-    def test_error_while_deleting_from_already_closed_connection(self) -> None:
+    def test_error_while_deleting_from_closed_connection(self) -> None:
         middleware = RabbitMQMessageMiddlewareQueue(
             self.__rabbitmq_host(), "queue-error-while-deleting-already-deleted"
         )

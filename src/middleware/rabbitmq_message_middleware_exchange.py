@@ -61,7 +61,6 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
         result = self._channel.queue_declare(
             queue="", exclusive=True, auto_delete=True, durable=True
         )
-        # maybe can be exclusive, auto_delete, durable, etc
         queue_name = str(result.method.queue)  # see if necessary the variable
         self.__bind_queue_to_routing_keys(queue_name)
 

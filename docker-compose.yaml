@@ -51,11 +51,6 @@ services:
       - YEARS=2024,2025
     networks:
       - custom_net
-    volumes:
-      - type: bind
-        source: ./.data/transaction_items
-        target: /filter_by_year/data
-        read_only: true
     deploy:
       restart_policy:
         condition: on-failure
@@ -77,11 +72,6 @@ services:
       - MAX_HOUR=23
     networks:
       - custom_net
-    volumes:
-      - type: bind
-        source: ./.data/transactions
-        target: /filter_by_hour/data
-        read_only: true
     deploy:
       restart_policy:
         condition: on-failure
@@ -102,11 +92,6 @@ services:
       - AMOUNT=75
     networks:
       - custom_net
-    volumes:
-      - type: bind
-        source: ./.data/transactions
-        target: /filter_by_amount/data
-        read_only: true
     deploy:
       restart_policy:
         condition: on-failure

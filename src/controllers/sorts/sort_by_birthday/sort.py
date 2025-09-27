@@ -66,4 +66,4 @@ class SortByBirthday():
 
     def __produce_output(self, items):
         for item in items.keys():
-            print(f"{item}: {items[item]}")
+            logging.info(f"Store id: {item}. Users: {items[item]}")

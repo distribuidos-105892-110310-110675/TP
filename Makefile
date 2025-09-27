@@ -11,6 +11,7 @@ docker-build-image:
 	docker build -f ./src/controllers/maps/map_month_year/Dockerfile -t "map_month_year:latest" .
 	docker build -f ./src/controllers/sorts/sort_by_count/Dockerfile -t "sort_by_count:latest" .
 	docker build -f ./src/controllers/sorts/sort_by_sum/Dockerfile -t "sort_by_sum:latest" .
+	docker build -f ./src/controllers/sorts/sort_by_birthday/Dockerfile -t "sort_by_birthday:latest" .
 .PHONY: docker-build-image
 
 docker-compose-up: docker-build-image

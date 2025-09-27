@@ -177,6 +177,25 @@ services:
       server:
         condition: service_started
 
+  sort_by_birthday:
+    container_name: sort_by_birthday
+    image: sort_by_birthday:latest
+    entrypoint: python3 -m sort_by_birthday.main
+    working_dir: /sort_by_birthday
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+    networks:
+      - custom_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
+    depends_on:
+      server:
+        condition: service_started
+
 networks:
   custom_net:
     ipam:

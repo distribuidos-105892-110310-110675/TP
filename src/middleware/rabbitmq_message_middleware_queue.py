@@ -1,26 +1,96 @@
-from typing import Callable, List
+from typing import Callable
 
 import pika
 
-from middleware.middleware import MessageMiddlewareQueue
+from middleware.middleware import (
+    MessageMiddlewareCloseError,
+    MessageMiddlewareDeleteError,
+    MessageMiddlewareQueue,
+)
 
 
 class RabbitMQMessageMiddlewareQueue(MessageMiddlewareQueue):
+
+    # ============================== PRIVATE - ACCESSING ============================== #
+
+    def __rabbitmq_port(self) -> int:
+        return 5672
+
+    def __rabbitmq_user(self) -> str:
+        return "guest"
+
+    def __rabbitmq_password(self) -> str:
+        return "guest"
+
+    # ============================== PRIVATE - INITIALIZATION ============================== #
+
     def __init__(self, host, queue_name):
         super().__init__(host, queue_name)
-        pass
+
+        # @TODO: see exceptions
+
+        self._queue_name = queue_name
+        self._exchange_name = ""  # default exchange
+
+        self._connection = pika.BlockingConnection(
+            pika.ConnectionParameters(
+                host=host,
+                port=self.__rabbitmq_port(),
+                credentials=pika.PlainCredentials(
+                    self.__rabbitmq_user(), self.__rabbitmq_password()
+                ),
+            )
+        )
+
+        self._channel = self._connection.channel()
+        self._channel.basic_qos(prefetch_count=1)
+        self._channel.queue_declare(queue=queue_name, durable=True)
+
+        # add_on_cancel_callback, add_on_close_callback could be useful
+
+        # basic_ack, basic_nack, basic_reject could be useful
+
+    # ============================== PUBLIC ============================== #
 
     def start_consuming(self, on_message_callback: Callable) -> None:
-        pass
+        def pika_on_message_callback(
+            channel: pika.adapters.blocking_connection.BlockingChannel,
+            method: pika.spec.Basic.Deliver,
+            properties: pika.spec.BasicProperties,
+            body: bytes,
+        ) -> None:
+            on_message_callback(body)
+            channel.basic_ack(delivery_tag=method.delivery_tag)  # type: ignore
+
+        self._channel.basic_consume(
+            queue=self._queue_name,
+            on_message_callback=pika_on_message_callback,
+            auto_ack=False,
+        )
+        self._channel.start_consuming()
 
     def stop_consuming(self) -> None:
-        pass
+        self._channel.stop_consuming()
 
     def send(self, message: str) -> None:
-        pass
+        self._channel.basic_publish(
+            exchange=self._exchange_name,
+            routing_key=self._queue_name,
+            body=message,
+            properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent),  # type: ignore
+        )
 
     def close(self) -> None:
-        pass
+        try:
+            self._channel.close()
+            self._connection.close()
+        except BaseException as e:
+            raise MessageMiddlewareCloseError(f"Error closing connection: {e}")
 
     def delete(self) -> None:
-        pass
+        try:
+            self._channel.queue_delete(
+                queue=self._queue_name, if_unused=False, if_empty=False
+            )
+        except BaseException as e:
+            raise MessageMiddlewareDeleteError(f"Error deleting queue: {e}")

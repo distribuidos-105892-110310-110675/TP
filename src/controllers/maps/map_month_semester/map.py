@@ -45,6 +45,6 @@ class MapMonthSemester:
         self.running = False
 
     def __produce_output(self, items):
-        print("MapMonthSemester producing output")
+        logging.info("MapMonthSemester producing output")
         for item in items:
-            print(item)
+            logging.info(item)

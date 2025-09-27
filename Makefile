@@ -7,6 +7,8 @@ docker-build-image:
 	docker build -f ./src/controllers/filters/filter_by_year/Dockerfile -t "filter_by_year:latest" .
 	docker build -f ./src/controllers/filters/filter_by_hour/Dockerfile -t "filter_by_hour:latest" .
 	docker build -f ./src/controllers/filters/filter_by_amount/Dockerfile -t "filter_by_amount:latest" .
+	docker build -f ./src/controllers/maps/map_month_semester/Dockerfile -t "map_month_semester:latest" .
+	docker build -f ./src/controllers/maps/map_month_year/Dockerfile -t "map_month_year:latest" .
 .PHONY: docker-build-image
 
 docker-compose-up: docker-build-image

@@ -55,4 +55,4 @@ class JoinTransactionsWithUsers():
 
     def __produce_output(self, joined_items):
         for item in joined_items:
-            print(f"{item['transaction_id']}: {item['birthdate']}. Store: {item['store_id']}")
+            logging.info(f"{item['transaction_id']}: {item['birthdate']}. Store: {item['store_id']}")

@@ -196,6 +196,82 @@ services:
       server:
         condition: service_started
 
+  join_items_with_menu:
+    container_name: join_items_with_menu
+    image: join_items_with_menu:latest
+    entrypoint: python3 -m join_items_with_menu.main
+    working_dir: /join_items_with_menu
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+    networks:
+      - custom_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
+    depends_on:
+      server:
+        condition: service_started
+
+  join_transactions_with_stores:
+    container_name: join_transactions_with_stores
+    image: join_transactions_with_stores:latest
+    entrypoint: python3 -m join_transactions_with_stores.main
+    working_dir: /join_transactions_with_stores
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+    networks:
+      - custom_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
+    depends_on:
+      server:
+        condition: service_started
+
+  join_transactions_with_users:
+    container_name: join_transactions_with_users
+    image: join_transactions_with_users:latest
+    entrypoint: python3 -m join_transactions_with_users.main
+    working_dir: /join_transactions_with_users
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+    networks:
+      - custom_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
+    depends_on:
+      server:
+        condition: service_started
+
+  join_users_with_stores:
+    container_name: join_users_with_stores
+    image: join_users_with_stores:latest
+    entrypoint: python3 -m join_users_with_stores.main
+    working_dir: /join_users_with_stores
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+    networks:
+      - custom_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
+    depends_on:
+      server:
+        condition: service_started
+
 networks:
   custom_net:
     ipam:

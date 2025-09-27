@@ -51,4 +51,4 @@ class JoinItemsWithMenu:
 
     def __produce_output(self, joined_items):
         for item in joined_items:
-            print(f"{item['item_id']}: {item['item_name']} ({item['category']})")
+            logging.info(f"{item['item_id']}: {item['item_name']} ({item['category']})")

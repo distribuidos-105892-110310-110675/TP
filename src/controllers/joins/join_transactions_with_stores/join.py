@@ -55,5 +55,5 @@ class JoinTransactionsWithStores:
 
     def __produce_output(self, joined_items):
         for item in joined_items:
-            print(f"{item['store_id']}: {item['store_name']} ({item['transaction_id']})")
+            logging.info(f"{item['store_id']}: {item['store_name']} ({item['transaction_id']})")
 

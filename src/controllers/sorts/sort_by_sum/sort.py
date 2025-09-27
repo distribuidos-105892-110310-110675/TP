@@ -58,4 +58,4 @@ class SortBySum():
 
     def __produce_output(self, items):
         for item in items.keys():
-            print(item, items[item])
+            logging.info(f"{item}: {items[item]}")

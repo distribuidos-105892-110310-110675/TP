@@ -1,30 +1,35 @@
 name: devcontainer
 
 services:
-  rabbitmq-dev:
-    image: "rabbitmq:4-management"
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    networks:
-      - devcontainer_net
-    healthcheck:
-      test: rabbitmq-diagnostics check_port_connectivity
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+  # =============================================================================== #
+  # [WARNING] uncomment rabbitmq-dev just if you need to run tests that require RabbitMQ
+  # and comment it again after finishing the tests to avoid unnecessary resource usage.
+  # Don't forget to uncomment the depends_on section in devcontainer service too.
+  # =============================================================================== #
+  # rabbitmq-dev:
+  #   image: "rabbitmq:4-management"
+  #   ports:
+  #     - "5672:5672"
+  #     - "15672:15672"
+  #   environment:
+  #     RABBITMQ_DEFAULT_USER: guest
+  #     RABBITMQ_DEFAULT_PASS: guest
+  #   networks:
+  #     - devcontainer_net
+  #   healthcheck:
+  #     test: rabbitmq-diagnostics check_port_connectivity
+  #     interval: 30s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 30s
 
   devcontainer:
     image: mcr.microsoft.com/devcontainers/python:3
     volumes:
       - ../..:/workspaces:cached
     command: sleep infinity
-    depends_on:
-      - rabbitmq-dev
+    # depends_on:
+    #   - rabbitmq-dev
     networks:
       - devcontainer_net
 

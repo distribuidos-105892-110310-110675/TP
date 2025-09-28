@@ -118,6 +118,11 @@ def decode_users_batch_message(message: str) -> list[dict[str, str]]:
     return __decode_batch_message(message, USERS_BATCH_MSG_TYPE)
 
 
+def decode_eof_message(message: str) -> str:
+    __assert_message_format(message, EOF)
+    return __get_message_payload(message)
+
+
 # ============================= PRIVATE - ENCODE ============================== #
 
 
@@ -206,4 +211,4 @@ def encode_users_batch_message(
 
 
 def encode_eof_message(message_type: str) -> str:
-    return __encode_message(message_type, EOF)
+    return __encode_message(EOF, message_type)

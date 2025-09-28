@@ -164,51 +164,31 @@ class Server:
 
     # ============================== PRIVATE - HANDLE CONNECTION ============================== #
 
-    def __send_to_mom_based_on(
-        self, message: str, message_type: str, data_tag: str
-    ) -> None:
-        if message == communication_protocol.encode_eof_message(message_type):
-            self._data_completed[message_type] = True
-            logging.info(
-                f"action: {data_tag}_batch_received | result: EOF_reached",
-            )
-        else:
-            self.__mom_send_message(data_tag, message)
-
     def __handle_menu_items_batch_message(self, message: str) -> None:
-        self.__send_to_mom_based_on(
-            message,
-            communication_protocol.MENU_ITEMS_BATCH_MSG_TYPE,
-            constants.MENU_ITEMS,
-        )
+        self.__mom_send_message(constants.MENU_ITEMS, message)
 
     def __handle_stores_batch_message(self, message: str) -> None:
-        self.__send_to_mom_based_on(
-            message,
-            communication_protocol.STORES_BATCH_MSG_TYPE,
-            constants.STORES,
-        )
+        self.__mom_send_message(constants.STORES, message)
 
     def __handle_transaction_items_batch_message(self, message: str) -> None:
-        self.__send_to_mom_based_on(
-            message,
-            communication_protocol.TRANSACTION_ITEMS_BATCH_MSG_TYPE,
-            constants.TRANSACTION_ITEMS,
-        )
+        self.__mom_send_message(constants.TRANSACTION_ITEMS, message)
 
     def __handle_transactions_batch_message(self, message: str) -> None:
-        self.__send_to_mom_based_on(
-            message,
-            communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE,
-            constants.TRANSACTIONS,
-        )
+        self.__mom_send_message(constants.TRANSACTIONS, message)
 
     def __handle_users_batch_message(self, message: str) -> None:
-        self.__send_to_mom_based_on(
-            message,
-            communication_protocol.USERS_BATCH_MSG_TYPE,
-            constants.USERS,
-        )
+        self.__mom_send_message(constants.USERS, message)
+
+    def __handle_eof_message(self, message: str) -> None:
+        message_type = communication_protocol.decode_eof_message(message)
+        if message_type not in self._data_completed:
+            raise ValueError(
+                f'Invalid EOF message type received from client "{message_type}"'
+            )
+        self._data_completed[message_type] = True
+        logging.info(f"action: {message_type}_batch_received | result: EOF_reached")
+
+        # should send it to all workers of that type
 
     def __handle_client_message(self, message: str) -> None:
         match communication_protocol.decode_message_type(message):
@@ -222,6 +202,8 @@ class Server:
                 self.__handle_transactions_batch_message(message)
             case communication_protocol.USERS_BATCH_MSG_TYPE:
                 self.__handle_users_batch_message(message)
+            case communication_protocol.EOF:
+                self.__handle_eof_message(message)
             case _:
                 raise ValueError(
                     f'Invalid message type received from client "{communication_protocol.decode_message_type(message)}"'

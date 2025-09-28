@@ -220,8 +220,12 @@ class Server:
                     f'Invalid message type received from client "{message_type}"'
                 )
 
-    def __with_each_client_message_do(
-        self, received_message: str, callback: Callable
+    def __with_each_message_do(
+        self,
+        received_message: str,
+        callback: Callable,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         messages = received_message.split(communication_protocol.MSG_END_DELIMITER)
         for message in messages:
@@ -230,7 +234,7 @@ class Server:
             if message == "":
                 continue
             message += communication_protocol.MSG_END_DELIMITER
-            callback(message)
+            callback(message, *args, **kwargs)
 
     def __receive_all_data_from_client(self, client_socket: socket.socket) -> None:
         while not all(self._client_data_batch_completed.values()):
@@ -238,7 +242,7 @@ class Server:
                 return
 
             received_message = self.__socket_receive_message(client_socket)
-            self.__with_each_client_message_do(
+            self.__with_each_message_do(
                 received_message,
                 self.__handle_client_message,
             )
@@ -270,12 +274,14 @@ class Server:
                 f'Invalid EOF message type received from output builder "{data_type}"'
             )
         self._output_builders_eof_received[data_type] += 1
-        logging.info(f"action: {data_type}_result_received | result: EOF_reached")
+        logging.info(f"action: eof_{data_type}_result_received | result: success")
 
         workers_amount = self._output_builders_data[data_type][constants.WORKERS_AMOUNT]
         if self._output_builders_eof_received[data_type] == workers_amount:
             self.__socket_send_message(client_socket, message)
-            logging.info(f"action: {data_type}_results_sent | result: EOF_reached")
+            logging.info(
+                f"action: eof_{data_type}_results_to_client_sent | result: success"
+            )
 
     def __handle_output_builder_message(self, client_socket: socket.socket) -> Callable:
         def __on_message_callback(message_as_bytes: bytes) -> None:

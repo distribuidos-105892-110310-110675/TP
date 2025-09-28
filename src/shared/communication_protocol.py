@@ -11,11 +11,11 @@ TRANSACTION_ITEMS_BATCH_MSG_TYPE = "TIT"
 TRANSACTIONS_BATCH_MSG_TYPE = "TRN"
 USERS_BATCH_MSG_TYPE = "USR"
 
-QUERY_RESULT_1_MSG_TYPE = "Q1_"
+QUERY_RESULT_1_MSG_TYPE = "Q1X"
 QUERY_RESULT_2_1_MSG_TYPE = "Q21"
 QUERY_RESULT_2_2_MSG_TYPE = "Q22"
-QUERY_RESULT_3_MSG_TYPE = "Q3_"
-QUERY_RESULT_4_MSG_TYPE = "Q4_"
+QUERY_RESULT_3_MSG_TYPE = "Q3X"
+QUERY_RESULT_4_MSG_TYPE = "Q4X"
 
 # delimiters & separators
 MSG_START_DELIMITER = "["
@@ -46,7 +46,7 @@ def __assert_message_format(message: str, expected_message_type: str) -> None:
         raise ValueError("Unexpected message format")
 
 
-def __get_message_payload(message: str) -> str:
+def get_message_payload(message: str) -> str:
     payload = message[MESSAGE_TYPE_LENGTH:]
 
     payload = payload[len(MSG_START_DELIMITER) : -len(MSG_END_DELIMITER)]
@@ -77,7 +77,7 @@ def __decode_row(encoded_row: str) -> dict[str, str]:
 
 def __decode_batch_message(message: str, message_type: str) -> list[dict[str, str]]:
     __assert_message_format(message, message_type)
-    payload = __get_message_payload(message)
+    payload = get_message_payload(message)
     encoded_rows = payload.split(BATCH_ROW_SEPARATOR)
     decoded_rows = []
 
@@ -121,7 +121,7 @@ def decode_users_batch_message(message: str) -> list[dict[str, str]]:
 
 def decode_eof_message(message: str) -> str:
     __assert_message_format(message, EOF)
-    return __get_message_payload(message)
+    return get_message_payload(message)
 
 
 # ============================= PRIVATE - ENCODE ============================== #

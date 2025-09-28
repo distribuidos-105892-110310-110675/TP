@@ -1,6 +1,6 @@
 import signal
 import logging
-from time import sleep
+from shared import communication_protocol
 
 TRANSACTIONS = [
     {"transaction_id": "t-001", "store_id": 5, 'user_id': '', 'final_amount': 24.1, "created_at": "2023-01-06 10:06:50"},
@@ -33,23 +33,60 @@ class JoinTransactionsWithStores:
     def __init__(self):
         self.running = True
         signal.signal(signal.SIGTERM, self.__handle_sigterm_signal)
+        self.transactions = []
+        self.stores = []
+        self.received_all_transactions = False
+        self.received_all_stores = False
 
     def __handle_sigterm_signal(self, signal, frame):
         logging.info("Received SIGTERM, shutting down JoinItemsWithMenu")
         self.running = False
 
     def start(self):
-        logging.info("Starting JoinItemsWithMenu.")
-        self.__join(TRANSACTIONS, STORES)
-        while self.running:
-            sleep(1)
+        chunk_size = len(TRANSACTIONS) // 2
+        i = 0
+        while i < len(TRANSACTIONS):
+            new_chunk = TRANSACTIONS[i:i + chunk_size]
+            self.__receive_data(communication_protocol.encode_transactions_batch_message(new_chunk))
+            i += chunk_size
+        self.__receive_data(
+            communication_protocol.encode_eof_message(communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE))
+        chunk_size = len(STORES) // 2
+        i = 0
+        while i < len(STORES):
+            new_chunk = STORES[i:i + chunk_size]
+            self.__receive_data(communication_protocol.encode_stores_batch_message(new_chunk))
+            i += chunk_size
+        self.__receive_data(communication_protocol.encode_eof_message(communication_protocol.STORES_BATCH_MSG_TYPE))
+        self.__join()
 
-    def __join(self, transactions, stores):
+    def __receive_data(self, chunk):
+        msg_type = communication_protocol.decode_message_type(chunk)
+        if msg_type == communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE:
+            transactions = communication_protocol.decode_transactions_batch_message(chunk)
+            for t in transactions:
+                self.transactions.append(t)
+        elif msg_type == communication_protocol.STORES_BATCH_MSG_TYPE:
+            stores = communication_protocol.decode_stores_batch_message(chunk)
+            for s in stores:
+                self.stores.append(s)
+        elif msg_type == communication_protocol.EOF:
+            body = communication_protocol.decode_eof_message(chunk)
+            if body == communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE:
+                self.received_all_transactions = True
+            elif body == communication_protocol.STORES_BATCH_MSG_TYPE:
+                self.received_all_stores = True
+            else:
+                logging.error("Received unknown message type")
+        else:
+            logging.error("Received unknown message type")
+
+    def __join(self):
         joined = []
-        for transaction in transactions:
-            for store in stores:
-                if transaction.get('store_id') == store.get('store_id'):
-                    joined.append({**transaction, **store})
+        for t in self.transactions:
+            for s in self.stores:
+                if t.get('store_id') == s.get('store_id'):
+                    joined.append({**t, **s})
         self.running = False
         self.__produce_output(joined)
 

@@ -1,6 +1,6 @@
 import signal
 import logging
-from time import sleep
+from shared import communication_protocol
 
 MENU_ITEMS = [
     {'item_id': 1, 'item_name': 'Espresso', 'category': 'coffee', 'price': 6.0, 'is_seasonal': False, 'available_from': '', 'available_to': ''},
@@ -29,22 +29,58 @@ class JoinItemsWithMenu:
     def __init__(self):
         self.running = True
         signal.signal(signal.SIGTERM, self.__handle_sigterm_signal)
+        self.menu_items = []
+        self.transaction_items = []
+        self.received_all_transaction_items = False
+        self.receive_all_menu_items = False
 
     def __handle_sigterm_signal(self, signal, frame):
         logging.info("Received SIGTERM, shutting down JoinItemsWithMenu")
         self.running = False
 
     def start(self):
-        logging.info("Starting JoinItemsWithMenu.")
-        self.__join(MENU_ITEMS, ITEMS)
-        while self.running:
-            sleep(1)
+        chunk_size = len(ITEMS) // 2
+        i = 0
+        while i < len(ITEMS):
+            new_chunk = ITEMS[i:i + chunk_size]
+            self.__receive_data(communication_protocol.encode_transaction_items_batch_message(new_chunk))
+            i += chunk_size
+        self.__receive_data(communication_protocol.encode_eof_message(communication_protocol.TRANSACTION_ITEMS_BATCH_MSG_TYPE))
+        chunk_size = len(MENU_ITEMS) // 2
+        i = 0
+        while i < len(MENU_ITEMS):
+            new_chunk = MENU_ITEMS[i:i + chunk_size]
+            self.__receive_data(communication_protocol.encode_menu_items_batch_message(new_chunk))
+            i += chunk_size
+        self.__receive_data(communication_protocol.encode_eof_message(communication_protocol.MENU_ITEMS_BATCH_MSG_TYPE))
+        self.__join()
 
-    def __join(self, menu_items, items):
+    def __receive_data(self, chunk):
+        msg_type = communication_protocol.decode_message_type(chunk)
+        if msg_type == communication_protocol.TRANSACTION_ITEMS_BATCH_MSG_TYPE:
+            transaction_items = communication_protocol.decode_transaction_items_batch_message(chunk)
+            for ti in transaction_items:
+                self.transaction_items.append(ti)
+        elif msg_type == communication_protocol.MENU_ITEMS_BATCH_MSG_TYPE:
+            menu_items = communication_protocol.decode_menu_items_batch_message(chunk)
+            for mi in menu_items:
+                self.menu_items.append(mi)
+        elif msg_type == communication_protocol.EOF:
+            body = communication_protocol.decode_eof_message(chunk)
+            if body == communication_protocol.TRANSACTION_ITEMS_BATCH_MSG_TYPE:
+                self.received_all_transaction_items = True
+            elif body == communication_protocol.MENU_ITEMS_BATCH_MSG_TYPE:
+                self.received_all_menu_items = True
+            else:
+                logging.error("Received unknown message type")
+        else:
+            logging.error("Received unknown message type")
+
+    def __join(self):
         joined_items = []
-        for item in items:
-            for m_item in menu_items:
-                if int(item.get('item_id')) == m_item.get('item_id'):
+        for item in self.transaction_items:
+            for m_item in self.menu_items:
+                if int(item.get('item_id')) == int(m_item.get('item_id')):
                     joined_items.append({**item, **m_item})
         self.running = False
         self.__produce_output(joined_items)

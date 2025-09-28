@@ -71,180 +71,180 @@ services:
 #      server:
 #        condition: service_started
 
-  filter_transactions_by_year:
-    container_name: filter_transactions_by_year
-    image: filter_transactions_by_year:latest
-    entrypoint: python3 -m filter_transactions_by_year.main
-    working_dir: /filter_transactions_by_year
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
-      - YEARS=2024,2025
-    networks:
-      - custom_net
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 1
+#  filter_transactions_by_year:
+#    container_name: filter_transactions_by_year
+#    image: filter_transactions_by_year:latest
+#    entrypoint: python3 -m filter_transactions_by_year.main
+#    working_dir: /filter_transactions_by_year
+#    environment:
+#      - PYTHONUNBUFFERED=1
+#      - LOGGING_LEVEL=DEBUG
+#      - YEARS=2024,2025
+#    networks:
+#      - custom_net
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        delay: 5s
+#        max_attempts: 1
 #    depends_on:
 #      server:
 #        condition: service_started
 
-  filter_items_by_year:
-    container_name: filter_items_by_year
-    image: filter_items_by_year:latest
-    entrypoint: python3 -m filter_items_by_year.main
-    working_dir: /filter_items_by_year
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
-      - YEARS=2024,2025
-    networks:
-      - custom_net
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 1
+#  filter_items_by_year:
+#    container_name: filter_items_by_year
+#    image: filter_items_by_year:latest
+#    entrypoint: python3 -m filter_items_by_year.main
+#    working_dir: /filter_items_by_year
+#    environment:
+#      - PYTHONUNBUFFERED=1
+#      - LOGGING_LEVEL=DEBUG
+#      - YEARS=2024,2025
+#    networks:
+#      - custom_net
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        delay: 5s
+#        max_attempts: 1
 #    depends_on:
 #      server:
 #        condition: service_started
 #
-  filter_transactions_by_hour:
-    container_name: filter_transactions_by_hour
-    image: filter_transactions_by_hour:latest
-    entrypoint: python3 -m filter_transactions_by_hour.main
-    working_dir: /filter_transactions_by_hour
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
-      - MIN_HOUR=6
-      - MAX_HOUR=23
-    networks:
-      - custom_net
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 1
+#  filter_transactions_by_hour:
+#    container_name: filter_transactions_by_hour
+#    image: filter_transactions_by_hour:latest
+#    entrypoint: python3 -m filter_transactions_by_hour.main
+#    working_dir: /filter_transactions_by_hour
+#    environment:
+#      - PYTHONUNBUFFERED=1
+#      - LOGGING_LEVEL=DEBUG
+#      - MIN_HOUR=6
+#      - MAX_HOUR=23
+#    networks:
+#      - custom_net
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        delay: 5s
+#        max_attempts: 1
 #    depends_on:
 #      server:
 #        condition: service_started
 #
-  filter_items_by_hour:
-    container_name: filter_items_by_hour
-    image: filter_items_by_hour:latest
-    entrypoint: python3 -m filter_items_by_hour.main
-    working_dir: /filter_items_by_hour
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
-      - MIN_HOUR=6
-      - MAX_HOUR=23
-    networks:
-      - custom_net
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 1
+#  filter_items_by_hour:
+#    container_name: filter_items_by_hour
+#    image: filter_items_by_hour:latest
+#    entrypoint: python3 -m filter_items_by_hour.main
+#    working_dir: /filter_items_by_hour
+#    environment:
+#      - PYTHONUNBUFFERED=1
+#      - LOGGING_LEVEL=DEBUG
+#      - MIN_HOUR=6
+#      - MAX_HOUR=23
+#    networks:
+#      - custom_net
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        delay: 5s
+#        max_attempts: 1
 #    depends_on:
 #      server:
 #        condition: service_started
 
-  filter_transactions_by_amount:
-    container_name: filter_transactions_by_amount
-    image: filter_transactions_by_amount:latest
-    entrypoint: python3 -m filter_transactions_by_amount.main
-    working_dir: /filter_transactions_by_amount
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
-      - AMOUNT=75
-    networks:
-      - custom_net
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 1
+#  filter_transactions_by_amount:
+#    container_name: filter_transactions_by_amount
+#    image: filter_transactions_by_amount:latest
+#    entrypoint: python3 -m filter_transactions_by_amount.main
+#    working_dir: /filter_transactions_by_amount
+#    environment:
+#      - PYTHONUNBUFFERED=1
+#      - LOGGING_LEVEL=DEBUG
+#      - AMOUNT=75
+#    networks:
+#      - custom_net
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        delay: 5s
+#        max_attempts: 1
 #    depends_on:
 #      server:
 #        condition: service_started
 
-  map_month_semester_transactions:
-    container_name: map_month_semester_transactions
-    image: map_month_semester_transactions:latest
-    entrypoint: python3 -m map_month_semester_transactions.main
-    working_dir: /map_month_semester_transactions
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
-    networks:
-      - custom_net
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 1
+#  map_month_semester_transactions:
+#    container_name: map_month_semester_transactions
+#    image: map_month_semester_transactions:latest
+#    entrypoint: python3 -m map_month_semester_transactions.main
+#    working_dir: /map_month_semester_transactions
+#    environment:
+#      - PYTHONUNBUFFERED=1
+#      - LOGGING_LEVEL=DEBUG
+#    networks:
+#      - custom_net
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        delay: 5s
+#        max_attempts: 1
 #    depends_on:
 #      server:
 #        condition: service_started
 #
-  map_month_semester_items:
-    container_name: map_month_semester_items
-    image: map_month_semester_items:latest
-    entrypoint: python3 -m map_month_semester_items.main
-    working_dir: /map_month_semester_items
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
-    networks:
-      - custom_net
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 1
+#  map_month_semester_items:
+#    container_name: map_month_semester_items
+#    image: map_month_semester_items:latest
+#    entrypoint: python3 -m map_month_semester_items.main
+#    working_dir: /map_month_semester_items
+#    environment:
+#      - PYTHONUNBUFFERED=1
+#      - LOGGING_LEVEL=DEBUG
+#    networks:
+#      - custom_net
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        delay: 5s
+#        max_attempts: 1
   #    depends_on:
   #      server:
   #        condition: service_started
   #
-  map_month_year_transactions:
-    container_name: map_month_year_transactions
-    image: map_month_year_transactions:latest
-    entrypoint: python3 -m map_month_year_transactions.main
-    working_dir: /map_month_year_transactions
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
-    networks:
-      - custom_net
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 1
+#  map_month_year_transactions:
+#    container_name: map_month_year_transactions
+#    image: map_month_year_transactions:latest
+#    entrypoint: python3 -m map_month_year_transactions.main
+#    working_dir: /map_month_year_transactions
+#    environment:
+#      - PYTHONUNBUFFERED=1
+#      - LOGGING_LEVEL=DEBUG
+#    networks:
+#      - custom_net
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        delay: 5s
+#        max_attempts: 1
 #    depends_on:
 #      server:
 #        condition: service_started
 
-  map_month_year_items:
-    container_name: map_month_year_items
-    image: map_month_year_items:latest
-    entrypoint: python3 -m map_month_year_items.main
-    working_dir: /map_month_year_items
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
-    networks:
-      - custom_net
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 1
+#  map_month_year_items:
+#    container_name: map_month_year_items
+#    image: map_month_year_items:latest
+#    entrypoint: python3 -m map_month_year_items.main
+#    working_dir: /map_month_year_items
+#    environment:
+#      - PYTHONUNBUFFERED=1
+#      - LOGGING_LEVEL=DEBUG
+#    networks:
+#      - custom_net
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        delay: 5s
+#        max_attempts: 1
 #    depends_on:
 #      server:
 #        condition: service_started
@@ -307,78 +307,78 @@ services:
 #      server:
 #        condition: service_started
 #
-#  join_items_with_menu:
-#    container_name: join_items_with_menu
-#    image: join_items_with_menu:latest
-#    entrypoint: python3 -m join_items_with_menu.main
-#    working_dir: /join_items_with_menu
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
+  join_items_with_menu:
+    container_name: join_items_with_menu
+    image: join_items_with_menu:latest
+    entrypoint: python3 -m join_items_with_menu.main
+    working_dir: /join_items_with_menu
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+    networks:
+      - custom_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
 #    depends_on:
 #      server:
 #        condition: service_started
 #
-#  join_transactions_with_stores:
-#    container_name: join_transactions_with_stores
-#    image: join_transactions_with_stores:latest
-#    entrypoint: python3 -m join_transactions_with_stores.main
-#    working_dir: /join_transactions_with_stores
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
+  join_transactions_with_stores:
+    container_name: join_transactions_with_stores
+    image: join_transactions_with_stores:latest
+    entrypoint: python3 -m join_transactions_with_stores.main
+    working_dir: /join_transactions_with_stores
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+    networks:
+      - custom_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
 #    depends_on:
 #      server:
 #        condition: service_started
 #
-#  join_transactions_with_users:
-#    container_name: join_transactions_with_users
-#    image: join_transactions_with_users:latest
-#    entrypoint: python3 -m join_transactions_with_users.main
-#    working_dir: /join_transactions_with_users
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
+  join_transactions_with_users:
+    container_name: join_transactions_with_users
+    image: join_transactions_with_users:latest
+    entrypoint: python3 -m join_transactions_with_users.main
+    working_dir: /join_transactions_with_users
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+    networks:
+      - custom_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
 #    depends_on:
 #      server:
 #        condition: service_started
 #
-#  join_users_with_stores:
-#    container_name: join_users_with_stores
-#    image: join_users_with_stores:latest
-#    entrypoint: python3 -m join_users_with_stores.main
-#    working_dir: /join_users_with_stores
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
+  join_users_with_stores:
+    container_name: join_users_with_stores
+    image: join_users_with_stores:latest
+    entrypoint: python3 -m join_users_with_stores.main
+    working_dir: /join_users_with_stores
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+    networks:
+      - custom_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
 #    depends_on:
 #      server:
 #        condition: service_started

@@ -1,6 +1,6 @@
 import signal
 import logging
-from time import sleep
+from shared import communication_protocol
 
 USERS = [
     {"user_id": "17585", "gender": "female", "birthdate": "2003-01-06", "registered_at": "2024-01-02 10:42:29", 'store_id': 1},
@@ -33,23 +33,60 @@ class JoinUsersWithStores():
     def __init__(self):
         self.running = True
         signal.signal(signal.SIGTERM, self.__handle_sigterm_signal)
+        self.users = []
+        self.stores = []
+        self.received_all_stores = False
+        self.received_all_users = False
 
     def __handle_sigterm_signal(self, signal, frame):
         logging.info("Received SIGTERM, shutting down JoinTransactionsWithUsers")
         self.running = False
 
     def start(self):
-        logging.info("Starting JoinTransactionsWithUsers.")
-        self.__join(STORES, USERS)
-        while self.running:
-            sleep(1)
+        chunk_size = len(STORES) // 2
+        i = 0
+        while i < len(STORES):
+            new_chunk = STORES[i:i + chunk_size]
+            self.__receive_data(communication_protocol.encode_stores_batch_message(new_chunk))
+            i += chunk_size
+        self.__receive_data(
+            communication_protocol.encode_eof_message(communication_protocol.STORES_BATCH_MSG_TYPE))
+        chunk_size = len(USERS) // 2
+        i = 0
+        while i < len(USERS):
+            new_chunk = USERS[i:i + chunk_size]
+            self.__receive_data(communication_protocol.encode_users_batch_message(new_chunk))
+            i += chunk_size
+        self.__receive_data(communication_protocol.encode_eof_message(communication_protocol.USERS_BATCH_MSG_TYPE))
+        self.__join()
 
-    def __join(self, stores, users):
+    def __receive_data(self, chunk):
+        msg_type = communication_protocol.decode_message_type(chunk)
+        if msg_type == communication_protocol.STORES_BATCH_MSG_TYPE:
+            stores = communication_protocol.decode_stores_batch_message(chunk)
+            for s in stores:
+                self.stores.append(s)
+        elif msg_type == communication_protocol.USERS_BATCH_MSG_TYPE:
+            users = communication_protocol.decode_users_batch_message(chunk)
+            for u in users:
+                self.users.append(u)
+        elif msg_type == communication_protocol.EOF:
+            body = communication_protocol.decode_eof_message(chunk)
+            if body == communication_protocol.STORES_BATCH_MSG_TYPE:
+                self.received_all_stores = True
+            elif body == communication_protocol.USERS_BATCH_MSG_TYPE:
+                self.received_all_users = True
+            else:
+                logging.error("Received unknown message type")
+        else:
+            logging.error("Received unknown message type")
+
+    def __join(self):
         joined_items = []
-        for user in users:
-            for store in stores:
-                if user.get('store_id') == store.get('store_id'):
-                    joined_items.append({**user, **store})
+        for s in self.stores:
+            for u in self.users:
+                if s.get('store_id') == u.get('store_id'):
+                    joined_items.append({**s, **u})
         self.running = False
         self.__produce_output(joined_items)
 

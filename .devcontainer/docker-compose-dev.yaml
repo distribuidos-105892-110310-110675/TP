@@ -2,7 +2,7 @@ name: devcontainer
 
 services:
   rabbitmq-dev:
-    image: "rabbitmq:4-management" # can be slim image
+    image: "rabbitmq:4-management"
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -13,10 +13,10 @@ services:
       - devcontainer_net
     healthcheck:
       test: rabbitmq-diagnostics check_port_connectivity
-      interval: 10s
+      interval: 30s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 30s
 
   devcontainer:
     image: mcr.microsoft.com/devcontainers/python:3

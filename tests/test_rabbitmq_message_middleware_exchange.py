@@ -1,8 +1,14 @@
 import threading
 import time
 
-import pika
+import pytest
 
+from middleware.middleware import (
+    MessageMiddlewareCloseError,
+    MessageMiddlewareDeleteError,
+    MessageMiddlewareDisconnectedError,
+    MessageMiddlewareMessageError,
+)
 from middleware.rabbitmq_message_middleware_exchange import (
     RabbitMQMessageMiddlewareExchange,
 )
@@ -108,7 +114,7 @@ class TestRabbitMQMessageMiddlewareExchange:
         exchange_publisher.delete()
         exchange_publisher.close()
 
-    # ============================== TESTS ============================== #
+    # ============================== TESTS - COMMUNICATION ============================== #
 
     def test_direct_working_exchange_communication_1_to_1(self) -> None:
         self.__test_direct_working_exchange_communication_1_to(
@@ -250,3 +256,145 @@ class TestRabbitMQMessageMiddlewareExchange:
 
         exchange_publisher.delete()
         exchange_publisher.close()
+
+    # ============================== TESTS - FUNCTIONS ============================== #
+
+    def test_stop_consuming_multiple_times(self) -> None:
+        exchange_consumer = RabbitMQMessageMiddlewareExchange(
+            self.__rabbitmq_host(),
+            "exchange-stop-consuming-multiple-times",
+            ["routing-key.1"],
+        )
+
+        exchange_consumer.stop_consuming()
+        exchange_consumer.stop_consuming()
+
+        exchange_consumer.delete()
+        exchange_consumer.close()
+
+    # ============================== TESTS - EXCEPTIONS ============================== #
+
+    def test_error_while_creating_connection_with_wrong_host(self) -> None:
+        with pytest.raises(MessageMiddlewareDisconnectedError) as exc_info:
+            RabbitMQMessageMiddlewareExchange(
+                "non-existing-host",
+                "exchange-error-while-creating-connection-with-wrong-host",
+                ["routing-key.1"],
+            )
+
+        assert (
+            "Error connecting to RabbitMQ server: [Errno -2] Name or service not known"
+            == str(exc_info.value)
+        )
+
+    def test_error_while_starting_consuming_from_closed_connection(self) -> None:
+        middleware = RabbitMQMessageMiddlewareExchange(
+            self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+        )
+        middleware.delete()
+        middleware.close()
+
+        with pytest.raises(MessageMiddlewareDisconnectedError) as exc_info:
+            middleware.start_consuming(lambda msg: None)
+
+        assert str(exc_info.value) == "Error: Connection or channel is closed."
+
+    def test_consumer_callback_failure_raises_exception(self) -> None:
+        def send_with_delay() -> None:
+            # we have to wait until all consumers are ready
+            # because if we send before they are listening,
+            # the message is lost (rabbitmq default behaviour)
+            time.sleep(1)
+
+            exchange_publisher = RabbitMQMessageMiddlewareExchange(
+                self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+            )
+            exchange_publisher.send("message that will cause failure")
+            exchange_publisher.close()
+
+        thread = threading.Thread(target=send_with_delay)
+        thread.start()
+
+        exchange_consumer = RabbitMQMessageMiddlewareExchange(
+            self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+        )
+
+        def failing_callback(message_as_bytes: bytes) -> None:
+            raise ValueError("Simulated processing error")
+
+        with pytest.raises(MessageMiddlewareMessageError) as exc_info:
+            exchange_consumer.start_consuming(failing_callback)
+
+        assert (
+            str(exc_info.value)
+            == "Error consuming messages: Simulated processing error"
+        )
+
+        thread.join()
+
+        exchange_consumer.delete()
+        exchange_consumer.close()
+
+    def test_error_while_stopping_consuming_from_closed_connection(self) -> None:
+        middleware = RabbitMQMessageMiddlewareExchange(
+            self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+        )
+        middleware.delete()
+        middleware.close()
+
+        with pytest.raises(MessageMiddlewareDisconnectedError) as exc_info:
+            middleware.stop_consuming()
+
+        assert str(exc_info.value) == "Error: Connection or channel is closed."
+
+    def test_error_while_sending_msg_to_closed_connection(self) -> None:
+        middleware = RabbitMQMessageMiddlewareExchange(
+            self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+        )
+        middleware.delete()
+        middleware.close()
+
+        with pytest.raises(MessageMiddlewareDisconnectedError) as exc_info:
+            middleware.send("Testing message")
+
+        assert str(exc_info.value) == "Error: Connection or channel is closed."
+
+    def test_error_while_sending_wrong_msg(self) -> None:
+        middleware = RabbitMQMessageMiddlewareExchange(
+            self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+        )
+
+        with pytest.raises(MessageMiddlewareMessageError) as exc_info:
+            middleware.send(None)  # type: ignore
+
+        assert (
+            str(exc_info.value)
+            == "Error sending message: object of type 'NoneType' has no len()"
+        )
+
+        middleware.delete()
+        middleware.close()
+
+    def test_error_while_closing_already_closed_connection(self) -> None:
+        middleware = RabbitMQMessageMiddlewareExchange(
+            self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+        )
+        middleware.delete()
+        middleware.close()
+
+        with pytest.raises(MessageMiddlewareCloseError) as exc_info:
+            middleware.close()
+
+        assert str(exc_info.value) == "Error closing connection: Channel is closed."
+
+    def test_error_while_deleting_from_closed_connection(self) -> None:
+        middleware = RabbitMQMessageMiddlewareExchange(
+            self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+        )
+        middleware.delete()
+        middleware.close()
+
+        with pytest.raises(MessageMiddlewareDeleteError) as exc_info:
+            middleware.delete()
+
+        assert str(exc_info.value) == "Error deleting queue: Channel is closed."

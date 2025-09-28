@@ -1,8 +1,12 @@
 import threading
 
+import pytest
+
 from middleware.middleware import (
     MessageMiddlewareCloseError,
     MessageMiddlewareDeleteError,
+    MessageMiddlewareDisconnectedError,
+    MessageMiddlewareMessageError,
 )
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 
@@ -89,7 +93,7 @@ class TestRabbitMQMessageMiddlewareQueue:
         queue_publisher.delete()
         queue_publisher.close()
 
-    # ============================== TESTS ============================== #
+    # ============================== TESTS - COMMUNICATION ============================== #
 
     def test_working_queue_communication_1_to_1(self) -> None:
         self.__test_working_queue_communication_1_to(1, "queue-communication-1-to-many")
@@ -97,37 +101,122 @@ class TestRabbitMQMessageMiddlewareQueue:
     def test_working_queue_communication_1_to_many(self) -> None:
         self.__test_working_queue_communication_1_to(5, "queue-communication-1-to-many")
 
-    # try to make tests for the other exceptions
-    # on the other methods
+    # ============================== TESTS - FUNCTIONS ============================== #
+
+    def test_stop_consuming_multiple_times(self) -> None:
+        middleware = RabbitMQMessageMiddlewareQueue(
+            self.__rabbitmq_host(), "testing-stop-consuming-multiple-times-queue"
+        )
+
+        middleware.stop_consuming()
+        middleware.stop_consuming()
+
+        middleware.delete()
+        middleware.close()
+
+    # ============================== TESTS - EXCEPTIONS ============================== #
+
+    def test_error_while_creating_connection_with_wrong_host(self) -> None:
+        with pytest.raises(MessageMiddlewareDisconnectedError) as exc_info:
+            RabbitMQMessageMiddlewareQueue("wrong-host", "testing-error-queue")
+
+        assert (
+            "Error connecting to RabbitMQ server: [Errno -2] Name or service not known"
+            == str(exc_info.value)
+        )
+
+    def test_error_while_starting_consuming_from_closed_connection(self) -> None:
+        middleware = RabbitMQMessageMiddlewareQueue(
+            self.__rabbitmq_host(), "testing-error-queue"
+        )
+        middleware.delete()
+        middleware.close()
+
+        with pytest.raises(MessageMiddlewareDisconnectedError) as exc_info:
+            middleware.start_consuming(lambda msg: None)
+
+        assert str(exc_info.value) == "Error: Connection or channel is closed."
+
+    def test_consumer_callback_failure_raises_exception(self) -> None:
+        middleware = RabbitMQMessageMiddlewareQueue(
+            self.__rabbitmq_host(), "testing-error-queue"
+        )
+        middleware.send("message that will cause failure")
+
+        def failing_callback(message_as_bytes: bytes) -> None:
+            raise ValueError("Simulated processing error")
+
+        with pytest.raises(MessageMiddlewareMessageError) as exc_info:
+            middleware.start_consuming(failing_callback)
+
+        assert (
+            str(exc_info.value)
+            == "Error consuming messages: Simulated processing error"
+        )
+
+        middleware.delete()
+        middleware.close()
+
+    def test_error_while_stopping_consuming_from_closed_connection(self) -> None:
+        middleware = RabbitMQMessageMiddlewareQueue(
+            self.__rabbitmq_host(), "testing-error-queue"
+        )
+        middleware.delete()
+        middleware.close()
+
+        with pytest.raises(MessageMiddlewareDisconnectedError) as exc_info:
+            middleware.stop_consuming()
+
+        assert str(exc_info.value) == "Error: Connection or channel is closed."
+
+    def test_error_while_sending_msg_to_closed_connection(self) -> None:
+        middleware = RabbitMQMessageMiddlewareQueue(
+            self.__rabbitmq_host(), "testing-error-queue"
+        )
+        middleware.delete()
+        middleware.close()
+
+        with pytest.raises(MessageMiddlewareDisconnectedError) as exc_info:
+            middleware.send("Testing message")
+
+        assert str(exc_info.value) == "Error: Connection or channel is closed."
+
+    def test_error_while_sending_wrong_msg(self) -> None:
+        middleware = RabbitMQMessageMiddlewareQueue(
+            self.__rabbitmq_host(), "testing-error-queue"
+        )
+
+        with pytest.raises(MessageMiddlewareMessageError) as exc_info:
+            middleware.send(None)  # type: ignore
+
+        assert (
+            str(exc_info.value)
+            == "Error sending message: object of type 'NoneType' has no len()"
+        )
+
+        middleware.delete()
+        middleware.close()
 
     def test_error_while_closing_already_closed_connection(self) -> None:
         middleware = RabbitMQMessageMiddlewareQueue(
-            self.__rabbitmq_host(), "queue-error-while-closing-already-closed"
+            self.__rabbitmq_host(), "testing-error-queue"
         )
         middleware.delete()
         middleware.close()
 
-        raise_right_exception = False
-        try:
+        with pytest.raises(MessageMiddlewareCloseError) as exc_info:
             middleware.close()
-        except MessageMiddlewareCloseError as e:
-            raise_right_exception = True
-            assert str(e) == "Error closing connection: Channel is closed."
 
-        assert raise_right_exception
+        assert str(exc_info.value) == "Error closing connection: Channel is closed."
 
     def test_error_while_deleting_from_closed_connection(self) -> None:
         middleware = RabbitMQMessageMiddlewareQueue(
-            self.__rabbitmq_host(), "queue-error-while-deleting-already-deleted"
+            self.__rabbitmq_host(), "testing-error-queue"
         )
         middleware.delete()
         middleware.close()
 
-        raise_right_exception = False
-        try:
+        with pytest.raises(MessageMiddlewareDeleteError) as exc_info:
             middleware.delete()
-        except MessageMiddlewareDeleteError as e:
-            raise_right_exception = True
-            assert str(e) == "Error deleting queue: Channel is closed."
 
-        assert raise_right_exception
+        assert str(exc_info.value) == "Error deleting queue: Channel is closed."

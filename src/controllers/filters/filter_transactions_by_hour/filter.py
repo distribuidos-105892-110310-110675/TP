@@ -1,7 +1,6 @@
-import csv
 import logging
-from time import sleep
 import signal
+from shared import communication_protocol
 
 TRANSACTIONS = [
     {"transaction_id": "t-001", "store_id": 5, 'user_id': '', 'final_amount': 24.1, "created_at": "2023-01-06 05:06:50"},
@@ -22,30 +21,38 @@ class FilterTransactionsByHour:
         self.max_hour = max_hour
         signal.signal(signal.SIGTERM, self.__handle_sigterm_signal)
         self.running = True
+        self.processed_chunks = 0
 
     def __handle_sigterm_signal(self, signal, frame):
-        logging.info("Received SIGTERM, shutting down FilterByYear")
+        logging.info("Received SIGTERM, shutting down FilterTransactionsByHour")
         self.running = False
 
     def start(self):
-        logging.info("Starting FilterByYear.")
         # it should not return
-        self.__filter_by_hour(TRANSACTIONS)
-        while self.running:
-            sleep(1)
+        chunk_size = len(TRANSACTIONS) // 2
+        i = 0
+        while i < len(TRANSACTIONS):
+            new_chunk = TRANSACTIONS[i:i + chunk_size]
+            self.__filter_by_hour(communication_protocol.encode_transactions_batch_message(new_chunk))
+            i += chunk_size
+        self.__filter_by_hour(
+            communication_protocol.encode_eof_message(communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE))
 
     def __filter_by_hour(self, chunk):
+        msg_type = communication_protocol.decode_message_type(chunk)
+        if msg_type == communication_protocol.EOF:
+            logging.info(f"Received EOF message. Processed chunks: {self.processed_chunks}")
+            return
+        transactions = communication_protocol.decode_transactions_batch_message(chunk)
         filtered = []
-        for item in chunk:
-            hour = int(item['created_at'].split(' ')[1].split(':')[0])
+        for t in transactions:
+            hour = int(t['created_at'].split(' ')[1].split(':')[0])
             if hour >= self.min_hour and hour < self.max_hour:
-                filtered.append(item)
-            else:
-                logging.info(f"Transaction: {item['transaction_id']} was filtered out")
+                filtered.append(t)
         self.running = False
+        self.processed_chunks += 1
         self.__produce_output(filtered)
 
     def __produce_output(self, items):
-        logging.info("FilterByHour producing output")
         for item in items:
             logging.info(item)

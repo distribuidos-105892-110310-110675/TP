@@ -1,7 +1,6 @@
 import logging
 import signal
-import csv
-from time import sleep
+from shared import communication_protocol
 
 TRANSACTIONS = [
     {"transaction_id": "t-001", "store_id": 5, 'user_id': '', 'final_amount': 24.1, "created_at": "2023-01-06 10:06:50"},
@@ -23,9 +22,10 @@ class FilterTransactionsByYear:
 
         signal.signal(signal.SIGTERM, self.__handle_sigterm_signal)
         self.running = True
+        self.processed_chunks = 0
 
     def __handle_sigterm_signal(self, signal, frame):
-        logging.info("Received SIGTERM, shutting down FilterByYear")
+        logging.info("Received SIGTERM, shutting down FilterTransactionsByYear")
         self.running = False
         #close middleware connection
 
@@ -33,24 +33,30 @@ class FilterTransactionsByYear:
         # connect to middleware
         #set callback for input
         #start consuming from middleware
-        logging.info("Starting FilterByYear.")
-        # it should not return
-        self.__filter_by_year(TRANSACTIONS)
-        while self.running:
-            sleep(1)
+        chunk_size = len(TRANSACTIONS) // 2
+        i = 0
+        while i < len(TRANSACTIONS):
+            new_chunk = TRANSACTIONS[i:i + chunk_size]
+            self.__filter_by_year(communication_protocol.encode_transactions_batch_message(new_chunk))
+            i += chunk_size
+        self.__filter_by_year(
+            communication_protocol.encode_eof_message(communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE))
+
 
     def __filter_by_year(self, chunk):
+        msg_type = communication_protocol.decode_message_type(chunk)
+        if msg_type == communication_protocol.EOF:
+            logging.info(f"Received EOF message. Processed chunks: {self.processed_chunks}")
+            return
+        transactions = communication_protocol.decode_transactions_batch_message(chunk)
         filtered = []
-        for item in chunk:
-            year = int(item['created_at'].split(' ')[0].split('-')[0])
+        for t in transactions:
+            year = int(t['created_at'].split(' ')[0].split('-')[0])
             if year in self.years_to_filter:
-                filtered.append(item)
-            else:
-                logging.info(f"Transaction: {item['transaction_id']} was filtered out")
+                filtered.append(t)
         self.running = False
         self.__produce_output(filtered)
 
     def __produce_output(self, items):
-        logging.info("FilterByYear producing output")
         for item in items:
             logging.info(item)

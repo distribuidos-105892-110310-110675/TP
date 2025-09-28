@@ -1,7 +1,7 @@
-import csv
 import logging
-from time import sleep
 import signal
+import csv
+from time import sleep
 
 TRANSACTIONS = [
     {"transaction_id": "t-001", "store_id": 5, 'user_id': '', 'final_amount': 24.1, "created_at": "2023-01-06 10:06:50"},
@@ -16,28 +16,34 @@ TRANSACTIONS = [
     {"transaction_id": "t-010", "store_id": 4, 'user_id': '', 'final_amount': 19.5, "created_at": "2021-01-06 10:06:50"},
 ]
 
-class FilterByAmount:
-    def __init__(self, amount):
-        self.minimun_amount = amount
+class FilterTransactionsByYear:
+    def __init__(self, years_to_filter: list[int]):
+
+        self.years_to_filter = set(years_to_filter)
+
         signal.signal(signal.SIGTERM, self.__handle_sigterm_signal)
         self.running = True
 
     def __handle_sigterm_signal(self, signal, frame):
         logging.info("Received SIGTERM, shutting down FilterByYear")
         self.running = False
+        #close middleware connection
 
     def start(self):
+        # connect to middleware
+        #set callback for input
+        #start consuming from middleware
         logging.info("Starting FilterByYear.")
         # it should not return
-        self.__filter_by_amount(TRANSACTIONS)
+        self.__filter_by_year(TRANSACTIONS)
         while self.running:
             sleep(1)
 
-    def __filter_by_amount(self, chunk):
+    def __filter_by_year(self, chunk):
         filtered = []
         for item in chunk:
-            amount = float(item['final_amount'])
-            if amount >= self.minimun_amount:
+            year = int(item['created_at'].split(' ')[0].split('-')[0])
+            if year in self.years_to_filter:
                 filtered.append(item)
             else:
                 logging.info(f"Transaction: {item['transaction_id']} was filtered out")
@@ -45,6 +51,6 @@ class FilterByAmount:
         self.__produce_output(filtered)
 
     def __produce_output(self, items):
-        logging.info("FilterByAmount producing output")
+        logging.info("FilterByYear producing output")
         for item in items:
             logging.info(item)

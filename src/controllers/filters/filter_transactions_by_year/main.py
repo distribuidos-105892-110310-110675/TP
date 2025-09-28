@@ -1,5 +1,5 @@
 from shared import initializer
-from filter import FilterByYear
+from filter import FilterTransactionsByYear
 
 def main():
     config_params = initializer.init_config(["LOGGING_LEVEL", "YEARS"])
@@ -9,7 +9,7 @@ def main():
     for year in yearlist:
         years.append(int(year))
     # for now, reads from file. Should receive data and filter automatically
-    filter = FilterByYear(years)
+    filter = FilterTransactionsByYear(years)
     filter.start()
 
 if __name__ == "__main__":

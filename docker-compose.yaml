@@ -72,10 +72,10 @@ services:
         condition: service_started
 
   filter_by_year:
-    container_name: filter_by_year
+    container_name: filter_transactions_by_year
     image: filter_by_year:latest
-    entrypoint: python3 -m filter_by_year.main
-    working_dir: /filter_by_year
+    entrypoint: python3 -m filter_transactions_by_year.main
+    working_dir: /filter_transactions_by_year
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=DEBUG
@@ -92,10 +92,10 @@ services:
         condition: service_started
 
   filter_by_hour:
-    container_name: filter_by_hour
+    container_name: filter_transactions_by_hour
     image: filter_by_hour:latest
-    entrypoint: python3 -m filter_by_hour.main
-    working_dir: /filter_by_hour
+    entrypoint: python3 -m filter_transactions_by_hour.main
+    working_dir: /filter_transactions_by_hour
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=DEBUG
@@ -113,10 +113,10 @@ services:
         condition: service_started
 
   filter_by_amount:
-    container_name: filter_by_amount
+    container_name: filter_transactions_by_amount
     image: filter_by_amount:latest
-    entrypoint: python3 -m filter_by_amount.main
-    working_dir: /filter_by_amount
+    entrypoint: python3 -m filter_transactions_by_amount.main
+    working_dir: /filter_transactions_by_amount
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=DEBUG

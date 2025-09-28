@@ -39,6 +39,7 @@ class RabbitMQMessageMiddlewareQueue(MessageMiddlewareQueue):
                 credentials=pika.PlainCredentials(
                     self.__rabbitmq_user(), self.__rabbitmq_password()
                 ),
+                heartbeat=3600,
             )
         )
 

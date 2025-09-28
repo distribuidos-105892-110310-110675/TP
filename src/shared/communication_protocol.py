@@ -28,13 +28,7 @@ ROW_FIELD_SEPARATOR = ","
 # payload
 EOF = "EOF"
 
-# ============================= DECODE ============================== #
-
-
-def decode_message_type(message: str) -> str:
-    if len(message) < MESSAGE_TYPE_LENGTH:
-        raise ValueError("Message too short to contain a valid message type")
-    return message[:MESSAGE_TYPE_LENGTH]
+# ============================= PRIVATE - DECODE ============================== #
 
 
 def __assert_message_format(message: str, expected_message_type: str) -> None:
@@ -66,61 +60,76 @@ def __decode_field(key_value_pair: str) -> tuple[str, str]:
     return key, value
 
 
-# def __decode_row(payload: str) -> utils.Bet:
-#     payload = payload.strip(BATCH_START_DELIMITER)
-#     payload = payload.strip(BATCH_END_DELIMITER)
+def __decode_row(encoded_row: str) -> dict[str, str]:
+    encoded_row = encoded_row.strip(BATCH_START_DELIMITER)
+    encoded_row = encoded_row.strip(BATCH_END_DELIMITER)
 
-#     key_value_pairs = payload.split(ROW_FIELD_SEPARATOR)
+    key_value_pairs = encoded_row.split(ROW_FIELD_SEPARATOR)
 
-#     bet_data = {}
-#     for key_value_pair in key_value_pairs:
-#         key, value = __decode_field(key_value_pair)
-#         bet_data[key] = value
+    row = {}
+    for key_value_pair in key_value_pairs:
+        key, value = __decode_field(key_value_pair)
+        row[key] = value
 
-#     bet = utils.Bet(
-#         agency=bet_data["agency"],
-#         first_name=bet_data["first_name"],
-#         last_name=bet_data["last_name"],
-#         document=bet_data["document"],
-#         birthdate=bet_data["birthdate"],
-#         number=bet_data["number"],
-#     )
-#     return bet
+    return row
 
 
-# def decode_bet_batch_message(message: str) -> list[utils.Bet]:
-#     # INPUT: BET[{"agency": "001",...};{...}; ...]
-#     __assert_message_format(message, BET_MSG_TYPE)
-#     payload = __get_message_payload(message)
-#     bet_entries = payload.split(BATCH_ROW_SEPARATOR)
+def __decode_batch_message(message: str, message_type: str) -> list[dict[str, str]]:
+    __assert_message_format(message, message_type)
+    payload = __get_message_payload(message)
+    encoded_rows = payload.split(BATCH_ROW_SEPARATOR)
+    decoded_rows = []
 
-#     bet_batch = []
-#     for bet_entry in bet_entries:
-#         bet = __decode_row(bet_entry)
-#         bet_batch.append(bet)
+    for encoded_row in encoded_rows:
+        bet = __decode_row(encoded_row)
+        decoded_rows.append(bet)
 
-#     return bet_batch
-
-
-# def decode_no_more_bets_message(message: str) -> int:
-#     __assert_message_format(message, NO_MORE_BETS_MSG_TYPE)
-#     payload = __get_message_payload(message)
-
-#     _, agency = __decode_field(payload)
-
-#     return int(agency)
+    return decoded_rows
 
 
-# def decode_ask_for_winners_message(message: str) -> int:
-#     __assert_message_format(message, ASK_FOR_WINNERS_MSG_TYPE)
-#     payload = __get_message_payload(message)
+# ============================= DECODE ============================== #
 
-#     _, agency = __decode_field(payload)
 
-#     return int(agency)
+def decode_message_type(message: str) -> str:
+    if len(message) < MESSAGE_TYPE_LENGTH:
+        raise ValueError(
+            f"Message too short to contain a valid message type: {message}"
+        )
+    return message[:MESSAGE_TYPE_LENGTH]
+
+
+def decode_menu_items_batch_message(message: str) -> list[dict[str, str]]:
+    return __decode_batch_message(message, MENU_ITEMS_BATCH_MSG_TYPE)
+
+
+def decode_stores_batch_message(message: str) -> list[dict[str, str]]:
+    return __decode_batch_message(message, STORES_BATCH_MSG_TYPE)
+
+
+def decode_transaction_items_batch_message(message: str) -> list[dict[str, str]]:
+    return __decode_batch_message(message, TRANSACTION_ITEMS_BATCH_MSG_TYPE)
+
+
+def decode_transactions_batch_message(message: str) -> list[dict[str, str]]:
+    return __decode_batch_message(message, TRANSACTIONS_BATCH_MSG_TYPE)
+
+
+def decode_users_batch_message(message: str) -> list[dict[str, str]]:
+    return __decode_batch_message(message, USERS_BATCH_MSG_TYPE)
 
 
 # ============================= PRIVATE - ENCODE ============================== #
+
+
+def __encode_message(message_type: str, payload: str) -> str:
+    encoded_payload = message_type
+    encoded_payload += MSG_START_DELIMITER
+    encoded_payload += payload
+    encoded_payload += MSG_END_DELIMITER
+    return encoded_payload
+
+
+# ============================= PRIVATE - ENCODE BATCH ============================== #
 
 
 def __encode_field(key: str, value: str) -> str:
@@ -132,34 +141,69 @@ def __encode_row(row: dict[str, str]) -> str:
     return ROW_FIELD_SEPARATOR.join(encoded_fields)
 
 
-def __encode_message(message_type: str, payload: str) -> str:
-    encoded_payload = message_type
-    encoded_payload += MSG_START_DELIMITER
-    encoded_payload += payload
-    encoded_payload += MSG_END_DELIMITER
-    return encoded_payload
-
-
-# ============================= ENCODE ============================== #
-
-
-def encode_menu_items_batch_message(menu_items_batch: list[dict[str, str]]) -> str:
+def __encode_batch_message(batch_msg_type: str, batch: list[dict[str, str]]) -> str:
     encoded_rows = []
 
-    for menu_item in menu_items_batch:
-        encoded_row = __encode_row(menu_item)
+    for item in batch:
+        encoded_row = __encode_row(item)
         encoded_rows.append(encoded_row)
 
     encoded_payload = BATCH_ROW_SEPARATOR.join(encoded_rows)
     encoded_payload = BATCH_START_DELIMITER + encoded_payload + BATCH_END_DELIMITER
-    return __encode_message(MENU_ITEMS_BATCH_MSG_TYPE, encoded_payload)
+    return __encode_message(batch_msg_type, encoded_payload)
 
 
-# def encode_ack_message(message: str) -> str:
-#     return __encode_message(ACK_MSG_TYPE, message)
+# ============================= PUBLIC ============================== #
 
 
-# def encode_winners_message(winners: list[utils.Bet]) -> str:
-#     encoded_payload = [f'"{winner.document}"' for winner in winners]
-#     encoded_payload = WINNERS_SEPARATOR.join(encoded_payload)
-#     return __encode_message(WINNERS_MSG_TYPE, encoded_payload)
+def encode_ack_message(message: str) -> str:
+    return __encode_message(ACK_MSG_TYPE, message)
+
+
+def encode_menu_items_batch_message(
+    menu_items_batch: list[dict[str, str]],
+) -> str:
+    return __encode_batch_message(
+        MENU_ITEMS_BATCH_MSG_TYPE,
+        menu_items_batch,
+    )
+
+
+def encode_stores_batch_message(
+    stores_batch: list[dict[str, str]],
+) -> str:
+    return __encode_batch_message(
+        STORES_BATCH_MSG_TYPE,
+        stores_batch,
+    )
+
+
+def encode_transaction_items_batch_message(
+    transaction_items_batch: list[dict[str, str]],
+) -> str:
+    return __encode_batch_message(
+        TRANSACTION_ITEMS_BATCH_MSG_TYPE,
+        transaction_items_batch,
+    )
+
+
+def encode_transactions_batch_message(
+    transactions_batch: list[dict[str, str]],
+) -> str:
+    return __encode_batch_message(
+        TRANSACTIONS_BATCH_MSG_TYPE,
+        transactions_batch,
+    )
+
+
+def encode_users_batch_message(
+    users_batch: list[dict[str, str]],
+) -> str:
+    return __encode_batch_message(
+        USERS_BATCH_MSG_TYPE,
+        users_batch,
+    )
+
+
+def encode_eof_message(message_type: str) -> str:
+    return __encode_message(message_type, EOF)

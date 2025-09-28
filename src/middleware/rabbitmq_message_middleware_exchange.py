@@ -44,13 +44,14 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
                 credentials=pika.PlainCredentials(
                     self.__rabbitmq_user(), self.__rabbitmq_password()
                 ),
+                heartbeat=3600,
             )
         )
 
         self._channel = self._connection.channel()
         self._channel.exchange_declare(
             exchange=self._exchange_name,
-            exchange_type="direct",  # type: ignore
+            exchange_type="topic",  # type: ignore
             durable=True,
         )
 

@@ -1,12 +1,20 @@
 # common constants
+from shared import communication_protocol
+
 KiB = 1024
 
-# useful tags
-MENU_ITEMS = "menu_items"
-STORES = "stores"
-TRANSACTION_ITEMS = "transaction_items"
-TRANSACTIONS = "transactions"
-USERS = "users"
+MENU_ITEMS = communication_protocol.MENU_ITEMS_BATCH_MSG_TYPE
+STORES = communication_protocol.STORES_BATCH_MSG_TYPE
+TRANSACTION_ITEMS = communication_protocol.TRANSACTION_ITEMS_BATCH_MSG_TYPE
+TRANSACTIONS = communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE
+USERS = communication_protocol.USERS_BATCH_MSG_TYPE
+
+QUERY_RESULT_1 = communication_protocol.QUERY_RESULT_1_MSG_TYPE
+QUERY_RESULT_2_1 = communication_protocol.QUERY_RESULT_2_1_MSG_TYPE
+QUERY_RESULT_2_2 = communication_protocol.QUERY_RESULT_2_2_MSG_TYPE
+QUERY_RESULT_3 = communication_protocol.QUERY_RESULT_3_MSG_TYPE
+QUERY_RESULT_4 = communication_protocol.QUERY_RESULT_4_MSG_TYPE
+
 
 QUEUE_PREFIX_NAME = "queue_prefix_name"
 WORKERS_AMOUNT = "workers_amount"

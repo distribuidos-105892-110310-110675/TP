@@ -1,7 +1,8 @@
+import logging
 from typing import Callable
 
 import pika
-from pika.exceptions import AMQPConnectionError, AMQPError
+from pika.exceptions import AMQPConnectionError
 
 from middleware.middleware import (
     MessageMiddlewareCloseError,
@@ -52,6 +53,27 @@ class RabbitMQMessageMiddlewareQueue(MessageMiddlewareQueue):
                 f"Error connecting to RabbitMQ server: {e}"
             )
 
+    # ============================== PRIVATE - ACCESSING ============================== #
+
+    def __pika_on_message_callback_wrapping(
+        self, on_message_callback: Callable
+    ) -> Callable:
+        def pika_on_message_callback(
+            channel: pika.adapters.blocking_connection.BlockingChannel,
+            method: pika.spec.Basic.Deliver,
+            properties: pika.spec.BasicProperties,
+            body: bytes,
+        ) -> None:
+            try:
+                on_message_callback(body)
+                channel.basic_ack(delivery_tag=method.delivery_tag, multiple=False)  # type: ignore
+            except Exception as e:
+                channel.basic_nack(delivery_tag=method.delivery_tag, requeue=False)  # type: ignore
+                logging.error(f"action: receive_message | result: fail | error: {e}")
+                raise e
+
+        return pika_on_message_callback
+
     # ============================== PRIVATE - ASSERTIONS ============================== #
 
     def __assert_connection_is_open(self) -> None:
@@ -65,19 +87,10 @@ class RabbitMQMessageMiddlewareQueue(MessageMiddlewareQueue):
     def start_consuming(self, on_message_callback: Callable) -> None:
         self.__assert_connection_is_open()
 
-        def pika_on_message_callback(
-            channel: pika.adapters.blocking_connection.BlockingChannel,
-            method: pika.spec.Basic.Deliver,
-            properties: pika.spec.BasicProperties,
-            body: bytes,
-        ) -> None:
-            on_message_callback(body)
-            channel.basic_ack(delivery_tag=method.delivery_tag)  # type: ignore
-
         try:
             self._channel.basic_consume(
-                queue=self._queue_name,
-                on_message_callback=pika_on_message_callback,
+                self._queue_name,
+                self.__pika_on_message_callback_wrapping(on_message_callback),
                 auto_ack=False,
             )
             self._channel.start_consuming()

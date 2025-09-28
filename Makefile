@@ -5,7 +5,9 @@ docker-build-image:
 	docker build -f ./src/server/Dockerfile -t "server:latest" .
 	docker build -f ./src/client/Dockerfile -t "client:latest" .
 	docker build -f ./src/controllers/filters/filter_transactions_by_year/Dockerfile -t "filter_transactions_by_year:latest" .
+	docker build -f ./src/controllers/filters/filter_items_by_year/Dockerfile -t "filter_items_by_year:latest" .
 	docker build -f ./src/controllers/filters/filter_transactions_by_hour/Dockerfile -t "filter_transactions_by_hour:latest" .
+	docker build -f ./src/controllers/filters/filter_items_by_hour/Dockerfile -t "filter_items_by_hour:latest" .
 	docker build -f ./src/controllers/filters/filter_transactions_by_amount/Dockerfile -t "filter_transactions_by_amount:latest" .
 	docker build -f ./src/controllers/maps/map_month_semester/Dockerfile -t "map_month_semester:latest" .
 	docker build -f ./src/controllers/maps/map_month_year/Dockerfile -t "map_month_year:latest" .

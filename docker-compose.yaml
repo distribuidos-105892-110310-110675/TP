@@ -71,7 +71,7 @@ services:
       server:
         condition: service_started
 
-  filter_by_year:
+  filter_transactions_by_year:
     container_name: filter_transactions_by_year
     image: filter_by_year:latest
     entrypoint: python3 -m filter_transactions_by_year.main
@@ -91,11 +91,52 @@ services:
       server:
         condition: service_started
 
-  filter_by_hour:
+  filter_items_by_year:
+    container_name: filter_items_by_year
+    image: filter_items_by_year:latest
+    entrypoint: python3 -m filter_items_by_year.main
+    working_dir: /filter_items_by_year
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+      - YEARS=2024,2025
+    networks:
+      - custom_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
+    depends_on:
+      server:
+        condition: service_started
+
+  filter_transactions_by_hour:
     container_name: filter_transactions_by_hour
     image: filter_by_hour:latest
     entrypoint: python3 -m filter_transactions_by_hour.main
     working_dir: /filter_transactions_by_hour
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+      - MIN_HOUR=6
+      - MAX_HOUR=23
+    networks:
+      - custom_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
+    depends_on:
+      server:
+        condition: service_started
+
+  filter_items_by_hour:
+    container_name: filter_items_by_hour
+    image: filter_items_by_hour:latest
+    entrypoint: python3 -m filter_items_by_hour.main
+    working_dir: /filter_items_by_hour
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=DEBUG

@@ -36,7 +36,7 @@ class FilterItemsByHour:
             self.__filter_by_hour(communication_protocol.encode_transaction_items_batch_message(new_chunk))
             i += chunk_size
         self.__filter_by_hour(
-            communication_protocol.encode_eof_message(communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE))
+            communication_protocol.encode_eof_message(communication_protocol.TRANSACTION_ITEMS_BATCH_MSG_TYPE))
 
     def __filter_by_hour(self, chunk):
         msg_type = communication_protocol.decode_message_type(chunk)

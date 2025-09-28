@@ -55,6 +55,7 @@ class FilterTransactionsByYear:
             if year in self.years_to_filter:
                 filtered.append(t)
         self.running = False
+        self.processed_chunks += 1
         self.__produce_output(filtered)
 
     def __produce_output(self, items):

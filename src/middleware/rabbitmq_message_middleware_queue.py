@@ -15,7 +15,7 @@ from middleware.middleware import (
 
 class RabbitMQMessageMiddlewareQueue(MessageMiddlewareQueue):
 
-    # ============================== PRIVATE - ACCESSING ============================== #
+    # ============================== PRIVATE - RABBIT INFO ============================== #
 
     def __rabbitmq_port(self) -> int:
         return 5672
@@ -82,40 +82,63 @@ class RabbitMQMessageMiddlewareQueue(MessageMiddlewareQueue):
                 "Error: Connection or channel is closed."
             )
 
+    # ============================== PRIVATE - HANDLE EXCEPTIONS ============================== #
+
+    def __handle_amqp_errors_during(
+        self, callback: Callable, args=(), kwargs={}, exc_prefix: str = ""
+    ) -> None:
+        try:
+            callback(*args, **kwargs)
+        except AMQPConnectionError as e:
+            raise MessageMiddlewareDisconnectedError(f"{exc_prefix} {e}")
+        except Exception as e:
+            raise MessageMiddlewareMessageError(f"{exc_prefix} {e}")
+
+    # ============================== PRIVATE - SUPPORT ============================== #
+
+    def __start_comsuming(self, on_message_callback: Callable) -> None:
+        self._channel.basic_consume(
+            self._queue_name,
+            self.__pika_on_message_callback_wrapping(on_message_callback),
+            auto_ack=False,
+        )
+        self._channel.start_consuming()
+
+    def __stop_consuming(self) -> None:
+        self._channel.stop_consuming()
+
+    def __send(self, message: str) -> None:
+        self._channel.basic_publish(
+            exchange=self._exchange_name,
+            routing_key=self._queue_name,
+            body=message,
+            properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent),  # type: ignore
+        )
+
     # ============================== PUBLIC ============================== #
 
     def start_consuming(self, on_message_callback: Callable) -> None:
         self.__assert_connection_is_open()
-
-        try:
-            self._channel.basic_consume(
-                self._queue_name,
-                self.__pika_on_message_callback_wrapping(on_message_callback),
-                auto_ack=False,
-            )
-            self._channel.start_consuming()
-        except AMQPConnectionError as e:
-            raise MessageMiddlewareDisconnectedError(f"Error consuming messages: {e}")
-        except Exception as e:
-            raise MessageMiddlewareMessageError(f"Error consuming messages: {e}")
+        self.__handle_amqp_errors_during(
+            self.__start_comsuming,
+            args=(on_message_callback,),
+            exc_prefix="Error consuming messages:",
+        )
 
     def stop_consuming(self) -> None:
         self.__assert_connection_is_open()
-        self._channel.stop_consuming()
+        self.__handle_amqp_errors_during(
+            self.__stop_consuming,
+            exc_prefix="Error stopping consuming:",
+        )
 
     def send(self, message: str) -> None:
         self.__assert_connection_is_open()
-        try:
-            self._channel.basic_publish(
-                exchange=self._exchange_name,
-                routing_key=self._queue_name,
-                body=message,
-                properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent),  # type: ignore
-            )
-        except AMQPConnectionError as e:
-            raise MessageMiddlewareDisconnectedError(f"Error sending message: {e}")
-        except Exception as e:
-            raise MessageMiddlewareMessageError(f"Error sending message: {e}")
+        self.__handle_amqp_errors_during(
+            self.__send,
+            args=(message,),
+            exc_prefix="Error sending message:",
+        )
 
     def close(self) -> None:
         try:

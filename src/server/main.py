@@ -5,32 +5,64 @@ from shared import constants, initializer
 
 
 def __build_cleaners_data(config_params: dict) -> dict:
-    menu_items_cleaners_amount = int(config_params["MENU_ITEMS_CL_AMOUNT"])
-    stores_cleaners_amount = int(config_params["STORES_CL_AMOUNT"])
-    transaction_items_cleaners_amount = config_params["TRANSACTION_ITEMS_CL_AMOUNT"]
-    transactions_cleaners_amount = int(config_params["TRANSACTIONS_CL_AMOUNT"])
-    users_cleaners_amount = int(config_params["USERS_CL_AMOUNT"])
+    menu_items_workers_amount = int(config_params["MENU_ITEMS_CLN_AMOUNT"])
+    stores_workers_amount = int(config_params["STORES_CLN_AMOUNT"])
+    transaction_items_workers_amount = config_params["TRANSACTION_ITEMS_CLN_AMOUNT"]
+    transactions_workers_amount = int(config_params["TRANSACTIONS_CLN_AMOUNT"])
+    users_workers_amount = int(config_params["USERS_CLN_AMOUNT"])
 
     return {
         constants.MENU_ITEMS: {
-            constants.QUEUE_PREFIX_NAME: "menu-items-cleaner-queue",
-            constants.WORKERS_AMOUNT: int(menu_items_cleaners_amount),
+            constants.QUEUE_PREFIX_NAME: constants.MENU_ITEMS_CLEANER_QUEUE,
+            constants.WORKERS_AMOUNT: int(menu_items_workers_amount),
         },
         constants.STORES: {
-            constants.QUEUE_PREFIX_NAME: "stores-cleaner-queue",
-            constants.WORKERS_AMOUNT: int(stores_cleaners_amount),
+            constants.QUEUE_PREFIX_NAME: constants.STORES_CLEANER_QUEUE,
+            constants.WORKERS_AMOUNT: int(stores_workers_amount),
         },
         constants.TRANSACTION_ITEMS: {
-            constants.QUEUE_PREFIX_NAME: "transaction-items-cleaner-queue",
-            constants.WORKERS_AMOUNT: int(transaction_items_cleaners_amount),
+            constants.QUEUE_PREFIX_NAME: constants.TRANSACTION_ITEMS_CLEANER_QUEUE,
+            constants.WORKERS_AMOUNT: int(transaction_items_workers_amount),
         },
         constants.TRANSACTIONS: {
-            constants.QUEUE_PREFIX_NAME: "transactions-cleaner-queue",
-            constants.WORKERS_AMOUNT: int(transactions_cleaners_amount),
+            constants.QUEUE_PREFIX_NAME: constants.TRANSACTIONS_CLEANER_QUEUE,
+            constants.WORKERS_AMOUNT: int(transactions_workers_amount),
         },
         constants.USERS: {
-            constants.QUEUE_PREFIX_NAME: "users-cleaner-queue",
-            constants.WORKERS_AMOUNT: int(users_cleaners_amount),
+            constants.QUEUE_PREFIX_NAME: constants.USERS_CLEANER_QUEUE,
+            constants.WORKERS_AMOUNT: int(users_workers_amount),
+        },
+    }
+
+
+def __build_output_builders_data(config_params: dict) -> dict:
+    # @TODO: see if we want to configure workers amount for output builders too
+    query_1_workers_amount = 1
+    query_2_1_workers_amount = 1
+    query_2_2_workers_amount = 1
+    query_3_workers_amount = 1
+    query_4_workers_amount = 1
+
+    return {
+        constants.QUERY_RESULT_1: {
+            constants.QUEUE_PREFIX_NAME: constants.QUERY_RESULTS_QUEUE,
+            constants.WORKERS_AMOUNT: int(query_1_workers_amount),
+        },
+        constants.QUERY_RESULT_2_1: {
+            constants.QUEUE_PREFIX_NAME: constants.QUERY_RESULTS_QUEUE,
+            constants.WORKERS_AMOUNT: int(query_2_1_workers_amount),
+        },
+        constants.QUERY_RESULT_2_2: {
+            constants.QUEUE_PREFIX_NAME: constants.QUERY_RESULTS_QUEUE,
+            constants.WORKERS_AMOUNT: int(query_2_2_workers_amount),
+        },
+        constants.QUERY_RESULT_3: {
+            constants.QUEUE_PREFIX_NAME: constants.QUERY_RESULTS_QUEUE,
+            constants.WORKERS_AMOUNT: int(query_3_workers_amount),
+        },
+        constants.QUERY_RESULT_4: {
+            constants.QUEUE_PREFIX_NAME: constants.QUERY_RESULTS_QUEUE,
+            constants.WORKERS_AMOUNT: int(query_4_workers_amount),
         },
     }
 
@@ -42,11 +74,11 @@ def main():
             "SERVER_PORT",
             "SERVER_LISTEN_BACKLOG",
             "RABBITMQ_HOST",
-            "MENU_ITEMS_CL_AMOUNT",
-            "STORES_CL_AMOUNT",
-            "TRANSACTION_ITEMS_CL_AMOUNT",
-            "TRANSACTIONS_CL_AMOUNT",
-            "USERS_CL_AMOUNT",
+            "MENU_ITEMS_CLN_AMOUNT",
+            "STORES_CLN_AMOUNT",
+            "TRANSACTION_ITEMS_CLN_AMOUNT",
+            "TRANSACTIONS_CLN_AMOUNT",
+            "USERS_CLN_AMOUNT",
         ]
     )
     initializer.init_log(config_params["LOGGING_LEVEL"])
@@ -57,6 +89,7 @@ def main():
         listen_backlog=int(config_params["SERVER_LISTEN_BACKLOG"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
         cleaners_data=__build_cleaners_data(config_params),
+        output_builders_data=__build_output_builders_data(config_params),
     )
     server.run()
 

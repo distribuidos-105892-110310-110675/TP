@@ -23,7 +23,7 @@ docker-compose-up: docker-build-image
 .PHONY: docker-compose-up
 
 docker-compose-down:
-	docker compose -f docker-compose.yaml stop -t 3
+	docker compose -f docker-compose.yaml stop -t 20
 	docker compose -f docker-compose.yaml down
 .PHONY: docker-compose-down
 

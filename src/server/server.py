@@ -325,7 +325,7 @@ class Server:
         self.__receive_all_data_from_client(client_socket)
         self.__receive_all_query_results_from_output_builders(client_socket)
 
-    # ============================== PRIVATE - HANDLE SERVER SOCKET ============================== #
+    # ============================== PRIVATE - RUN ============================== #
 
     def __run(self) -> None:
         self.__set_server_as_running()

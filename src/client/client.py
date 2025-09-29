@@ -28,7 +28,7 @@ class Client:
 
         self._data_path = Path(data_path)
 
-        self._output_path = Path(results_path) / constants.RESULTS_FOLDER_NAME
+        self._output_path = Path(results_path) / constants.QRS_FOLDER_NAME
         self._output_path.mkdir(parents=True, exist_ok=True)
         shell_cmd.shell_silent(f"rm -f {self._output_path}/*")
 
@@ -194,35 +194,35 @@ class Client:
 
     def __send_all_menu_items(self) -> None:
         self.__send_data_from_all_files_using_batchs(
-            constants.MENU_ITEMS_FOLDER_NAME,
+            constants.MIT_FOLDER_NAME,
             communication_protocol.MENU_ITEMS_BATCH_MSG_TYPE,
             communication_protocol.encode_menu_items_batch_message,
         )
 
     def __send_all_stores(self) -> None:
         self.__send_data_from_all_files_using_batchs(
-            constants.STORES_FOLDER_NAME,
+            constants.STR_FOLDER_NAME,
             communication_protocol.STORES_BATCH_MSG_TYPE,
             communication_protocol.encode_stores_batch_message,
         )
 
     def __send_all_transaction_items(self) -> None:
         self.__send_data_from_all_files_using_batchs(
-            constants.TRANSACTION_ITEMS_FOLDER_NAME,
+            constants.TIT_FOLDER_NAME,
             communication_protocol.TRANSACTION_ITEMS_BATCH_MSG_TYPE,
             communication_protocol.encode_transaction_items_batch_message,
         )
 
     def __send_all_transactions(self) -> None:
         self.__send_data_from_all_files_using_batchs(
-            constants.TRANSACTIONS_FOLDER_NAME,
+            constants.TRN_FOLDER_NAME,
             communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE,
             communication_protocol.encode_transactions_batch_message,
         )
 
     def __send_all_users(self) -> None:
         self.__send_data_from_all_files_using_batchs(
-            constants.USERS_FOLDER_NAME,
+            constants.USR_FOLDER_NAME,
             communication_protocol.USERS_BATCH_MSG_TYPE,
             communication_protocol.encode_users_batch_message,
         )

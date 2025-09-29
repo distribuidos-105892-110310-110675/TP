@@ -23,18 +23,22 @@ WORKERS_AMOUNT = "workers_amount"
 
 # folder names
 
-MENU_ITEMS_FOLDER_NAME = "menu_items"
-STORES_FOLDER_NAME = "stores"
-TRANSACTION_ITEMS_FOLDER_NAME = "transaction_items"
-TRANSACTIONS_FOLDER_NAME = "transactions"
-USERS_FOLDER_NAME = "users"
-RESULTS_FOLDER_NAME = "query_results"
+MIT_FOLDER_NAME = "menu_items"
+STR_FOLDER_NAME = "stores"
+TIT_FOLDER_NAME = "transaction_items"
+TRN_FOLDER_NAME = "transactions"
+USR_FOLDER_NAME = "users"
+QRS_FOLDER_NAME = "query_results"
 
-# queue names
-MENU_ITEMS_CLEANER_QUEUE = "menu-items-cleaner-queue"
-STORES_CLEANER_QUEUE = "stores-cleaner-queue"
-TRANSACTION_ITEMS_CLEANER_QUEUE = "transaction-items-cleaner-queue"
-TRANSACTIONS_CLEANER_QUEUE = "transactions-cleaner-queue"
-USERS_CLEANER_QUEUE = "users-cleaner-queue"
+# queue prefix names
 
-QUERY_RESULTS_QUEUE = "query-results-queue"
+MIT_CLEANER_QUEUE_PREFIX = "menu-items-cleaner-queue"
+STR_CLEANER_QUEUE_PREFIX = "stores-cleaner-queue"
+TIT_CLEANER_QUEUE_PREFIX = "transaction-items-cleaner-queue"
+TRN_CLEANER_QUEUE_PREFIX = "transactions-cleaner-queue"
+USR_CLEANER_QUEUE_PREFIX = "users-cleaner-queue"
+
+FILTER_TIT_BY_YEAR_QUEUE_PREFIX = "filters-transaction-items-by-year-queue"
+FILTER_TRN_BY_YEAR_QUEUE_PREFIX = "filters-transactions-by-year-queue"
+
+QRS_QUEUE_PREFIX = "query-results-queue"

@@ -13,23 +13,23 @@ def __build_cleaners_data(config_params: dict) -> dict:
 
     return {
         constants.MENU_ITEMS: {
-            constants.QUEUE_PREFIX_NAME: constants.MENU_ITEMS_CLEANER_QUEUE,
+            constants.QUEUE_PREFIX_NAME: constants.MIT_CLEANER_QUEUE_PREFIX,
             constants.WORKERS_AMOUNT: int(menu_items_workers_amount),
         },
         constants.STORES: {
-            constants.QUEUE_PREFIX_NAME: constants.STORES_CLEANER_QUEUE,
+            constants.QUEUE_PREFIX_NAME: constants.STR_CLEANER_QUEUE_PREFIX,
             constants.WORKERS_AMOUNT: int(stores_workers_amount),
         },
         constants.TRANSACTION_ITEMS: {
-            constants.QUEUE_PREFIX_NAME: constants.TRANSACTION_ITEMS_CLEANER_QUEUE,
+            constants.QUEUE_PREFIX_NAME: constants.TIT_CLEANER_QUEUE_PREFIX,
             constants.WORKERS_AMOUNT: int(transaction_items_workers_amount),
         },
         constants.TRANSACTIONS: {
-            constants.QUEUE_PREFIX_NAME: constants.TRANSACTIONS_CLEANER_QUEUE,
+            constants.QUEUE_PREFIX_NAME: constants.TRN_CLEANER_QUEUE_PREFIX,
             constants.WORKERS_AMOUNT: int(transactions_workers_amount),
         },
         constants.USERS: {
-            constants.QUEUE_PREFIX_NAME: constants.USERS_CLEANER_QUEUE,
+            constants.QUEUE_PREFIX_NAME: constants.USR_CLEANER_QUEUE_PREFIX,
             constants.WORKERS_AMOUNT: int(users_workers_amount),
         },
     }
@@ -45,23 +45,23 @@ def __build_output_builders_data(config_params: dict) -> dict:
 
     return {
         constants.QUERY_RESULT_1: {
-            constants.QUEUE_PREFIX_NAME: constants.QUERY_RESULTS_QUEUE,
+            constants.QUEUE_PREFIX_NAME: constants.QRS_QUEUE_PREFIX,
             constants.WORKERS_AMOUNT: int(query_1_workers_amount),
         },
         constants.QUERY_RESULT_2_1: {
-            constants.QUEUE_PREFIX_NAME: constants.QUERY_RESULTS_QUEUE,
+            constants.QUEUE_PREFIX_NAME: constants.QRS_QUEUE_PREFIX,
             constants.WORKERS_AMOUNT: int(query_2_1_workers_amount),
         },
         constants.QUERY_RESULT_2_2: {
-            constants.QUEUE_PREFIX_NAME: constants.QUERY_RESULTS_QUEUE,
+            constants.QUEUE_PREFIX_NAME: constants.QRS_QUEUE_PREFIX,
             constants.WORKERS_AMOUNT: int(query_2_2_workers_amount),
         },
         constants.QUERY_RESULT_3: {
-            constants.QUEUE_PREFIX_NAME: constants.QUERY_RESULTS_QUEUE,
+            constants.QUEUE_PREFIX_NAME: constants.QRS_QUEUE_PREFIX,
             constants.WORKERS_AMOUNT: int(query_3_workers_amount),
         },
         constants.QUERY_RESULT_4: {
-            constants.QUEUE_PREFIX_NAME: constants.QUERY_RESULTS_QUEUE,
+            constants.QUEUE_PREFIX_NAME: constants.QRS_QUEUE_PREFIX,
             constants.WORKERS_AMOUNT: int(query_4_workers_amount),
         },
     }

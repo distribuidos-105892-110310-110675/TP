@@ -10,6 +10,7 @@ def main():
             "LOGGING_LEVEL",
             "CLEANER_ID",
             "RABBITMQ_HOST",
+            "JOINS_AMOUNT",
         ]
     )
     initializer.init_log(config_params["LOGGING_LEVEL"])
@@ -21,7 +22,7 @@ def main():
         data_queue_prefix=constants.STR_CLEANER_QUEUE_PREFIX,
         cleaned_data_exchange_prefix=constants.CLEANED_STR_EXCHANGE_PREFIX,
         cleaned_data_routing_key_prefix=constants.CLEANED_STR_ROUTING_KEY_PREFIX,
-        cleaned_data_routing_keys_amount=2,  # take it from env variable
+        cleaned_data_routing_keys_amount=int(config_params["JOINS_AMOUNT"]),
     )
     cleaner.run()
 

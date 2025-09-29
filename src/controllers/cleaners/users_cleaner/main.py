@@ -10,6 +10,7 @@ def main():
             "LOGGING_LEVEL",
             "CLEANER_ID",
             "RABBITMQ_HOST",
+            "JOINS_AMOUNT",
         ]
     )
     initializer.init_log(config_params["LOGGING_LEVEL"])
@@ -20,7 +21,7 @@ def main():
         rabbitmq_host=config_params["RABBITMQ_HOST"],
         data_queue_prefix=constants.USR_CLEANER_QUEUE_PREFIX,
         cleaned_data_queue_prefix=constants.CLEANED_USR_QUEUE_PREFIX,
-        cleaned_data_queues_amount=2,  # must take it from env
+        cleaned_data_queues_amount=int(config_params["JOINS_AMOUNT"]),
     )
     cleaner.run()
 

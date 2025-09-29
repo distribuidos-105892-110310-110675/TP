@@ -76,20 +76,20 @@ services:
       server:
         condition: service_started
 
-  # menu_cleaner_0:
-  #   container_name: menu_cleaner_0
-  #   image: menu_cleaner:latest
-  #   entrypoint: python3 -m controllers.cleaners.menu_cleaner.main
-  #   environment:
-  #     - PYTHONUNBUFFERED=1
-  #     - LOGGING_LEVEL=INFO
-  #     - CLEANER_ID=0
-  #     - RABBITMQ_HOST=rabbitmq-message-middleware
-  #   networks:
-  #     - custom_net
-  #   depends_on:
-  #     rabbitmq-message-middleware:
-  #       condition: service_healthy
+  menu_cleaner_items_0:
+    container_name: menu_cleaner_items_0
+    image: menu_items_cleaner:latest
+    entrypoint: python3 -m controllers.cleaners.menu_items_cleaner.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CLEANER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
 
   transaction_items_cleaner_0:
     container_name: transaction_items_cleaner_0

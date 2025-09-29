@@ -30,7 +30,7 @@ TRN_FOLDER_NAME = "transactions"
 USR_FOLDER_NAME = "users"
 QRS_FOLDER_NAME = "query_results"
 
-# queue prefix names
+# message middleware constants
 
 MIT_CLEANER_QUEUE_PREFIX = "menu-items-cleaner-queue"
 STR_CLEANER_QUEUE_PREFIX = "stores-cleaner-queue"
@@ -41,5 +41,9 @@ USR_CLEANER_QUEUE_PREFIX = "users-cleaner-queue"
 CLEANED_TIT_QUEUE_PREFIX = "cleaned-transaction-items"
 CLEANED_TRN_QUEUE_PREFIX = "cleaned-transactions"
 CLEANED_USR_QUEUE_PREFIX = "cleaned-users"
+
+CLEANED_MIT_EXCHANGE_PREFIX = "cleaned-menu-items-exchange"
+
+CLEANED_MIT_ROUTING_KEYS = ["cleaned-menu-items-routing-key"]
 
 QRS_QUEUE_PREFIX = "query-results-queue"

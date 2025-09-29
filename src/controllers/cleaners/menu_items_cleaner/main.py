@@ -1,7 +1,7 @@
 import logging
 
-from controllers.cleaners.menu_cleaner.menu_cleaner import MenuCleaner
-from shared import initializer
+from controllers.cleaners.menu_items_cleaner.menu_items_cleaner import MenuItemsCleaner
+from shared import constants, initializer
 
 
 def main():
@@ -15,9 +15,12 @@ def main():
     initializer.init_log(config_params["LOGGING_LEVEL"])
     logging.debug(f"action: init_config | result: success | params: {config_params}")
 
-    cleaner = MenuCleaner(
+    cleaner = MenuItemsCleaner(
         cleaner_id=int(config_params["CLEANER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
+        data_queue_prefix=constants.MIT_CLEANER_QUEUE_PREFIX,
+        cleaned_data_exchange_prefix=constants.CLEANED_MIT_EXCHANGE_PREFIX,
+        cleaned_data_routing_keys=constants.CLEANED_MIT_ROUTING_KEYS,
     )
     cleaner.run()
 

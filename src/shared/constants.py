@@ -38,7 +38,8 @@ TIT_CLEANER_QUEUE_PREFIX = "transaction-items-cleaner-queue"
 TRN_CLEANER_QUEUE_PREFIX = "transactions-cleaner-queue"
 USR_CLEANER_QUEUE_PREFIX = "users-cleaner-queue"
 
-FILTER_TIT_BY_YEAR_QUEUE_PREFIX = "filters-transaction-items-by-year-queue"
-FILTER_TRN_BY_YEAR_QUEUE_PREFIX = "filters-transactions-by-year-queue"
+CLEANED_TIT_QUEUE_PREFIX = "cleaned-transaction-items"
+CLEANED_TRN_QUEUE_PREFIX = "cleaned-transactions"
+CLEANED_USR_QUEUE_PREFIX = "cleaned-users"
 
 QRS_QUEUE_PREFIX = "query-results-queue"

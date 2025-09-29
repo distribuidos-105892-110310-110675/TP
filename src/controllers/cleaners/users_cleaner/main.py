@@ -1,8 +1,6 @@
 import logging
 
-from controllers.cleaners.transactions_cleaner.transactions_cleaner import (
-    TransactionsCleaner,
-)
+from controllers.cleaners.users_cleaner.users_cleaner import UsersCleaner
 from shared import constants, initializer
 
 
@@ -12,18 +10,16 @@ def main():
             "LOGGING_LEVEL",
             "CLEANER_ID",
             "RABBITMQ_HOST",
-            "FILTERS_AMOUNT",
         ]
     )
     initializer.init_log(config_params["LOGGING_LEVEL"])
     logging.debug(f"action: init_config | result: success | params: {config_params}")
 
-    cleaner = TransactionsCleaner(
+    cleaner = UsersCleaner(
         cleaner_id=int(config_params["CLEANER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
-        data_queue_prefix=constants.TRN_CLEANER_QUEUE_PREFIX,
-        cleaned_data_queue_prefix=constants.CLEANED_TRN_QUEUE_PREFIX,
-        cleaned_data_queues_amount=int(config_params["FILTERS_AMOUNT"]),
+        data_queue_prefix=constants.USR_CLEANER_QUEUE_PREFIX,
+        cleaned_data_queue_prefix=constants.CLEANED_USR_QUEUE_PREFIX,
     )
     cleaner.run()
 

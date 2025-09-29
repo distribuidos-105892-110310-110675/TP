@@ -20,6 +20,7 @@ def main():
         rabbitmq_host=config_params["RABBITMQ_HOST"],
         data_queue_prefix=constants.USR_CLEANER_QUEUE_PREFIX,
         cleaned_data_queue_prefix=constants.CLEANED_USR_QUEUE_PREFIX,
+        cleaned_data_queues_amount=1,  # only one queue for users
     )
     cleaner.run()
 

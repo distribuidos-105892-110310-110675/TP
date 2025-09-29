@@ -10,19 +10,23 @@ class UsersCleaner:
 
     # ============================== INITIALIZE ============================== #
 
-    def __init_mom_cleaner_connection(
-        self, host: str, cleaner_queue_prefix: str
-    ) -> None:
-        queue_name = f"{cleaner_queue_prefix}-{self._cleaner_id}"
-        self._mom_cleaner_consumer = RabbitMQMessageMiddlewareQueue(
+    def __init_mom_data_connection(self, host: str, data_queue_prefix: str) -> None:
+        queue_name = f"{data_queue_prefix}-{self._cleaner_id}"
+        self._mom_data_consumer = RabbitMQMessageMiddlewareQueue(
             host=host, queue_name=queue_name
         )
 
-    def __init_mom_join_connection(self, host: str, join_queue_prefix: str) -> None:
-        queue_name = join_queue_prefix
-        self._mom_join_producer = RabbitMQMessageMiddlewareQueue(
-            host=host, queue_name=queue_name
-        )
+    def __init_mom_cleaned_data_connections(
+        self, host: str, cleaned_data_queue_prefix: str, cleaned_data_queues_amount: int
+    ) -> None:
+        self._current_cleaned_data_producer_id = 0
+        self._mom_cleaned_data_producers: list[RabbitMQMessageMiddlewareQueue] = []
+        for id in range(cleaned_data_queues_amount):
+            queue_name = f"{cleaned_data_queue_prefix}-{id}"
+            mom_filter_producer = RabbitMQMessageMiddlewareQueue(
+                host=host, queue_name=queue_name
+            )
+            self._mom_cleaned_data_producers.append(mom_filter_producer)
 
     def __init__(
         self,
@@ -30,18 +34,21 @@ class UsersCleaner:
         rabbitmq_host: str,
         data_queue_prefix: str,
         cleaned_data_queue_prefix: str,
+        cleaned_data_queues_amount: int,
     ) -> None:
         self._cleaner_id = cleaner_id
+
         self.__set_controller_as_not_running()
         signal.signal(signal.SIGTERM, self.__sigterm_signal_handler)
 
-        self.__init_mom_cleaner_connection(
+        self.__init_mom_data_connection(
             rabbitmq_host,
             data_queue_prefix,
         )
-        self.__init_mom_join_connection(
+        self.__init_mom_cleaned_data_connections(
             rabbitmq_host,
             cleaned_data_queue_prefix,
+            cleaned_data_queues_amount,
         )
 
     # ============================== PRIVATE - ACCESSING ============================== #
@@ -68,7 +75,7 @@ class UsersCleaner:
 
         self.__set_controller_as_not_running()
 
-        self._mom_cleaner_consumer.stop_consuming()
+        self._mom_data_consumer.stop_consuming()
         logging.debug("action: sigterm_mom_stop_consuming | result: success")
 
         logging.info("action: sigterm_signal_handler | result: success")
@@ -86,13 +93,11 @@ class UsersCleaner:
     def __filter_items_using(
         self, message: str, decoder: Callable, encoder: Callable
     ) -> str:
-        filtered_items_batch = []
-
+        batch = []
         for item in decoder(message):
             filtered_item = self.__filter_item(item)
-            filtered_items_batch.append(filtered_item)
-
-        return str(encoder(filtered_items_batch))
+            batch.append(filtered_item)
+        return str(encoder(batch))
 
     # @TODO: this is the only should send
     def __filter_message(self, message: str) -> str:
@@ -105,20 +110,28 @@ class UsersCleaner:
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
     def __mom_send_message_to_next(self, message: str) -> None:
-        self._mom_join_producer.send(message)
+        mom_cleaned_data_producer = self._mom_cleaned_data_producers[
+            self._current_cleaned_data_producer_id
+        ]
+        mom_cleaned_data_producer.send(message)
+
+        self._current_cleaned_data_producer_id += 1
+        if self._current_cleaned_data_producer_id >= len(
+            self._mom_cleaned_data_producers
+        ):
+            self._current_cleaned_data_producer_id = 0
 
     def __handle_data_batch_message(self, message: str) -> None:
         filtered_message = self.__filter_message(message)
-        logging.debug(f"action: message_filtered | result: success")
         self.__mom_send_message_to_next(filtered_message)
 
     def __handle_data_batch_eof(self, message: str) -> None:
-        self._mom_join_producer.send(message)
-        logging.debug(f"action: eof_sent_to_join | result: success")
+        for mom_cleaned_data_producer in self._mom_cleaned_data_producers:
+            mom_cleaned_data_producer.send(message)
 
     def __handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self.__is_running():
-            self._mom_cleaner_consumer.stop_consuming()
+            self._mom_data_consumer.stop_consuming()
             return
 
         message = message_as_bytes.decode("utf-8")
@@ -137,17 +150,18 @@ class UsersCleaner:
 
     def __run(self) -> None:
         self.__set_controller_as_running()
-        self._mom_cleaner_consumer.start_consuming(self.__handle_received_data)
+        self._mom_data_consumer.start_consuming(self.__handle_received_data)
 
     # @TODO: this is something that can be abstracted to a base cleaner class
     def __close_all_mom_connections(self) -> None:
-        self._mom_join_producer.delete()
-        self._mom_join_producer.close()
-        logging.debug("action: mom_join_connection_close | result: success")
+        for mom_cleaned_data_producer in self._mom_cleaned_data_producers:
+            mom_cleaned_data_producer.delete()
+            mom_cleaned_data_producer.close()
+            logging.debug("action: mom_cleaned_data_producer_close | result: success")
 
-        self._mom_cleaner_consumer.delete()
-        self._mom_cleaner_consumer.close()
-        logging.debug("action: mom_cleaner_connection_close | result: success")
+        self._mom_data_consumer.delete()
+        self._mom_data_consumer.close()
+        logging.debug("action: mom_data_consumer_close | result: success")
 
     def __ensure_connections_close_after_doing(self, callback: Callable) -> None:
         try:

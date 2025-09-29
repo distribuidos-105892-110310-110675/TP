@@ -29,3 +29,12 @@ TRANSACTION_ITEMS_FOLDER_NAME = "transaction_items"
 TRANSACTIONS_FOLDER_NAME = "transactions"
 USERS_FOLDER_NAME = "users"
 RESULTS_FOLDER_NAME = "query_results"
+
+# queue names
+MENU_ITEMS_CLEANER_QUEUE = "menu-items-cleaner-queue"
+STORES_CLEANER_QUEUE = "stores-cleaner-queue"
+TRANSACTION_ITEMS_CLEANER_QUEUE = "transaction-items-cleaner-queue"
+TRANSACTIONS_CLEANER_QUEUE = "transactions-cleaner-queue"
+USERS_CLEANER_QUEUE = "users-cleaner-queue"
+
+QUERY_RESULTS_QUEUE = "query-results-queue"

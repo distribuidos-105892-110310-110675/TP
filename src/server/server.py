@@ -142,7 +142,7 @@ class Server:
     def __socket_receive_message(self, socket: socket.socket) -> str:
         logging.debug(f"action: receive_message | result: in_progress")
 
-        buffsize = constants.KiB * 100
+        buffsize = constants.KiB
         bytes_received = b""
 
         all_data_received = False

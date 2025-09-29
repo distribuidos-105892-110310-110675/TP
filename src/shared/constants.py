@@ -32,18 +32,20 @@ QRS_FOLDER_NAME = "query_results"
 
 # message middleware constants
 
-MIT_CLEANER_QUEUE_PREFIX = "menu-items-cleaner-queue"
-STR_CLEANER_QUEUE_PREFIX = "stores-cleaner-queue"
-TIT_CLEANER_QUEUE_PREFIX = "transaction-items-cleaner-queue"
-TRN_CLEANER_QUEUE_PREFIX = "transactions-cleaner-queue"
-USR_CLEANER_QUEUE_PREFIX = "users-cleaner-queue"
+MIT_CLEANER_QUEUE_PREFIX = "cleaner-menu-items-queue"
+STR_CLEANER_QUEUE_PREFIX = "cleaner-stores-queue"
+TIT_CLEANER_QUEUE_PREFIX = "cleaner-transaction-items-queue"
+TRN_CLEANER_QUEUE_PREFIX = "cleaner-transactions-queue"
+USR_CLEANER_QUEUE_PREFIX = "cleaner-users-queue"
 
 CLEANED_TIT_QUEUE_PREFIX = "cleaned-transaction-items"
 CLEANED_TRN_QUEUE_PREFIX = "cleaned-transactions"
 CLEANED_USR_QUEUE_PREFIX = "cleaned-users"
 
 CLEANED_MIT_EXCHANGE_PREFIX = "cleaned-menu-items-exchange"
+CLEANED_STR_EXCHANGE_PREFIX = "cleaned-stores-exchange"
 
-CLEANED_MIT_ROUTING_KEYS = ["cleaned-menu-items-routing-key"]
+CLEANED_MIT_ROUTING_KEY_PREFIX = "cleaned-menu-items-routing-key"
+CLEANED_STR_ROUTING_KEY_PREFIX = "cleaned-stores-routing-key"
 
 QRS_QUEUE_PREFIX = "query-results-queue"

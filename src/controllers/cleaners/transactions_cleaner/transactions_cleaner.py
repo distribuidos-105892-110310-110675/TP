@@ -23,10 +23,10 @@ class TransactionsCleaner:
         self._mom_cleaned_data_producers: list[RabbitMQMessageMiddlewareQueue] = []
         for id in range(cleaned_data_queues_amount):
             queue_name = f"{cleaned_data_queue_prefix}-{id}"
-            mom_filter_producer = RabbitMQMessageMiddlewareQueue(
+            mom_cleaned_data_producer = RabbitMQMessageMiddlewareQueue(
                 host=host, queue_name=queue_name
             )
-            self._mom_cleaned_data_producers.append(mom_filter_producer)
+            self._mom_cleaned_data_producers.append(mom_cleaned_data_producer)
 
     def __init__(
         self,

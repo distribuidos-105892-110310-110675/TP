@@ -6,6 +6,7 @@ docker-build-image:
 	docker build -f ./src/client/Dockerfile -t "client:latest" .
 	
 	docker build -f ./src/controllers/cleaners/menu_items_cleaner/Dockerfile -t "menu_items_cleaner:latest" .
+	docker build -f ./src/controllers/cleaners/stores_cleaner/Dockerfile -t "stores_cleaner:latest" .
 	docker build -f ./src/controllers/cleaners/transaction_items_cleaner/Dockerfile -t "transaction_items_cleaner:latest" .
 	docker build -f ./src/controllers/cleaners/transactions_cleaner/Dockerfile -t "transactions_cleaner:latest" .
 	docker build -f ./src/controllers/cleaners/users_cleaner/Dockerfile -t "users_cleaner:latest" .

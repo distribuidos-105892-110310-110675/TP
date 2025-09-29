@@ -1,12 +1,17 @@
 import logging
 import signal
+import threading
+import time
 from typing import Any, Callable
 
+from middleware.rabbitmq_message_middleware_exchange import (
+    RabbitMQMessageMiddlewareExchange,
+)
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from shared import communication_protocol
 
 
-class TransactionItemsCleaner:
+class StoresCleaner:
 
     # ============================== INITIALIZE ============================== #
 
@@ -17,24 +22,102 @@ class TransactionItemsCleaner:
         )
 
     def __init_mom_cleaned_data_connections(
-        self, host: str, cleaned_data_queue_prefix: str, cleaned_data_queues_amount: int
+        self,
+        host: str,
+        cleaned_data_exchange_prefix: str,
+        cleaned_data_routing_key_prefix: str,
+        cleaned_data_routing_keys_amount: int,
     ) -> None:
         self._current_cleaned_data_producer_id = 0
-        self._mom_cleaned_data_producers: list[RabbitMQMessageMiddlewareQueue] = []
-        for id in range(cleaned_data_queues_amount):
-            queue_name = f"{cleaned_data_queue_prefix}-{id}"
-            mom_cleaned_data_producer = RabbitMQMessageMiddlewareQueue(
-                host=host, queue_name=queue_name
+        self._mom_cleaned_data_producers: list[RabbitMQMessageMiddlewareExchange] = []
+        for id in range(cleaned_data_routing_keys_amount):
+            exchange_name = cleaned_data_exchange_prefix
+            routing_keys = [f"{cleaned_data_routing_key_prefix}-{id}"]
+            mom_cleaned_data_producer = RabbitMQMessageMiddlewareExchange(
+                host=host,
+                exchange_name=exchange_name,
+                route_keys=routing_keys,
             )
             self._mom_cleaned_data_producers.append(mom_cleaned_data_producer)
+
+    def _mock_consumers_using_threads(
+        self,
+        host: str,
+        cleaned_data_mom_prefix: str,
+        cleaned_data_routing_key_prefix: str,
+    ) -> None:
+        exchange_name = cleaned_data_mom_prefix
+        self._mom_cleaned_data_consumer_1 = RabbitMQMessageMiddlewareExchange(
+            host=host,
+            exchange_name=exchange_name,
+            route_keys=[cleaned_data_routing_key_prefix + "-0"],
+        )
+        self._mom_cleaned_data_consumer_2 = RabbitMQMessageMiddlewareExchange(
+            host=host,
+            exchange_name=exchange_name,
+            route_keys=[cleaned_data_routing_key_prefix + "-0"],
+        )
+        self._mom_cleaned_data_consumer_3 = RabbitMQMessageMiddlewareExchange(
+            host=host,
+            exchange_name=exchange_name,
+            route_keys=[cleaned_data_routing_key_prefix + "-1"],
+        )
+        self._mom_cleaned_data_consumer_4 = RabbitMQMessageMiddlewareExchange(
+            host=host,
+            exchange_name=exchange_name,
+            route_keys=[cleaned_data_routing_key_prefix + "-1"],
+        )
+
+        self._spawned_threads = []
+
+        def _start_mock_consumer(
+            consumer: RabbitMQMessageMiddlewareExchange,
+        ) -> None:
+            def thread_safe_callback() -> Callable[[bytes], None]:
+                def callback(message_as_bytes: bytes) -> None:
+                    while self.__is_running():
+                        time.sleep(5)  # simulate processing time
+
+                return callback
+
+            consumer.start_consuming(thread_safe_callback())
+
+        thread = threading.Thread(
+            target=_start_mock_consumer,
+            args=(self._mom_cleaned_data_consumer_1,),
+        )
+        thread.start()
+        self._spawned_threads.append(thread)
+
+        thread = threading.Thread(
+            target=_start_mock_consumer,
+            args=(self._mom_cleaned_data_consumer_2,),
+        )
+        thread.start()
+        self._spawned_threads.append(thread)
+
+        thread = threading.Thread(
+            target=_start_mock_consumer,
+            args=(self._mom_cleaned_data_consumer_3,),
+        )
+        thread.start()
+        self._spawned_threads.append(thread)
+
+        thread = threading.Thread(
+            target=_start_mock_consumer,
+            args=(self._mom_cleaned_data_consumer_4,),
+        )
+        thread.start()
+        self._spawned_threads.append(thread)
 
     def __init__(
         self,
         cleaner_id: int,
         rabbitmq_host: str,
         data_queue_prefix: str,
-        cleaned_data_queue_prefix: str,
-        cleaned_data_queues_amount: int,
+        cleaned_data_exchange_prefix: str,
+        cleaned_data_routing_key_prefix: str,
+        cleaned_data_routing_keys_amount: int,
     ) -> None:
         self._cleaner_id = cleaner_id
 
@@ -47,8 +130,16 @@ class TransactionItemsCleaner:
         )
         self.__init_mom_cleaned_data_connections(
             rabbitmq_host,
-            cleaned_data_queue_prefix,
-            cleaned_data_queues_amount,
+            cleaned_data_exchange_prefix,
+            cleaned_data_routing_key_prefix,
+            cleaned_data_routing_keys_amount,
+        )
+
+        # REMOVE THIS WHEN THERE IS A REAL CONSUMER
+        self._mock_consumers_using_threads(
+            rabbitmq_host,
+            cleaned_data_exchange_prefix,
+            cleaned_data_routing_key_prefix,
         )
 
     # ============================== PRIVATE - ACCESSING ============================== #
@@ -63,7 +154,10 @@ class TransactionItemsCleaner:
         self._server_running = True
 
     def __columns_to_keep(self) -> list[str]:
-        return ["created_at", "item_id", "subtotal"]
+        return [
+            "store_id",
+            "store_name",
+        ]
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
@@ -100,8 +194,8 @@ class TransactionItemsCleaner:
     def __filter_message(self, message: str) -> str:
         return self.__filter_items_using(
             message,
-            communication_protocol.decode_transaction_items_batch_message,
-            communication_protocol.encode_transaction_items_batch_message,
+            communication_protocol.decode_stores_batch_message,
+            communication_protocol.encode_stores_batch_message,
         )
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
@@ -134,7 +228,7 @@ class TransactionItemsCleaner:
         message = message_as_bytes.decode("utf-8")
         message_type = communication_protocol.decode_message_type(message)
         match message_type:
-            case communication_protocol.TRANSACTION_ITEMS_BATCH_MSG_TYPE:
+            case communication_protocol.STORES_BATCH_MSG_TYPE:
                 self.__handle_data_batch_message(message)
             case communication_protocol.EOF:
                 self.__handle_data_batch_eof(message)

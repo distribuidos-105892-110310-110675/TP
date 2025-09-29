@@ -21,35 +21,51 @@ class MenuItemsCleaner:
             host=host, queue_name=queue_name
         )
 
-    def __init_mom_cleaned_data_connection(
+    def __init_mom_cleaned_data_connections(
         self,
         host: str,
-        cleaned_data_mom_prefix: str,
-        cleaned_data_routing_keys: list,
+        cleaned_data_exchange_prefix: str,
+        cleaned_data_routing_key_prefix: str,
+        cleaned_data_routing_keys_amount: int,
     ) -> None:
-        exchange_name = f"{cleaned_data_mom_prefix}-0"
-        self._mom_cleaned_data_producer = RabbitMQMessageMiddlewareExchange(
-            host=host,
-            exchange_name=exchange_name,
-            route_keys=cleaned_data_routing_keys,
-        )
+        self._current_cleaned_data_producer_id = 0
+        self._mom_cleaned_data_producers: list[RabbitMQMessageMiddlewareExchange] = []
+        for id in range(cleaned_data_routing_keys_amount):
+            exchange_name = cleaned_data_exchange_prefix
+            routing_keys = [f"{cleaned_data_routing_key_prefix}-{id}"]
+            mom_cleaned_data_producer = RabbitMQMessageMiddlewareExchange(
+                host=host,
+                exchange_name=exchange_name,
+                route_keys=routing_keys,
+            )
+            self._mom_cleaned_data_producers.append(mom_cleaned_data_producer)
 
     def _mock_consumers_using_threads(
         self,
         host: str,
         cleaned_data_mom_prefix: str,
-        cleaned_data_routing_keys: list,
+        cleaned_data_routing_key_prefix: str,
     ) -> None:
-        exchange_name = f"{cleaned_data_mom_prefix}-0"
+        exchange_name = cleaned_data_mom_prefix
         self._mom_cleaned_data_consumer_1 = RabbitMQMessageMiddlewareExchange(
             host=host,
             exchange_name=exchange_name,
-            route_keys=cleaned_data_routing_keys,
+            route_keys=[cleaned_data_routing_key_prefix + "-0"],
         )
         self._mom_cleaned_data_consumer_2 = RabbitMQMessageMiddlewareExchange(
             host=host,
             exchange_name=exchange_name,
-            route_keys=cleaned_data_routing_keys,
+            route_keys=[cleaned_data_routing_key_prefix + "-0"],
+        )
+        self._mom_cleaned_data_consumer_3 = RabbitMQMessageMiddlewareExchange(
+            host=host,
+            exchange_name=exchange_name,
+            route_keys=[cleaned_data_routing_key_prefix + "-1"],
+        )
+        self._mom_cleaned_data_consumer_4 = RabbitMQMessageMiddlewareExchange(
+            host=host,
+            exchange_name=exchange_name,
+            route_keys=[cleaned_data_routing_key_prefix + "-1"],
         )
 
         self._spawned_threads = []
@@ -80,13 +96,28 @@ class MenuItemsCleaner:
         thread.start()
         self._spawned_threads.append(thread)
 
+        thread = threading.Thread(
+            target=_start_mock_consumer,
+            args=(self._mom_cleaned_data_consumer_3,),
+        )
+        thread.start()
+        self._spawned_threads.append(thread)
+
+        thread = threading.Thread(
+            target=_start_mock_consumer,
+            args=(self._mom_cleaned_data_consumer_4,),
+        )
+        thread.start()
+        self._spawned_threads.append(thread)
+
     def __init__(
         self,
         cleaner_id: int,
         rabbitmq_host: str,
         data_queue_prefix: str,
         cleaned_data_exchange_prefix: str,
-        cleaned_data_routing_keys: list,
+        cleaned_data_routing_key_prefix: str,
+        cleaned_data_routing_keys_amount: int,
     ) -> None:
         self._cleaner_id = cleaner_id
 
@@ -97,17 +128,18 @@ class MenuItemsCleaner:
             rabbitmq_host,
             data_queue_prefix,
         )
-        self.__init_mom_cleaned_data_connection(
+        self.__init_mom_cleaned_data_connections(
             rabbitmq_host,
             cleaned_data_exchange_prefix,
-            cleaned_data_routing_keys,
+            cleaned_data_routing_key_prefix,
+            cleaned_data_routing_keys_amount,
         )
 
         # REMOVE THIS WHEN THERE IS A REAL CONSUMER
         self._mock_consumers_using_threads(
             rabbitmq_host,
             cleaned_data_exchange_prefix,
-            cleaned_data_routing_keys,
+            cleaned_data_routing_key_prefix,
         )
 
     # ============================== PRIVATE - ACCESSING ============================== #
@@ -169,16 +201,24 @@ class MenuItemsCleaner:
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
     def __mom_send_message_to_next(self, message: str) -> None:
-        mom_cleaned_data_producer = self._mom_cleaned_data_producer
+        mom_cleaned_data_producer = self._mom_cleaned_data_producers[
+            self._current_cleaned_data_producer_id
+        ]
         mom_cleaned_data_producer.send(message)
+
+        self._current_cleaned_data_producer_id += 1
+        if self._current_cleaned_data_producer_id >= len(
+            self._mom_cleaned_data_producers
+        ):
+            self._current_cleaned_data_producer_id = 0
 
     def __handle_data_batch_message(self, message: str) -> None:
         filtered_message = self.__filter_message(message)
         self.__mom_send_message_to_next(filtered_message)
 
     def __handle_data_batch_eof(self, message: str) -> None:
-        mom_cleaned_data_producer = self._mom_cleaned_data_producer
-        mom_cleaned_data_producer.send(message)
+        for mom_cleaned_data_producer in self._mom_cleaned_data_producers:
+            mom_cleaned_data_producer.send(message)
 
     def __handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self.__is_running():
@@ -205,9 +245,10 @@ class MenuItemsCleaner:
 
     # @TODO: this is something that can be abstracted to a base cleaner class
     def __close_all_mom_connections(self) -> None:
-        self._mom_cleaned_data_producer.delete()
-        self._mom_cleaned_data_producer.close()
-        logging.debug("action: mom_cleaned_data_producer_close | result: success")
+        for mom_cleaned_data_producer in self._mom_cleaned_data_producers:
+            mom_cleaned_data_producer.delete()
+            mom_cleaned_data_producer.close()
+            logging.debug("action: mom_cleaned_data_producer_close | result: success")
 
         self._mom_data_consumer.delete()
         self._mom_data_consumer.close()

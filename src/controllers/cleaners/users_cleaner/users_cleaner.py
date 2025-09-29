@@ -19,7 +19,7 @@ class UsersCleaner:
     def __init_mom_cleaned_data_connections(
         self, host: str, cleaned_data_queue_prefix: str, cleaned_data_queues_amount: int
     ) -> None:
-        self._current_cleaned_data_producer_id = 0
+        self._mom_cleaned_data_producers_amount = cleaned_data_queues_amount
         self._mom_cleaned_data_producers: list[RabbitMQMessageMiddlewareQueue] = []
         for id in range(cleaned_data_queues_amount):
             queue_name = f"{cleaned_data_queue_prefix}-{id}"
@@ -45,9 +45,6 @@ class UsersCleaner:
             rabbitmq_host,
             data_queue_prefix,
         )
-
-        # THIS IS BAD, SHOULD HASH DATA AND SEND TO DETERMINED QUEUE
-        # AND THERE MUST BE MULTIPLE QUEUES
         self.__init_mom_cleaned_data_connections(
             rabbitmq_host,
             cleaned_data_queue_prefix,
@@ -113,16 +110,18 @@ class UsersCleaner:
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
     def __mom_send_message_to_next(self, message: str) -> None:
-        mom_cleaned_data_producer = self._mom_cleaned_data_producers[
-            self._current_cleaned_data_producer_id
-        ]
-        mom_cleaned_data_producer.send(message)
+        user_batchs_by_hash: dict = {}
+        for user in communication_protocol.decode_users_batch_message(message):
+            user_id = int(user["user_id"])
+            key = user_id % self._mom_cleaned_data_producers_amount
+            if key not in user_batchs_by_hash:
+                user_batchs_by_hash[key] = []
+            user_batchs_by_hash[key].append(user)
 
-        self._current_cleaned_data_producer_id += 1
-        if self._current_cleaned_data_producer_id >= len(
-            self._mom_cleaned_data_producers
-        ):
-            self._current_cleaned_data_producer_id = 0
+        for key, user_batch in user_batchs_by_hash.items():
+            mom_cleaned_data_producer = self._mom_cleaned_data_producers[key]
+            message = communication_protocol.encode_users_batch_message(user_batch)
+            mom_cleaned_data_producer.send(message)
 
     def __handle_data_batch_message(self, message: str) -> None:
         filtered_message = self.__filter_message(message)

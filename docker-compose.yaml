@@ -1,263 +1,80 @@
 name: tp
 services:
-#  rabbitmq-message-middleware:
-#    image: "rabbitmq:4-management"
-#    ports:
-#      - "5672:5672"
-#      - "15672:15672"
-#    environment:
-#      - RABBITMQ_DEFAULT_USER=guest # @TODO: can be configured in .env
-#      - RABBITMQ_DEFAULT_PASS=guest
-#    networks:
-#      - custom_net
-#    healthcheck:
-#      test: rabbitmq-diagnostics check_port_connectivity
-#      interval: 30s
-#      timeout: 5s
-#      retries: 5
-#      start_period: 30s
 
-#  server:
-#    container_name: server
-#    image: server:latest
-#    entrypoint: python3 -m server.main
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=INFO
-#      - SERVER_PORT=5000
-#      - SERVER_LISTEN_BACKLOG=5
-#      - RABBITMQ_HOST=rabbitmq-message-middleware
-#      - MENU_ITEMS_CL_AMOUNT=2
-#      - STORES_CL_AMOUNT=2
-#      - TRANSACTION_ITEMS_CL_AMOUNT=2
-#      - TRANSACTIONS_CL_AMOUNT=2
-#      - USERS_CL_AMOUNT=2
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
-#    depends_on:
-#      rabbitmq-message-middleware:
-#        condition: service_healthy
-#
-#  client:
-#    container_name: client
-#    image: client:latest
-#    entrypoint: python3 -m client.main
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=INFO
-#      - CLIENT_ID=1
-#      - SERVER_HOST=server
-#      - SERVER_PORT=5000
-#      - DATA_PATH=/data
-#      - BATCH_MAX_SIZE=1
-#    networks:
-#      - custom_net
-#    volumes:
-#      - type: bind
-#        source: ./.data
-#        target: /data
-#        read_only: true
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
+# ============================== RABBITMQ SERVICE ============================== #
 
-#  filter_transactions_by_year:
-#    container_name: filter_transactions_by_year
-#    image: filter_transactions_by_year:latest
-#    entrypoint: python3 -m filter_transactions_by_year.main
-#    working_dir: /filter_transactions_by_year
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#      - YEARS=2024,2025
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
+  rabbitmq-message-middleware:
+    image: "rabbitmq:4-management"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest # @TODO: can be configured in .env
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - custom_net
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
-#  filter_items_by_year:
-#    container_name: filter_items_by_year
-#    image: filter_items_by_year:latest
-#    entrypoint: python3 -m filter_items_by_year.main
-#    working_dir: /filter_items_by_year
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#      - YEARS=2024,2025
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
-#
-#  filter_transactions_by_hour:
-#    container_name: filter_transactions_by_hour
-#    image: filter_transactions_by_hour:latest
-#    entrypoint: python3 -m filter_transactions_by_hour.main
-#    working_dir: /filter_transactions_by_hour
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#      - MIN_HOUR=6
-#      - MAX_HOUR=23
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
-#
-#  filter_items_by_hour:
-#    container_name: filter_items_by_hour
-#    image: filter_items_by_hour:latest
-#    entrypoint: python3 -m filter_items_by_hour.main
-#    working_dir: /filter_items_by_hour
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#      - MIN_HOUR=6
-#      - MAX_HOUR=23
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
+# ============================== CLIENT & SERVER SERVICES ============================== #
 
-#  filter_transactions_by_amount:
-#    container_name: filter_transactions_by_amount
-#    image: filter_transactions_by_amount:latest
-#    entrypoint: python3 -m filter_transactions_by_amount.main
-#    working_dir: /filter_transactions_by_amount
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#      - AMOUNT=75
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
+  client:
+    container_name: client
+    image: client:latest
+    entrypoint: python3 -m client.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CLIENT_ID=0
+      - SERVER_HOST=server
+      - SERVER_PORT=5000
+      - DATA_PATH=/data
+      - RESULTS_PATH=/results
+      - BATCH_MAX_SIZE=20
+    networks:
+      - custom_net
+    volumes:
+      - type: bind
+        source: ./.data
+        target: /data
+        read_only: true
+      - type: bind
+        source: ./.results
+        target: /results
+        read_only: false
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
+    depends_on:
+      server:
+        condition: service_started
 
-#  map_month_semester_transactions:
-#    container_name: map_month_semester_transactions
-#    image: map_month_semester_transactions:latest
-#    entrypoint: python3 -m map_month_semester_transactions.main
-#    working_dir: /map_month_semester_transactions
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
-#
-#  map_month_semester_items:
-#    container_name: map_month_semester_items
-#    image: map_month_semester_items:latest
-#    entrypoint: python3 -m map_month_semester_items.main
-#    working_dir: /map_month_semester_items
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
-  #    depends_on:
-  #      server:
-  #        condition: service_started
-  #
-#  map_month_year_transactions:
-#    container_name: map_month_year_transactions
-#    image: map_month_year_transactions:latest
-#    entrypoint: python3 -m map_month_year_transactions.main
-#    working_dir: /map_month_year_transactions
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
-
-#  map_month_year_items:
-#    container_name: map_month_year_items
-#    image: map_month_year_items:latest
-#    entrypoint: python3 -m map_month_year_items.main
-#    working_dir: /map_month_year_items
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
-
-#
-  sort_by_count:
-    container_name: sort_by_count
-    image: sort_by_count:latest
-    entrypoint: python3 -m sort_by_count.main
-    working_dir: /sort_by_count
+  server:
+    container_name: server
+    image: server:latest
+    entrypoint: python3 -m server.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=DEBUG
+      - SERVER_PORT=5000
+      - SERVER_LISTEN_BACKLOG=5
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - MENU_ITEMS_CLN_AMOUNT=1
+      - STORES_CLN_AMOUNT=1
+      - TRANSACTION_ITEMS_CLN_AMOUNT=1
+      - TRANSACTIONS_CLN_AMOUNT=1
+      - USERS_CLN_AMOUNT=1
+      - Q1X_OB_AMOUNT=1
+      - Q21_OB_AMOUNT=1
+      - Q22_OB_AMOUNT=1
+      - Q3X_OB_AMOUNT=1
+      - Q4X_OB_AMOUNT=1
     networks:
       - custom_net
     deploy:
@@ -265,123 +82,405 @@ services:
         condition: on-failure
         delay: 5s
         max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
-#
-  sort_by_sum:
-    container_name: sort_by_sum
-    image: sort_by_sum:latest
-    entrypoint: python3 -m sort_by_sum.main
-    working_dir: /sort_by_sum
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+# ============================== CLEANERS SERVICES ============================== #
+
+  menu_items_cleaner_items_0:
+    container_name: menu_items_cleaner_items_0
+    image: menu_items_cleaner:latest
+    entrypoint: python3 -m controllers.cleaners.menu_items_cleaner.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CLEANER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - JOINS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  stores_cleaner_items_0:
+    container_name: stores_cleaner_items_0
+    image: stores_cleaner:latest
+    entrypoint: python3 -m controllers.cleaners.stores_cleaner.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CLEANER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - JOINS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  transaction_items_cleaner_0:
+    container_name: transaction_items_cleaner_0
+    image: transaction_items_cleaner:latest
+    entrypoint: python3 -m controllers.cleaners.transaction_items_cleaner.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=DEBUG
+      - CLEANER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - FILTERS_AMOUNT=1
     networks:
       - custom_net
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
-#
-  sort_by_birthday:
-    container_name: sort_by_birthday
-    image: sort_by_birthday:latest
-    entrypoint: python3 -m sort_by_birthday.main
-    working_dir: /sort_by_birthday
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  transactions_cleaner_0:
+    container_name: transactions_cleaner_0
+    image: transactions_cleaner:latest
+    entrypoint: python3 -m controllers.cleaners.transactions_cleaner.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=DEBUG
+      - CLEANER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - FILTERS_AMOUNT=1
     networks:
       - custom_net
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
-#
-#  join_items_with_menu:
-#    container_name: join_items_with_menu
-#    image: join_items_with_menu:latest
-#    entrypoint: python3 -m join_items_with_menu.main
-#    working_dir: /join_items_with_menu
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
-#
-#  join_transactions_with_stores:
-#    container_name: join_transactions_with_stores
-#    image: join_transactions_with_stores:latest
-#    entrypoint: python3 -m join_transactions_with_stores.main
-#    working_dir: /join_transactions_with_stores
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
-#
-#  join_transactions_with_users:
-#    container_name: join_transactions_with_users
-#    image: join_transactions_with_users:latest
-#    entrypoint: python3 -m join_transactions_with_users.main
-#    working_dir: /join_transactions_with_users
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
-#
-#  join_users_with_stores:
-#    container_name: join_users_with_stores
-#    image: join_users_with_stores:latest
-#    entrypoint: python3 -m join_users_with_stores.main
-#    working_dir: /join_users_with_stores
-#    environment:
-#      - PYTHONUNBUFFERED=1
-#      - LOGGING_LEVEL=DEBUG
-#    networks:
-#      - custom_net
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 5s
-#        max_attempts: 1
-#    depends_on:
-#      server:
-#        condition: service_started
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  users_cleaner_0:
+    container_name: users_cleaner_0
+    image: users_cleaner:latest
+    entrypoint: python3 -m controllers.cleaners.users_cleaner.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+      - CLEANER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - JOINS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+# ============================== OUTPUT BUILDER SERVICES ============================== #
+
+  query_1x_output_builder_0:
+    container_name: query_1x_output_builder_0
+    image: query_1x_output_builder:latest
+    entrypoint: python3 -m controllers.output_builders.query_1x_output_builder.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+      - OUTPUT_BUILDER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  query_21_output_builder_0:
+    container_name: query_21_output_builder_0
+    image: query_21_output_builder:latest
+    entrypoint: python3 -m controllers.output_builders.query_21_output_builder.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+      - OUTPUT_BUILDER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  query_22_output_builder_0:
+    container_name: query_22_output_builder_0
+    image: query_22_output_builder:latest
+    entrypoint: python3 -m controllers.output_builders.query_22_output_builder.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+      - OUTPUT_BUILDER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  query_3x_output_builder_0:
+    container_name: query_3x_output_builder_0
+    image: query_3x_output_builder:latest
+    entrypoint: python3 -m controllers.output_builders.query_3x_output_builder.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+      - OUTPUT_BUILDER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  query_4x_output_builder_0:
+    container_name: query_4x_output_builder_0
+    image: query_4x_output_builder:latest
+    entrypoint: python3 -m controllers.output_builders.query_4x_output_builder.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=DEBUG
+      - OUTPUT_BUILDER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+# filter_by_year:
+#   container_name: filter_by_year
+#   image: filter_by_year:latest
+#   entrypoint: python3 -m filter_by_year.main
+#   working_dir: /filter_by_year
+#   environment:
+#     - PYTHONUNBUFFERED=1
+#     - LOGGING_LEVEL=DEBUG
+#     - YEARS=2024,2025
+#   networks:
+#     - custom_net
+#   deploy:
+#     restart_policy:
+#       condition: on-failure
+#       delay: 5s
+#       max_attempts: 1
+#   depends_on:
+#     server:
+#       condition: service_started
+
+# filter_by_hour:
+#   container_name: filter_by_hour
+#   image: filter_by_hour:latest
+#   entrypoint: python3 -m filter_by_hour.main
+#   working_dir: /filter_by_hour
+#   environment:
+#     - PYTHONUNBUFFERED=1
+#     - LOGGING_LEVEL=DEBUG
+#     - MIN_HOUR=6
+#     - MAX_HOUR=23
+#   networks:
+#     - custom_net
+#   deploy:
+#     restart_policy:
+#       condition: on-failure
+#       delay: 5s
+#       max_attempts: 1
+#   depends_on:
+#     server:
+#       condition: service_started
+
+# filter_by_amount:
+#   container_name: filter_by_amount
+#   image: filter_by_amount:latest
+#   entrypoint: python3 -m filter_by_amount.main
+#   working_dir: /filter_by_amount
+#   environment:
+#     - PYTHONUNBUFFERED=1
+#     - LOGGING_LEVEL=DEBUG
+#     - AMOUNT=75
+#   networks:
+#     - custom_net
+#   deploy:
+#     restart_policy:
+#       condition: on-failure
+#       delay: 5s
+#       max_attempts: 1
+#   depends_on:
+#     server:
+#       condition: service_started
+
+# map_month_semester:
+#   container_name: map_month_semester
+#   image: map_month_semester:latest
+#   entrypoint: python3 -m map_month_semester.main
+#   working_dir: /map_month_semester
+#   environment:
+#     - PYTHONUNBUFFERED=1
+#     - LOGGING_LEVEL=DEBUG
+#   networks:
+#     - custom_net
+#   deploy:
+#     restart_policy:
+#       condition: on-failure
+#       delay: 5s
+#       max_attempts: 1
+#   depends_on:
+#     server:
+#       condition: service_started
+
+# map_month_year:
+#   container_name: map_month_year
+#   image: map_month_year:latest
+#   entrypoint: python3 -m map_month_year.main
+#   working_dir: /map_month_year
+#   environment:
+#     - PYTHONUNBUFFERED=1
+#     - LOGGING_LEVEL=DEBUG
+#   networks:
+#     - custom_net
+#   deploy:
+#     restart_policy:
+#       condition: on-failure
+#       delay: 5s
+#       max_attempts: 1
+#   depends_on:
+#     server:
+#       condition: service_started
+
+# sort_by_count:
+#   container_name: sort_by_count
+#   image: sort_by_count:latest
+#   entrypoint: python3 -m sort_by_count.main
+#   working_dir: /sort_by_count
+#   environment:
+#     - PYTHONUNBUFFERED=1
+#     - LOGGING_LEVEL=DEBUG
+#   networks:
+#     - custom_net
+#   deploy:
+#     restart_policy:
+#       condition: on-failure
+#       delay: 5s
+#       max_attempts: 1
+#   depends_on:
+#     server:
+#       condition: service_started
+
+# sort_by_sum:
+#   container_name: sort_by_sum
+#   image: sort_by_sum:latest
+#   entrypoint: python3 -m sort_by_sum.main
+#   working_dir: /sort_by_sum
+#   environment:
+#     - PYTHONUNBUFFERED=1
+#     - LOGGING_LEVEL=DEBUG
+#   networks:
+#     - custom_net
+#   deploy:
+#     restart_policy:
+#       condition: on-failure
+#       delay: 5s
+#       max_attempts: 1
+#   depends_on:
+#     server:
+#       condition: service_started
+
+# sort_by_birthday:
+#   container_name: sort_by_birthday
+#   image: sort_by_birthday:latest
+#   entrypoint: python3 -m sort_by_birthday.main
+#   working_dir: /sort_by_birthday
+#   environment:
+#     - PYTHONUNBUFFERED=1
+#     - LOGGING_LEVEL=DEBUG
+#   networks:
+#     - custom_net
+#   deploy:
+#     restart_policy:
+#       condition: on-failure
+#       delay: 5s
+#       max_attempts: 1
+#   depends_on:
+#     server:
+#       condition: service_started
+
+# join_items_with_menu:
+#   container_name: join_items_with_menu
+#   image: join_items_with_menu:latest
+#   entrypoint: python3 -m join_items_with_menu.main
+#   working_dir: /join_items_with_menu
+#   environment:
+#     - PYTHONUNBUFFERED=1
+#     - LOGGING_LEVEL=DEBUG
+#   networks:
+#     - custom_net
+#   deploy:
+#     restart_policy:
+#       condition: on-failure
+#       delay: 5s
+#       max_attempts: 1
+#   depends_on:
+#     server:
+#       condition: service_started
+
+# join_transactions_with_stores:
+#   container_name: join_transactions_with_stores
+#   image: join_transactions_with_stores:latest
+#   entrypoint: python3 -m join_transactions_with_stores.main
+#   working_dir: /join_transactions_with_stores
+#   environment:
+#     - PYTHONUNBUFFERED=1
+#     - LOGGING_LEVEL=DEBUG
+#   networks:
+#     - custom_net
+#   deploy:
+#     restart_policy:
+#       condition: on-failure
+#       delay: 5s
+#       max_attempts: 1
+#   depends_on:
+#     server:
+#       condition: service_started
+
+# join_transactions_with_users:
+#   container_name: join_transactions_with_users
+#   image: join_transactions_with_users:latest
+#   entrypoint: python3 -m join_transactions_with_users.main
+#   working_dir: /join_transactions_with_users
+#   environment:
+#     - PYTHONUNBUFFERED=1
+#     - LOGGING_LEVEL=DEBUG
+#   networks:
+#     - custom_net
+#   deploy:
+#     restart_policy:
+#       condition: on-failure
+#       delay: 5s
+#       max_attempts: 1
+#   depends_on:
+#     server:
+#       condition: service_started
+
+# join_users_with_stores:
+#   container_name: join_users_with_stores
+#   image: join_users_with_stores:latest
+#   entrypoint: python3 -m join_users_with_stores.main
+#   working_dir: /join_users_with_stores
+#   environment:
+#     - PYTHONUNBUFFERED=1
+#     - LOGGING_LEVEL=DEBUG
+#   networks:
+#     - custom_net
+#   deploy:
+#     restart_policy:
+#       condition: on-failure
+#       delay: 5s
+#       max_attempts: 1
+#   depends_on:
+#     server:
+#       condition: service_started
 
 networks:
   custom_net:

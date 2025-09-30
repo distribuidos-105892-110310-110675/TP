@@ -1,11 +1,6 @@
 <br>
 <p align="center">
   <img src="https://huergo.edu.ar/images/convenios/fiuba.jpg" width="100%" style="background-color:white"/>
-<font size="+1">
-<br>
-<br>
-2c 2025
-</font>
 </p>
 
 # ☕ Coffee Shop Analysis

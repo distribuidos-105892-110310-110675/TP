@@ -155,7 +155,8 @@ def __encode_field(key: str, value: str) -> str:
 
 def __encode_row(row: dict[str, str]) -> str:
     encoded_fields = [__encode_field(key, value) for key, value in row.items()]
-    return ROW_FIELD_SEPARATOR.join(encoded_fields)
+    encoded_fields = ROW_FIELD_SEPARATOR.join(encoded_fields)
+    return BATCH_START_DELIMITER + encoded_fields + BATCH_END_DELIMITER
 
 
 # ============================= PUBLIC ============================== #
@@ -173,7 +174,6 @@ def encode_batch_message(batch_msg_type: str, batch: list[dict[str, str]]) -> st
         encoded_rows.append(encoded_row)
 
     encoded_payload = BATCH_ROW_SEPARATOR.join(encoded_rows)
-    encoded_payload = BATCH_START_DELIMITER + encoded_payload + BATCH_END_DELIMITER
     return __encode_message(batch_msg_type, encoded_payload)
 
 

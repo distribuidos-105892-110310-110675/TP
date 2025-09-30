@@ -328,6 +328,7 @@ function add-query-3x-output-builder() {
 
 function add-query-4x-output-builder() {
   local compose_filename=$1
+  local id=$2
 
   add-line $compose_filename '  query_4x_output_builder_0:'
   add-line $compose_filename '    container_name: query_4x_output_builder_0'
@@ -348,16 +349,20 @@ function add-query-4x-output-builder() {
 
 function add-output-builders() {
   local compose_filename=$1
+  local workers_amount=$2
 
-  add-query-1x-output-builder $compose_filename
-  add-empty-line $compose_filename
-  add-query-21-output-builder $compose_filename
-  add-empty-line $compose_filename
-  add-query-22-output-builder $compose_filename
-  add-empty-line $compose_filename
-  add-query-3x-output-builder $compose_filename
-  add-empty-line $compose_filename
-  add-query-4x-output-builder $compose_filename
+  for (( i=1; i<=$clients_amount; i++ )); do
+    add-query-1x-output-builder $compose_filename $i
+    add-empty-line $compose_filename
+    add-query-21-output-builder $compose_filename $i
+    add-empty-line $compose_filename
+    add-query-22-output-builder $compose_filename $i
+    add-empty-line $compose_filename
+    add-query-3x-output-builder $compose_filename $i
+    add-empty-line $compose_filename
+    add-query-4x-output-builder $compose_filename $i
+  done
+
 
 }
 
@@ -365,6 +370,7 @@ function add-output-builders() {
 
 function add-services() {
   local compose_filename=$1
+  local workers_amount=$2
 
   add-line $compose_filename 'services:'
   add-empty-line $compose_filename
@@ -380,11 +386,11 @@ function add-services() {
   add-empty-line $compose_filename
 
   add-comment $compose_filename 'CLEANERS SERVICES'
-  add-cleaners $compose_filename
+  add-cleaners $compose_filename $workers_amount
   add-empty-line $compose_filename
 
   add-comment $compose_filename 'OUTPUT BUILDER SERVICES'
-  add-output-builders $compose_filename
+  add-output-builders $compose_filename $workers_amount
 }
 
 # ============================== PRIVATE - NETWORKS ============================== #
@@ -404,11 +410,12 @@ function add-networks() {
 
 function build-docker-compose-file() {
   local compose_filename=$1
+  local workers_amount=$2
 
   echo "Generando archivo $compose_filename ..."
   
   add-name $compose_filename
-  add-services $compose_filename
+  add-services $compose_filename $workers_amount
   add-empty-line $compose_filename
   add-networks $compose_filename
 
@@ -417,15 +424,21 @@ function build-docker-compose-file() {
 
 # ============================== MAIN ============================== #
 
-if [ $# -ne 1 ]; then
-  echo "Uso: $0 <compose_filename.yaml>"
-  echo "Ejemplo: $0 docker-compose.yaml"
+if [ $# -ne 2 ]; then
+  echo "Uso: $0 <compose_filename.yaml> [workers_amount]"
+  echo "Ejemplo: $0 docker-compose.yaml 3"
   exit 1
 fi
 
 compose_filename_param=$1
-batch_size=$2
+workers_amount_param=${2:-1}
+
+if ! [[ "$workers_amount_param" =~ ^[0-9]+$ ]] || [ "$workers_amount_param" -le 0 ]; then
+  echo "Error: La cantidad de clientes debe ser un entero mayor o igual a cero."
+  exit 1
+fi
 
 echo "Nombre del archivo de salida: $compose_filename_param"
+echo "Cantidad de workers: $workers_amount_param"
 
-build-docker-compose-file $compose_filename_param
+build-docker-compose-file $compose_filename_param $workers_amount_param

@@ -47,7 +47,9 @@ CLEANED_MIT_ROUTING_KEY_PREFIX = "cleaned-menu-items-routing-key"
 CLEANED_STR_ROUTING_KEY_PREFIX = "cleaned-stores-routing-key"
 
 
-# @TODO add the others queues or exchanges here
+FILTERED_TRN_BY_YEAR_EXCHANGE_PREFIX = "filtered-transactions-by-year-exchange"
+FILTERED_TRN_BY_YEAR_ROUTING_KEY_PREFIX = "filtered-transactions-by-year-routing-key"
+
 
 FILTERED_TRN_BY_YEAR__TIME__FINAL_AMOUNT = (
     "filtered-transactions-by-year-&-time-&-final-amount"

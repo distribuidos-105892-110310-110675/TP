@@ -46,14 +46,6 @@ def __assert_message_format(message: str, expected_message_type: str) -> None:
         raise ValueError("Unexpected message format")
 
 
-def get_message_payload(message: str) -> str:
-    payload = message[MESSAGE_TYPE_LENGTH:]
-
-    payload = payload[len(MSG_START_DELIMITER) : -len(MSG_END_DELIMITER)]
-
-    return payload
-
-
 def __decode_field(key_value_pair: str) -> tuple[str, str]:
     key, value = key_value_pair.split(":", 1)
     key = key.strip('"')
@@ -83,6 +75,19 @@ def __decode_batch_message_with_type(
 
 
 # ============================= DECODE ============================== #
+
+
+def get_message_payload(message: str) -> str:
+    payload = message[MESSAGE_TYPE_LENGTH:]
+
+    payload = payload[len(MSG_START_DELIMITER) : -len(MSG_END_DELIMITER)]
+
+    return payload
+
+
+def decode_is_empty_message(message: str) -> bool:
+    payload = get_message_payload(message)
+    return len(payload) == 0
 
 
 def decode_message_type(message: str) -> str:

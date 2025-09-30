@@ -1,13 +1,15 @@
 import logging
 import signal
-from abc import ABC, abstractmethod
 from typing import Any, Callable, Optional
 
+from middleware.rabbitmq_message_middleware_exchange import (
+    RabbitMQMessageMiddlewareExchange,
+)
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from shared import communication_protocol
 
 
-class QueryOutputBuilder(ABC):
+class FilterTransactionsByYear:
 
     # ============================== INITIALIZE ============================== #
 
@@ -17,30 +19,57 @@ class QueryOutputBuilder(ABC):
             host=host, queue_name=queue_name
         )
 
-    def __init_mom_producer(self, host: str, producer_queue_prefix: str) -> None:
-        queue_name = producer_queue_prefix
-        self._mom_producer = RabbitMQMessageMiddlewareQueue(
-            host=host, queue_name=queue_name
-        )
+    def __init_mom_producers(
+        self,
+        host: str,
+        producer_exchange_prefix: str,
+        producer_routing_key_prefix: str,
+        producer_routing_keys_amount: int,
+    ) -> None:
+        self._current_producer_id = 0
+        self._mom_producers = []
+        exchange_name = producer_exchange_prefix
+        for i in range(producer_routing_keys_amount):
+            routing_key = [f"{producer_routing_key_prefix}-{i}"]
+            self._mom_producers.append(
+                RabbitMQMessageMiddlewareExchange(
+                    host=host,
+                    exchange_name=exchange_name,
+                    route_keys=routing_key,
+                )
+            )
 
     def __init__(
         self,
         controller_id: int,
         rabbitmq_host: str,
         consumer_queue_prefix: str,
-        producer_queue_prefix: str,
+        producer_exchange_prefix: str,
+        producer_routing_key_prefix: str,
+        producer_routing_keys_amount: int,
         previous_controllers_amount: int,
+        years_to_filter: list[int],
     ) -> None:
         self._controller_id = controller_id
 
         self.__set_controller_as_not_running()
         signal.signal(signal.SIGTERM, self.__sigterm_signal_handler)
 
-        self.__init_mom_consumer(rabbitmq_host, consumer_queue_prefix)
-        self.__init_mom_producer(rabbitmq_host, producer_queue_prefix)
+        self.__init_mom_consumer(
+            rabbitmq_host,
+            consumer_queue_prefix,
+        )
+        self.__init_mom_producers(
+            rabbitmq_host,
+            producer_exchange_prefix,
+            producer_routing_key_prefix,
+            producer_routing_keys_amount,
+        )
 
         self._eof_received_from_previous_controllers = 0
         self._previous_controllers_amount = previous_controllers_amount
+
+        self._years_to_filter = set(years_to_filter)
 
     # ============================== PRIVATE - ACCESSING ============================== #
 
@@ -52,16 +81,6 @@ class QueryOutputBuilder(ABC):
 
     def __set_controller_as_running(self) -> None:
         self._controller_running = True
-
-    # ============================== PRIVATE - INTERFACE ============================== #
-
-    @abstractmethod
-    def columns_to_keep(self) -> list[str]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def output_message_type(self) -> str:
-        raise NotImplementedError
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
@@ -77,11 +96,13 @@ class QueryOutputBuilder(ABC):
 
     # ============================== PRIVATE - TRANSFORM DATA ============================== #
 
-    def __transform_batch_item(self, batch_item: dict[str, str]) -> dict:
-        modified_item_batch = {}
-        for column in self.columns_to_keep():
-            modified_item_batch[column] = batch_item[column]
-        return modified_item_batch
+    def __transform_batch_item(self, batch_item: dict[str, str]) -> Optional[dict]:
+        created_at = batch_item["created_at"]
+        date = created_at.split(" ")[0]
+        year = int(date.split("-")[0])
+        if year not in self._years_to_filter:
+            return None
+        return batch_item
 
     def __transform_batch_message_using(
         self,
@@ -97,7 +118,8 @@ class QueryOutputBuilder(ABC):
         new_batch = []
         for item in decoder(message):
             modified_item = self.__transform_batch_item(item)
-            new_batch.append(modified_item)
+            if modified_item is not None:
+                new_batch.append(modified_item)
         return str(encoder(message_type, new_batch))
 
     def __transform_batch_message(self, message: str) -> str:
@@ -105,14 +127,22 @@ class QueryOutputBuilder(ABC):
             message,
             communication_protocol.decode_batch_message,
             communication_protocol.encode_batch_message,
-            self.output_message_type(),
         )
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
+    def __mom_send_message_to_next(self, message: str) -> None:
+        mom_producer = self._mom_producers[self._current_producer_id]
+        mom_producer.send(message)
+
+        self._current_producer_id += 1
+        if self._current_producer_id >= len(self._mom_producers):
+            self._current_producer_id = 0
+
     def __handle_data_batch_message(self, message: str) -> None:
         output_message = self.__transform_batch_message(message)
-        self._mom_producer.send(output_message)
+        if communication_protocol.decode_is_empty_message(output_message):
+            self.__mom_send_message_to_next(output_message)
 
     def __handle_data_batch_eof(self, message: str) -> None:
         self._eof_received_from_previous_controllers += 1
@@ -123,10 +153,8 @@ class QueryOutputBuilder(ABC):
             == self._previous_controllers_amount
         ):
             logging.info("action: all_eofs_received | result: success")
-            message = communication_protocol.encode_eof_message(
-                self.output_message_type()
-            )
-            self._mom_producer.send(message)
+            for mom_producer in self._mom_producers:
+                mom_producer.send(message)
             logging.info("action: eof_sent | result: success")
 
     def __handle_received_data(self, message_as_bytes: bytes) -> None:
@@ -149,9 +177,10 @@ class QueryOutputBuilder(ABC):
         self._mom_consumer.start_consuming(self.__handle_received_data)
 
     def __close_all_mom_connections(self) -> None:
-        self._mom_producer.delete()
-        self._mom_producer.close()
-        logging.debug("action: mom_producer_close | result: success")
+        for mom_producer in self._mom_producers:
+            mom_producer.delete()
+            mom_producer.close()
+            logging.debug("action: mom_producer_close | result: success")
 
         self._mom_consumer.delete()
         self._mom_consumer.close()

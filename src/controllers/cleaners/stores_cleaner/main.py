@@ -19,7 +19,7 @@ def main():
     cleaner = StoresCleaner(
         cleaner_id=int(config_params["CLEANER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
-        data_queue_prefix=constants.STR_CLEANER_QUEUE_PREFIX,
+        data_queue_prefix=constants.DIRTY_STR_QUEUE_PREFIX,
         cleaned_data_exchange_prefix=constants.CLEANED_STR_EXCHANGE_PREFIX,
         cleaned_data_routing_key_prefix=constants.CLEANED_STR_ROUTING_KEY_PREFIX,
         cleaned_data_routing_keys_amount=int(config_params["JOINS_AMOUNT"]),

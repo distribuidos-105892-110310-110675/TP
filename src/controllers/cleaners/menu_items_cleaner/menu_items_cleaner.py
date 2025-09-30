@@ -136,11 +136,11 @@ class MenuItemsCleaner:
         )
 
         # REMOVE THIS WHEN THERE IS A REAL CONSUMER
-        self._mock_consumers_using_threads(
-            rabbitmq_host,
-            cleaned_data_exchange_prefix,
-            cleaned_data_routing_key_prefix,
-        )
+        # self._mock_consumers_using_threads(
+        #     rabbitmq_host,
+        #     cleaned_data_exchange_prefix,
+        #     cleaned_data_routing_key_prefix,
+        # )
 
     # ============================== PRIVATE - ACCESSING ============================== #
 

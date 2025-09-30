@@ -21,7 +21,7 @@ def main():
     cleaner = TransactionsCleaner(
         cleaner_id=int(config_params["CLEANER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
-        data_queue_prefix=constants.TRN_CLEANER_QUEUE_PREFIX,
+        data_queue_prefix=constants.DIRTY_TRN_QUEUE_PREFIX,
         cleaned_data_queue_prefix=constants.CLEANED_TRN_QUEUE_PREFIX,
         cleaned_data_queues_amount=int(config_params["FILTERS_AMOUNT"]),
     )

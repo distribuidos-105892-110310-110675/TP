@@ -2,8 +2,8 @@ SHELL := /bin/bash
 PWD := $(shell pwd)
 
 docker-build-image:
-	docker build -f ./src/server/Dockerfile -t "server:latest" .
 	docker build -f ./src/client/Dockerfile -t "client:latest" .
+	docker build -f ./src/server/Dockerfile -t "server:latest" .
 	
 	docker build -f ./src/controllers/cleaners/menu_items_cleaner/Dockerfile -t "menu_items_cleaner:latest" .
 	docker build -f ./src/controllers/cleaners/stores_cleaner/Dockerfile -t "stores_cleaner:latest" .
@@ -23,6 +23,13 @@ docker-build-image:
 # 	docker build -f ./src/controllers/joins/join_transactions_with_stores/Dockerfile -t "join_transactions_with_stores:latest" .
 # 	docker build -f ./src/controllers/joins/join_transactions_with_users/Dockerfile -t "join_transactions_with_users:latest" .
 # 	docker build -f ./src/controllers/joins/join_users_with_stores/Dockerfile -t "join_users_with_stores:latest" .
+
+	docker build -f ./src/controllers/output_builders/query_1x_output_builder/Dockerfile -t "query_1x_output_builder:latest" .
+	docker build -f ./src/controllers/output_builders/query_21_output_builder/Dockerfile -t "query_21_output_builder:latest" .
+	docker build -f ./src/controllers/output_builders/query_22_output_builder/Dockerfile -t "query_22_output_builder:latest" .
+	docker build -f ./src/controllers/output_builders/query_3x_output_builder/Dockerfile -t "query_3x_output_builder:latest" .
+	docker build -f ./src/controllers/output_builders/query_4x_output_builder/Dockerfile -t "query_4x_output_builder:latest" .
+
 .PHONY: docker-build-image
 
 docker-compose-up: docker-build-image

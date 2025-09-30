@@ -31,11 +31,11 @@ class Server:
 
     def __init_output_builders_data_stats(self) -> None:
         self._output_builders_eof_received = {
-            constants.QUERY_RESULT_1: 0,
-            constants.QUERY_RESULT_2_1: 0,
-            constants.QUERY_RESULT_2_2: 0,
-            constants.QUERY_RESULT_3: 0,
-            constants.QUERY_RESULT_4: 0,
+            constants.QUERY_RESULT_1X: 0,
+            constants.QUERY_RESULT_21: 0,
+            constants.QUERY_RESULT_22: 0,
+            constants.QUERY_RESULT_3X: 0,
+            constants.QUERY_RESULT_4X: 0,
         }
 
     def __init_mom_cleaners_connections(self, host: str) -> None:
@@ -46,7 +46,7 @@ class Server:
         for data_type, cleaner_data in self._cleaners_data.items():
             workers_amount = cleaner_data[constants.WORKERS_AMOUNT]
             for id in range(workers_amount):
-                queue_name = cleaner_data[constants.QUEUE_PREFIX_NAME] + f"-{id}"
+                queue_name = cleaner_data[constants.QUEUE_PREFIX] + f"-{id}"
                 queue_producer = RabbitMQMessageMiddlewareQueue(host, queue_name)
 
                 if self._mom_cleaners_connections.get(data_type) is None:
@@ -55,7 +55,7 @@ class Server:
 
     def __init_mom_output_builders_connection(self, host: str) -> None:
         (_, output_builder_data) = next(iter(self._output_builders_data.items()))
-        queue_name = output_builder_data[constants.QUEUE_PREFIX_NAME]
+        queue_name = output_builder_data[constants.QUEUE_PREFIX]
         queue_consumer = RabbitMQMessageMiddlewareQueue(host, queue_name)
         self._mom_output_builders_connection = queue_consumer
 
@@ -289,11 +289,11 @@ class Server:
             message_type = communication_protocol.decode_message_type(message)
             match message_type:
                 case (
-                    communication_protocol.QUERY_RESULT_1_MSG_TYPE
-                    | communication_protocol.QUERY_RESULT_2_1_MSG_TYPE
-                    | communication_protocol.QUERY_RESULT_2_2_MSG_TYPE
-                    | communication_protocol.QUERY_RESULT_3_MSG_TYPE
-                    | communication_protocol.QUERY_RESULT_4_MSG_TYPE
+                    communication_protocol.QUERY_RESULT_1X_MSG_TYPE
+                    | communication_protocol.QUERY_RESULT_21_MSG_TYPE
+                    | communication_protocol.QUERY_RESULT_22_MSG_TYPE
+                    | communication_protocol.QUERY_RESULT_3X_MSG_TYPE
+                    | communication_protocol.QUERY_RESULT_4X_MSG_TYPE
                 ):
                     self.__handle_query_result_batch_message(client_socket, message)
                 case communication_protocol.EOF:

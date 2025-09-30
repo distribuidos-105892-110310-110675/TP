@@ -254,7 +254,7 @@ class Client:
         payload = communication_protocol.get_message_payload(message)
         file_name = f"client_{self._client_id}_{message_type}_result.txt"
 
-        shell_cmd.shell_silent(f'echo "{payload}" >> {self._output_path / file_name}')
+        shell_cmd.shell_silent(f"echo '{payload}' >> {self._output_path / file_name}")
         logging.debug(
             f"action: {message_type}_save_query_result | result: success | file: {file_name}",
         )
@@ -263,11 +263,11 @@ class Client:
         message_type = communication_protocol.decode_message_type(message)
         match message_type:
             case (
-                communication_protocol.QUERY_RESULT_1_MSG_TYPE
-                | communication_protocol.QUERY_RESULT_2_1_MSG_TYPE
-                | communication_protocol.QUERY_RESULT_2_2_MSG_TYPE
-                | communication_protocol.QUERY_RESULT_3_MSG_TYPE
-                | communication_protocol.QUERY_RESULT_4_MSG_TYPE
+                communication_protocol.QUERY_RESULT_1X_MSG_TYPE
+                | communication_protocol.QUERY_RESULT_21_MSG_TYPE
+                | communication_protocol.QUERY_RESULT_22_MSG_TYPE
+                | communication_protocol.QUERY_RESULT_3X_MSG_TYPE
+                | communication_protocol.QUERY_RESULT_4X_MSG_TYPE
             ):
                 self.__handle_query_result_message(message, message_type)
             case communication_protocol.EOF:
@@ -295,11 +295,11 @@ class Client:
 
     def __receive_all_query_results_from_server(self) -> None:
         all_eof_received = {
-            constants.QUERY_RESULT_1: False,
-            constants.QUERY_RESULT_2_1: False,
-            constants.QUERY_RESULT_2_2: False,
-            constants.QUERY_RESULT_3: False,
-            constants.QUERY_RESULT_4: False,
+            constants.QUERY_RESULT_1X: False,
+            constants.QUERY_RESULT_21: False,
+            constants.QUERY_RESULT_22: False,
+            constants.QUERY_RESULT_3X: False,
+            constants.QUERY_RESULT_4X: False,
         }
 
         while not all(all_eof_received.values()):

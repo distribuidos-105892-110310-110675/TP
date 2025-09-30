@@ -50,18 +50,25 @@ CLEANED_STR_ROUTING_KEY_PREFIX = "cleaned-stores-routing-key"
 FILTERED_TRN_BY_YEAR_EXCHANGE_PREFIX = "filtered-transactions-by-year-exchange"
 FILTERED_TRN_BY_YEAR_ROUTING_KEY_PREFIX = "filtered-transactions-by-year-routing-key"
 
-
-FILTERED_TRN_BY_YEAR__TIME__FINAL_AMOUNT = (
+FILTERED_TRN_BY_YEAR__HOUR_EXCHANGE_PREFIX = (
+    "filtered-transactions-by-year-&-hour-exchange"
+)
+FILTERED_TRN_BY_YEAR__HOUR_ROUTING_KEY_PREFIX = (
+    "filtered-transactions-by-year-&-hour-routing-key"
+)
+FILTERED_TRN_BY_YEAR__HOUR__FINAL_AMOUNT_QUEUE_PREFIX = (
     "filtered-transactions-by-year-&-time-&-final-amount"
 )
-SORTED_DESC_SELLING_QTY_BY_YEAR_MONTH__ITEM_NAME = (
+SORTED_DESC_SELLING_QTY_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX = (
     "sorted-desc-selling-qty-by-year-month-&-item-name"
 )
-SORTED_DESC_PROFIT_SUM_BY_YEAR_MONTH__ITEM_NAME = (
+SORTED_DESC_PROFIT_SUM_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX = (
     "sorted-desc-profit-sum-by-year-month-&-item-name"
 )
-TPV_BY_HALF_YEAR_CREATED_AT__STORE_NAME = "tpv-by-half-year-created-at-&-store-name"
-SORTED_DESC_USR_PURCHASES_BY_USR_BIRTHDATE__STORE_NAME = (
+TPV_BY_HALF_YEAR_CREATED_AT__STORE_NAME_QUEUE_PREFIX = (
+    "tpv-by-half-year-created-at-&-store-name"
+)
+SORTED_DESC_USR_PURCHASES_BY_USR_BIRTHDATE__STORE_NAME_QUEUE_PREFIX = (
     "sorted-desc-user-purchases-by-user-birthdate-&-store-name"
 )
 

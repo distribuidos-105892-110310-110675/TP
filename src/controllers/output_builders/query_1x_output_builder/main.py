@@ -21,7 +21,7 @@ def main():
     cleaner = Query1XOutputBuilder(
         controller_id=int(config_params["OUTPUT_BUILDER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
-        consumer_queue_prefix=constants.FILTERED_TRN_BY_YEAR__TIME__FINAL_AMOUNT,
+        consumer_queue_prefix=constants.FILTERED_TRN_BY_YEAR__HOUR__FINAL_AMOUNT_QUEUE_PREFIX,
         producer_queue_prefix=constants.QRS_QUEUE_PREFIX,
         previous_controllers_amount=int(config_params["PREV_CONTROLLERS_AMOUNT"]),
     )

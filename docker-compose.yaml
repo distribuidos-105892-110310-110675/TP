@@ -34,7 +34,7 @@ services:
       - SERVER_PORT=5000
       - DATA_PATH=/data
       - RESULTS_PATH=/results
-      - BATCH_MAX_SIZE=1
+      - BATCH_MAX_SIZE=20
     networks:
       - custom_net
     volumes:
@@ -61,7 +61,7 @@ services:
     entrypoint: python3 -m server.main
     environment:
       - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
+      - LOGGING_LEVEL=INFO
       - SERVER_PORT=5000
       - SERVER_LISTEN_BACKLOG=5
       - RABBITMQ_HOST=rabbitmq-message-middleware
@@ -126,7 +126,7 @@ services:
     entrypoint: python3 -m controllers.cleaners.transaction_items_cleaner.main
     environment:
       - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
+      - LOGGING_LEVEL=INFO
       - CLEANER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - FILTERS_AMOUNT=1
@@ -142,7 +142,7 @@ services:
     entrypoint: python3 -m controllers.cleaners.transactions_cleaner.main
     environment:
       - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
+      - LOGGING_LEVEL=INFO
       - CLEANER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - FILTERS_AMOUNT=1
@@ -158,7 +158,7 @@ services:
     entrypoint: python3 -m controllers.cleaners.users_cleaner.main
     environment:
       - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
+      - LOGGING_LEVEL=INFO
       - CLEANER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - JOINS_AMOUNT=1
@@ -176,7 +176,7 @@ services:
     entrypoint: python3 -m controllers.filters.filter_transactions_by_year.main
     environment:
       - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
+      - LOGGING_LEVEL=INFO
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=1
@@ -194,7 +194,7 @@ services:
     entrypoint: python3 -m controllers.filters.filter_transactions_by_hour.main
     environment:
       - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
+      - LOGGING_LEVEL=INFO
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=1
@@ -213,7 +213,7 @@ services:
     entrypoint: python3 -m controllers.filters.filter_transactions_by_final_amount.main
     environment:
       - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
+      - LOGGING_LEVEL=INFO
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=1
@@ -225,24 +225,24 @@ services:
       rabbitmq-message-middleware:
         condition: service_healthy
 
-  filter_items_by_year_0:
-    container_name: filter_items_by_year_0
-    image: filter_items_by_year:latest
-    entrypoint: python3 -m controllers.filters.filter_items_by_year.main
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
-      - CONTROLLER_ID=0
-      - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=1
-      - FILTERS_AMOUNT=1
-      - MAPS_AMOUNT=1
-      - YEARS=2024,2025
-    networks:
-      - custom_net
-    depends_on:
-      rabbitmq-message-middleware:
-        condition: service_healthy
+  # filter_items_by_year_0:
+  #   container_name: filter_items_by_year_0
+  #   image: filter_items_by_year:latest
+  #   entrypoint: python3 -m controllers.filters.filter_items_by_year.main
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #     - LOGGING_LEVEL=INFO
+  #     - CONTROLLER_ID=0
+  #     - RABBITMQ_HOST=rabbitmq-message-middleware
+  #     - PREV_CONTROLLERS_AMOUNT=1
+  #     - FILTERS_AMOUNT=1
+  #     - MAPS_AMOUNT=1
+  #     - YEARS=2024,2025
+  #   networks:
+  #     - custom_net
+  #   depends_on:
+  #     rabbitmq-message-middleware:
+  #       condition: service_healthy
 
   # ============================== OUTPUT BUILDER SERVICES ============================== #
 
@@ -252,7 +252,7 @@ services:
     entrypoint: python3 -m controllers.output_builders.query_1x_output_builder.main
     environment:
       - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
+      - LOGGING_LEVEL=INFO
       - OUTPUT_BUILDER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=1
@@ -268,7 +268,7 @@ services:
     entrypoint: python3 -m controllers.output_builders.query_21_output_builder.main
     environment:
       - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
+      - LOGGING_LEVEL=INFO
       - OUTPUT_BUILDER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=1
@@ -284,7 +284,7 @@ services:
     entrypoint: python3 -m controllers.output_builders.query_22_output_builder.main
     environment:
       - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
+      - LOGGING_LEVEL=INFO
       - OUTPUT_BUILDER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=1
@@ -300,7 +300,7 @@ services:
     entrypoint: python3 -m controllers.output_builders.query_3x_output_builder.main
     environment:
       - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
+      - LOGGING_LEVEL=INFO
       - OUTPUT_BUILDER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=1
@@ -316,7 +316,7 @@ services:
     entrypoint: python3 -m controllers.output_builders.query_4x_output_builder.main
     environment:
       - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
+      - LOGGING_LEVEL=INFO
       - OUTPUT_BUILDER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=1

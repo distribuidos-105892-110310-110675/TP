@@ -28,7 +28,7 @@ class Client:
 
         self._data_path = Path(data_path)
 
-        self._output_path = Path(results_path) / constants.RESULTS_FOLDER_NAME
+        self._output_path = Path(results_path) / constants.QRS_FOLDER_NAME
         self._output_path.mkdir(parents=True, exist_ok=True)
         shell_cmd.shell_silent(f"rm -f {self._output_path}/*")
 
@@ -194,35 +194,35 @@ class Client:
 
     def __send_all_menu_items(self) -> None:
         self.__send_data_from_all_files_using_batchs(
-            constants.MENU_ITEMS_FOLDER_NAME,
+            constants.MIT_FOLDER_NAME,
             communication_protocol.MENU_ITEMS_BATCH_MSG_TYPE,
             communication_protocol.encode_menu_items_batch_message,
         )
 
     def __send_all_stores(self) -> None:
         self.__send_data_from_all_files_using_batchs(
-            constants.STORES_FOLDER_NAME,
+            constants.STR_FOLDER_NAME,
             communication_protocol.STORES_BATCH_MSG_TYPE,
             communication_protocol.encode_stores_batch_message,
         )
 
     def __send_all_transaction_items(self) -> None:
         self.__send_data_from_all_files_using_batchs(
-            constants.TRANSACTION_ITEMS_FOLDER_NAME,
+            constants.TIT_FOLDER_NAME,
             communication_protocol.TRANSACTION_ITEMS_BATCH_MSG_TYPE,
             communication_protocol.encode_transaction_items_batch_message,
         )
 
     def __send_all_transactions(self) -> None:
         self.__send_data_from_all_files_using_batchs(
-            constants.TRANSACTIONS_FOLDER_NAME,
+            constants.TRN_FOLDER_NAME,
             communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE,
             communication_protocol.encode_transactions_batch_message,
         )
 
     def __send_all_users(self) -> None:
         self.__send_data_from_all_files_using_batchs(
-            constants.USERS_FOLDER_NAME,
+            constants.USR_FOLDER_NAME,
             communication_protocol.USERS_BATCH_MSG_TYPE,
             communication_protocol.encode_users_batch_message,
         )
@@ -254,7 +254,7 @@ class Client:
         payload = communication_protocol.get_message_payload(message)
         file_name = f"client_{self._client_id}_{message_type}_result.txt"
 
-        shell_cmd.shell_silent(f'echo "{payload}" >> {self._output_path / file_name}')
+        shell_cmd.shell_silent(f"echo '{payload}' >> {self._output_path / file_name}")
         logging.debug(
             f"action: {message_type}_save_query_result | result: success | file: {file_name}",
         )
@@ -263,11 +263,11 @@ class Client:
         message_type = communication_protocol.decode_message_type(message)
         match message_type:
             case (
-                communication_protocol.QUERY_RESULT_1_MSG_TYPE
-                | communication_protocol.QUERY_RESULT_2_1_MSG_TYPE
-                | communication_protocol.QUERY_RESULT_2_2_MSG_TYPE
-                | communication_protocol.QUERY_RESULT_3_MSG_TYPE
-                | communication_protocol.QUERY_RESULT_4_MSG_TYPE
+                communication_protocol.QUERY_RESULT_1X_MSG_TYPE
+                | communication_protocol.QUERY_RESULT_21_MSG_TYPE
+                | communication_protocol.QUERY_RESULT_22_MSG_TYPE
+                | communication_protocol.QUERY_RESULT_3X_MSG_TYPE
+                | communication_protocol.QUERY_RESULT_4X_MSG_TYPE
             ):
                 self.__handle_query_result_message(message, message_type)
             case communication_protocol.EOF:
@@ -295,11 +295,11 @@ class Client:
 
     def __receive_all_query_results_from_server(self) -> None:
         all_eof_received = {
-            constants.QUERY_RESULT_1: False,
-            constants.QUERY_RESULT_2_1: False,
-            constants.QUERY_RESULT_2_2: False,
-            constants.QUERY_RESULT_3: False,
-            constants.QUERY_RESULT_4: False,
+            constants.QUERY_RESULT_1X: False,
+            constants.QUERY_RESULT_21: False,
+            constants.QUERY_RESULT_22: False,
+            constants.QUERY_RESULT_3X: False,
+            constants.QUERY_RESULT_4X: False,
         }
 
         while not all(all_eof_received.values()):

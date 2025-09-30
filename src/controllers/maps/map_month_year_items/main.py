@@ -1,10 +1,11 @@
-from map import MapMonthSemester
+from map import MapMonthYearItems
 from shared import initializer
+
 
 def main():
     config_params = initializer.init_config(["LOGGING_LEVEL"])
     initializer.init_log(config_params["LOGGING_LEVEL"])
-    mapper = MapMonthSemester()
+    mapper = MapMonthYearItems()
     mapper.start()
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 import signal
 import logging
-from time import sleep
+from shared import communication_protocol
 
 USER_COUNT = [
     {'user_id': 1, 'purchase_amount': 20, 'store_id': 1, 'birthday': '2000-01-01'},
@@ -31,16 +31,36 @@ class SortByBirthday():
         signal.signal(signal.SIGTERM, self.__handle_sigterm_signal)
         self.running = True
         self.counter = {}
+        self.received_all_users = False
 
     def __handle_sigterm_signal(self, signal, frame):
         logging.info("Received SIGTERM, shutting down SortByCount.")
         self.running = False
 
     def start(self):
-        logging.info("Starting SortByCount.")
-        self.__sort(USER_COUNT)
-        while self.running:
-            sleep(1)
+        chunk_size = len(USER_COUNT) // 2
+        i = 0
+        while i < len(USER_COUNT):
+            new_chunk = USER_COUNT[i:i + chunk_size]
+            self.__receive_data(communication_protocol.encode_users_batch_message(new_chunk))
+            i += chunk_size
+        self.__receive_data(communication_protocol.encode_eof_message(communication_protocol.USERS_BATCH_MSG_TYPE))
+        self.running = False
+
+    def __receive_data(self, chunk):
+        msg_type = communication_protocol.decode_message_type(chunk)
+        if msg_type == communication_protocol.USERS_BATCH_MSG_TYPE:
+            users = communication_protocol.decode_users_batch_message(chunk)
+            self.__sort(users)
+        elif msg_type == communication_protocol.EOF:
+            body = communication_protocol.decode_eof_message(chunk)
+            if body == communication_protocol.USERS_BATCH_MSG_TYPE:
+                self.received_all_users = True
+                self.__produce_output(self.counter)
+            else:
+                logging.error("Received unknown message type")
+        else:
+            logging.error("Received unknown message type")
 
     def __sort(self, chunk):
         for item in chunk:
@@ -60,9 +80,6 @@ class SortByBirthday():
                 key=lambda x: x["purchase_amount"],
                 reverse=True
             )[:3]
-
-        self.__produce_output(self.counter)
-        self.running = False
 
     def __produce_output(self, items):
         for item in items.keys():

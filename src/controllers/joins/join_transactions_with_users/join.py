@@ -1,6 +1,6 @@
 import signal
 import logging
-from time import sleep
+from shared import communication_protocol
 
 TRANSACTIONS = [
     {"transaction_id": "t-001", "store_id": 5, 'user_id': '17585', 'final_amount': 24.1, "created_at": "2023-01-06 10:06:50"},
@@ -33,23 +33,60 @@ class JoinTransactionsWithUsers():
     def __init__(self):
         self.running = True
         signal.signal(signal.SIGTERM, self.__handle_sigterm_signal)
+        self.transactions = []
+        self.users = []
+        self.received_all_transactions = False
+        self.received_all_users = False
 
     def __handle_sigterm_signal(self, signal, frame):
         logging.info("Received SIGTERM, shutting down JoinTransactionsWithUsers")
         self.running = False
 
     def start(self):
-        logging.info("Starting JoinTransactionsWithUsers.")
-        self.__join(TRANSACTIONS, USERS)
-        while self.running:
-            sleep(1)
+        chunk_size = len(TRANSACTIONS) // 2
+        i = 0
+        while i < len(TRANSACTIONS):
+            new_chunk = TRANSACTIONS[i:i + chunk_size]
+            self.__receive_data(communication_protocol.encode_transactions_batch_message(new_chunk))
+            i += chunk_size
+        self.__receive_data(
+            communication_protocol.encode_eof_message(communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE))
+        chunk_size = len(USERS) // 2
+        i = 0
+        while i < len(USERS):
+            new_chunk = USERS[i:i + chunk_size]
+            self.__receive_data(communication_protocol.encode_users_batch_message(new_chunk))
+            i += chunk_size
+        self.__receive_data(communication_protocol.encode_eof_message(communication_protocol.USERS_BATCH_MSG_TYPE))
+        self.__join()
 
-    def __join(self, transactions, users):
+    def __receive_data(self, chunk):
+        msg_type = communication_protocol.decode_message_type(chunk)
+        if msg_type == communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE:
+            transactions = communication_protocol.decode_transactions_batch_message(chunk)
+            for t in transactions:
+                self.transactions.append(t)
+        elif msg_type == communication_protocol.USERS_BATCH_MSG_TYPE:
+            users = communication_protocol.decode_users_batch_message(chunk)
+            for u in users:
+                self.users.append(u)
+        elif msg_type == communication_protocol.EOF:
+            body = communication_protocol.decode_eof_message(chunk)
+            if body == communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE:
+                self.received_all_transactions = True
+            elif body == communication_protocol.USERS_BATCH_MSG_TYPE:
+                self.received_all_users = True
+            else:
+                logging.error("Received unknown message type")
+        else:
+            logging.error("Received unknown message type")
+
+    def __join(self):
         joined_items = []
-        for transaction in transactions:
-            for user in users:
-                if transaction.get('user_id') == user.get('user_id'):
-                    joined_items.append({**transaction, **user})
+        for t in self.transactions:
+            for u in self.users:
+                if t.get('user_id') == u.get('user_id'):
+                    joined_items.append({**t, **u})
         self.running = False
         self.__produce_output(joined_items)
 

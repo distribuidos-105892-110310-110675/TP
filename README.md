@@ -116,3 +116,21 @@ Esta interfaz nos permite:
 - Ver las colas activas.
 - Inspeccionar mensajes.
 - Observar cómo los controladores intercambian información.
+
+## 📁 Archivos de entrada y salida
+
+El sistema funciona con archivos de entrada y salida, se pasa a detallar el funcionamiento y ubicación de cada uno.
+
+### Archivos de entrada
+
+Residen en el directorio ".data", estos son los que envía el cliente junto con las queries, y le brindan al sistema los datos para realizar el procesamiento pedido.
+
+En este repositorio se encuentran unos pequeños ejemplos de los mismos, se utilizaron como testeo inicial del sistema para validar funcionamiento, pero para trabajar sobre la resolución del trabajo práctico solicitado deben cargarse los brindados por la cátedra.
+
+Estos mismos pueden ser encontrados en el siguiente: [🔗 Link al dataset completo](https://www.kaggle.com/datasets/geraldooizx/g-coffee-shop-transaction-202307-to-202506/data)
+
+### Archivos de salida
+
+Las respuestas a las queries se generarán en archivos separados por cada una, que se crearán dentro del directorio '.results'.
+
+Al finalizar la ejecución completa del procesamiento para todas las queries, dentro de ese directorio encontraremos el reporte final con los resultados para cada consulta realizada por el cliente.

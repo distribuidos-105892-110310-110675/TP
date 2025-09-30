@@ -5,22 +5,20 @@ from io import TextIOWrapper
 from pathlib import Path
 from typing import Any, Callable
 
-from shared import communication_protocol, constants
-
-MENU_ITEMS_FOLDER_NAME = "menu_items"
-STORES_FOLDER_NAME = "stores"
-TRANSACTION_ITEMS_FOLDER_NAME = "transaction_items"
-TRANSACTIONS_FOLDER_NAME = "transactions"
-USERS_FOLDER_NAME = "users"
+from shared import communication_protocol, constants, shell_cmd
 
 
 class Client:
+
+    # ============================== INITIALIZE ============================== #
+
     def __init__(
         self,
         client_id: int,
         server_host: str,
         server_port: int,
         data_path: str,
+        results_path: str,
         batch_max_size: int,
     ):
         self._client_id = client_id
@@ -29,7 +27,14 @@ class Client:
         self._server_port = server_port
 
         self._data_path = Path(data_path)
+
+        self._output_path = Path(results_path) / constants.QRS_FOLDER_NAME
+        self._output_path.mkdir(parents=True, exist_ok=True)
+        shell_cmd.shell_silent(f"rm -f {self._output_path}/*")
+
         self._batch_max_size = batch_max_size
+
+        self._client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self.__set_client_as_not_running()
         signal.signal(signal.SIGTERM, self.__sigterm_signal_handler)
@@ -51,6 +56,9 @@ class Client:
         logging.info("action: sigterm_signal_handler | result: in_progress")
 
         self.__set_client_as_not_running()
+
+        self._client_socket.close()
+        logging.debug("action: sigterm_client_socket_close | result: success")
 
         logging.info("action: sigterm_signal_handler | result: success")
 
@@ -142,9 +150,8 @@ class Client:
 
     # ============================== PRIVATE - SEND DATA ============================== #
 
-    def __send_all_data_using_batchs(
+    def __send_data_from_file_using_batchs(
         self,
-        socket: socket.socket,
         folder_name: str,
         file: TextIOWrapper,
         encoding_callback: Callable,
@@ -156,14 +163,13 @@ class Client:
         while len(batch) != 0 and self.__is_running():
             logging.debug(f"action: {folder_name}_batch | result: in_progress")
             message = encoding_callback(batch)
-            self.__socket_send_message(socket, message)
+            self.__socket_send_message(self._client_socket, message)
             logging.debug(f"action: {folder_name}_batch | result: success")
 
             batch = self.__read_next_batch_from_file(file, column_names)
 
-    def __send_data(
+    def __send_data_from_all_files_using_batchs(
         self,
-        socket: socket.socket,
         folder_name: str,
         message_type: str,
         encoding_callback: Callable,
@@ -172,8 +178,7 @@ class Client:
             self.__assert_is_file(file_path)
             csv_file = open(file_path, "rt", newline="")
             try:
-                self.__send_all_data_using_batchs(
-                    socket,
+                self.__send_data_from_file_using_batchs(
                     folder_name,
                     csv_file,
                     encoding_callback,
@@ -185,56 +190,140 @@ class Client:
                 )
 
         eof_message = communication_protocol.encode_eof_message(message_type)
-        self.__socket_send_message(socket, eof_message)
+        self.__socket_send_message(self._client_socket, eof_message)
 
-    def __send_menu_items(self, server_socket: socket.socket) -> None:
-        self.__send_data(
-            server_socket,
-            MENU_ITEMS_FOLDER_NAME,
+    def __send_all_menu_items(self) -> None:
+        self.__send_data_from_all_files_using_batchs(
+            constants.MIT_FOLDER_NAME,
             communication_protocol.MENU_ITEMS_BATCH_MSG_TYPE,
             communication_protocol.encode_menu_items_batch_message,
         )
 
-    def __send_stores(self, server_socket: socket.socket) -> None:
-        self.__send_data(
-            server_socket,
-            STORES_FOLDER_NAME,
+    def __send_all_stores(self) -> None:
+        self.__send_data_from_all_files_using_batchs(
+            constants.STR_FOLDER_NAME,
             communication_protocol.STORES_BATCH_MSG_TYPE,
             communication_protocol.encode_stores_batch_message,
         )
 
-    def __send_transaction_items(self, server_socket: socket.socket) -> None:
-        self.__send_data(
-            server_socket,
-            TRANSACTION_ITEMS_FOLDER_NAME,
+    def __send_all_transaction_items(self) -> None:
+        self.__send_data_from_all_files_using_batchs(
+            constants.TIT_FOLDER_NAME,
             communication_protocol.TRANSACTION_ITEMS_BATCH_MSG_TYPE,
             communication_protocol.encode_transaction_items_batch_message,
         )
 
-    def __send_transactions(self, server_socket: socket.socket) -> None:
-        self.__send_data(
-            server_socket,
-            TRANSACTIONS_FOLDER_NAME,
+    def __send_all_transactions(self) -> None:
+        self.__send_data_from_all_files_using_batchs(
+            constants.TRN_FOLDER_NAME,
             communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE,
             communication_protocol.encode_transactions_batch_message,
         )
 
-    def __send_users(self, server_socket: socket.socket) -> None:
-        self.__send_data(
-            server_socket,
-            USERS_FOLDER_NAME,
+    def __send_all_users(self) -> None:
+        self.__send_data_from_all_files_using_batchs(
+            constants.USR_FOLDER_NAME,
             communication_protocol.USERS_BATCH_MSG_TYPE,
             communication_protocol.encode_users_batch_message,
         )
 
-    def __send_all_data(self, server_socket: socket.socket) -> None:
+    def __send_all_data(self) -> None:
         # WARNING: do not modify order
-        self.__send_menu_items(server_socket)
-        self.__send_stores(server_socket)
-        self.__send_transactions(server_socket)
-        self.__send_transaction_items(server_socket)
-        self.__send_users(server_socket)
+        self.__send_all_menu_items()
+        self.__send_all_stores()
+        self.__send_all_transactions()
+        self.__send_all_transaction_items()
+        self.__send_all_users()
         logging.info("action: all_data_sent | result: success")
+
+    # ============================== PRIVATE - SEND DATA ============================== #
+
+    def __handle_query_result_eof_message(
+        self, message: str, all_eof_received: dict
+    ) -> None:
+        data_type = communication_protocol.decode_eof_message(message)
+        if data_type not in all_eof_received:
+            raise ValueError(f"Unknown EOF message type {data_type}")
+
+        all_eof_received[data_type] = True
+        logging.info(f"action: eof_{data_type}_receive_query_result | result: success")
+
+    def __handle_query_result_message(self, message: str, message_type: str) -> None:
+        logging.info(f"action: {message_type}_receive_query_result | result: success")
+
+        payload = communication_protocol.get_message_payload(message)
+        file_name = f"client_{self._client_id}_{message_type}_result.txt"
+
+        shell_cmd.shell_silent(f"echo '{payload}' >> {self._output_path / file_name}")
+        logging.debug(
+            f"action: {message_type}_save_query_result | result: success | file: {file_name}",
+        )
+
+    def __handle_server_message(self, message: str, all_eof_received: dict) -> None:
+        message_type = communication_protocol.decode_message_type(message)
+        match message_type:
+            case (
+                communication_protocol.QUERY_RESULT_1X_MSG_TYPE
+                | communication_protocol.QUERY_RESULT_21_MSG_TYPE
+                | communication_protocol.QUERY_RESULT_22_MSG_TYPE
+                | communication_protocol.QUERY_RESULT_3X_MSG_TYPE
+                | communication_protocol.QUERY_RESULT_4X_MSG_TYPE
+            ):
+                self.__handle_query_result_message(message, message_type)
+            case communication_protocol.EOF:
+                self.__handle_query_result_eof_message(message, all_eof_received)
+            case _:
+                raise ValueError(
+                    f'Invalid message type received from server "{message_type}"'
+                )
+
+    def __with_each_message_do(
+        self,
+        received_message: str,
+        callback: Callable,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        messages = received_message.split(communication_protocol.MSG_END_DELIMITER)
+        for message in messages:
+            if not self.__is_running():
+                break
+            if message == "":
+                continue
+            message += communication_protocol.MSG_END_DELIMITER
+            callback(message, *args, **kwargs)
+
+    def __receive_all_query_results_from_server(self) -> None:
+        all_eof_received = {
+            constants.QUERY_RESULT_1X: False,
+            constants.QUERY_RESULT_21: False,
+            constants.QUERY_RESULT_22: False,
+            constants.QUERY_RESULT_3X: False,
+            constants.QUERY_RESULT_4X: False,
+        }
+
+        while not all(all_eof_received.values()):
+            if not self.__is_running():
+                return
+
+            received_message = self.__socket_receive_message(self._client_socket)
+            self.__with_each_message_do(
+                received_message,
+                self.__handle_server_message,
+                all_eof_received,
+            )
+
+        logging.info("action: all_query_results_received | result: success")
+
+    # ============================== PRIVATE - HANDLE SERVER CONNECTION ============================== #
+
+    def __handle_server_connection(self) -> None:
+        # @TODO:
+        # send a message to identify the client
+        # receive an ack message from the server
+
+        self.__send_all_data()
+        self.__receive_all_query_results_from_server()
 
     # ============================== PUBLIC ============================== #
 
@@ -245,16 +334,8 @@ class Client:
 
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            server_socket.connect((self._server_host, self._server_port))
-
-            # send a message to identify the client
-            # receive an ack message from the server
-
-            self.__send_all_data(server_socket)
-
-            # now we wait for a response from the server
-            # this will be sent as batchs too with the result of each query
-
+            self._client_socket.connect((self._server_host, self._server_port))
+            self.__handle_server_connection()
         except Exception as e:
             logging.error(f"action: client_run | result: fail | error: {e}")
             raise e

@@ -17,6 +17,10 @@ def init_log(logging_level: str) -> None:
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
+    # set pika logger to warning to avoid too much verbosity
+    pika_logger = logging.getLogger("pika")
+    pika_logger.setLevel(logging.WARNING)
+
 
 def init_config(env_vars: List[str]) -> Dict:
     """

@@ -45,3 +45,59 @@ El informe técnico detalla las decisiones de diseño y la implementación de ca
 ---
 
 ---
+
+## Levantar los containers de Docker de cada Controlador
+
+### Construir la imagen
+
+```bash
+
+docker build -t sd1-cleaner:dev .
+
+```
+
+### Correr por defecto ('menu_cleaner', 'q1_output_builder' y 'count_purchases')
+
+```bash
+
+docker run --name <nombre_del_controlador> --rm -e CLEANER_SLEEP_SECS=1 sd1-cleaner:dev
+
+```
+
+### Correr en primer plano (Para probar SIGINT)
+
+```bash
+
+docker run --name <nombre_del_controlador> --rm \
+  -e CLEANER_SLEEP_SECS=1 \
+  sd1-cleaner:dev \
+  <nombre_del_controlador>.py
+
+```
+
+### Correr en segundo plano (Para probar SIGTERM)
+
+```bash
+
+docker run -d --name <nombre-del-controlador> \
+  -e CLEANER_SLEEP_SECS=1 \
+  sd1-cleaner:dev \
+  <nombre-del-controlador>.py
+
+docker logs -f <nombre-del-controlador>
+
+docker stop <nombre-del-controlador>
+
+```
+
+### Bajar todos los containers si quedaron corriendo
+
+```bash
+
+docker stop $(docker ps -aq)
+
+docker rm $(docker ps -aq)
+
+docker ps -a # Verificar que se bajaron todos.
+
+```

@@ -1,8 +1,18 @@
-# TP - Coffee Shop Analysis
+<br>
+<p align="center">
+  <img src="https://huergo.edu.ar/images/convenios/fiuba.jpg" width="100%" style="background-color:white"/>
+<font size="+1">
+<br>
+<br>
+2c 2025
+</font>
+</p>
 
-## Materia: Sistemas Distribuidos 1 (Roca)
+# ☕ Coffee Shop Analysis
 
-## Grupo 9
+## 📚 Materia: Sistemas Distribuidos 1 (Roca)
+
+## 👥 Grupo 9
 
 ### Integrantes
 
@@ -14,90 +24,100 @@
 
 ### Corrector
 
-- Franco Papa.
+- [Franco Papa](https://github.com/F-Papa)
 
-## Descripción
+## 📖 Descripción
 
-En este repositorio se encuentra el material relacionado al TP del sistema distribuido "Coffee Shop Analysis" del segundo cuatrimestre del año 2025 en la materia "Sistemas Distribuidos 1 (Roca)".
+Este repositorio contiene el material del TP del sistema distribuido "Coffee Shop Analysis", correspondiente al segundo cuatrimestre del año 2025 en la materia Sistemas Distribuidos 1 (Roca).
 
-## Enunciado
+## 📂 Enunciado
 
-Para poder acceder los enunciados del trabajo práctico, haga click [aquí](./docs/).
+Para acceder al enunciado del TP, haga click 👉 [aquí](./docs/).
 
-## Informe de Diseño
+## 🛠️ Informe de Diseño
 
-El informe técnico detalla las decisiones de diseño y la implementación de cada ejercicio, incluyendo el protocolo de comunicación y los mecanismos de concurrencia utilizados. Además, se indica cómo debe ser ejecutado cada ejericio. Para acceder al informe, haga click [aquí](./docs/Informe-G9-Diseño.pdf).
+El informe técnico incluye:
+- Decisiones de diseño.
+- Implementación de cada ejercicio.
+- Protocolo de comunicación.
+- Mecanismos de concurrencia utilizados.
+- Instrucciones de ejecución.
 
----
+[📑 Acceso al informe](./docs/Informe-G9-Diseño.pdf).
 
----
+## 🚀 Ejecución del Sistema con Docker Compose
 
-<br>
-<p align="center">
-  <img src="https://huergo.edu.ar/images/convenios/fiuba.jpg" width="60%" style="background-color:white"/>
-<font size="+1">
-<br>
-<br>
-2c 2025
-</font>
-</p>
+En este TP se utiliza Docker Compose para levantar todos los componentes:
+- El cliente que realiza las queries.
+- El servidor que las recibe.
+- Todos los nodos del sistema distribuido.
+- El middleware.
 
----
-
----
-
-## Levantar los containers de Docker de cada Controlador
-
-### Construir la imagen
+### ▶️ Levantar todo el sistema
 
 ```bash
 
-docker build -t sd1-cleaner:dev .
+make docker-compose-up
 
 ```
 
-### Correr por defecto ('menu_cleaner', 'q1_output_builder' y 'count_purchases')
+✅ Con este comando se ponen en marcha todos los servicios del sistema distribuido (cliente, server, nodos y middleware).
+
+### ⏹️ Apagar todo el sistema
 
 ```bash
 
-docker run --name <nombre_del_controlador> --rm -e CLEANER_SLEEP_SECS=1 sd1-cleaner:dev
+make docker-compose-down
 
 ```
 
-### Correr en primer plano (Para probar SIGINT)
+❌ Detiene y elimina todos los contenedores que levantó el sistema.
+
+
+### 📜 Ver los logs del sistema
 
 ```bash
 
-docker run --name <nombre_del_controlador> --rm \
-  -e CLEANER_SLEEP_SECS=1 \
-  sd1-cleaner:dev \
-  <nombre_del_controlador>.py
+make docker-compose-logs
 
 ```
 
-### Correr en segundo plano (Para probar SIGTERM)
+👀 Muestra en consola todos los logs de cada componente.
+
+### 🔎 Filtrar logs de un contenedor específico
 
 ```bash
 
-docker run -d --name <nombre-del-controlador> \
-  -e CLEANER_SLEEP_SECS=1 \
-  sd1-cleaner:dev \
-  <nombre-del-controlador>.py
-
-docker logs -f <nombre-del-controlador>
-
-docker stop <nombre-del-controlador>
+make docker-compose-logs | grep '<nombre_del_contenedor>'
 
 ```
 
-### Bajar todos los containers si quedaron corriendo
+👉 Esto mostrará solo los logs de los filters, lo cual es práctico para debuggear sin ruido de otros componentes.
+
+#### Ejemplo:
 
 ```bash
 
-docker stop $(docker ps -aq)
-
-docker rm $(docker ps -aq)
-
-docker ps -a # Verificar que se bajaron todos.
+make docker-compose-logs | grep 'filter'
 
 ```
+
+## 📡 Monitorear RabbitMQ
+
+Dado que el sistema utiliza RabbitMQ para la comunicación, podés seguir en tiempo real el estado de las colas, los mensajes que viajan y cómo se encadenan los procesos.
+
+1. Primero, asegurate de haber levantado el sistema con make docker-compose-up.
+2. Luego, entrá a la siguiente URL en tu navegador: [🔗 Link al gestor web](http://localhost:15672/)
+
+### 📌 Credenciales por defecto:
+
+- Usuario: guest
+- Contraseña: guest
+
+### ¿Qué nos permite hacer la interfaz del gestor?
+
+Esta interfaz nos permite:
+
+- Ver las colas activas.
+- Inspeccionar mensajes.
+- Observar cómo los controladores intercambian información.

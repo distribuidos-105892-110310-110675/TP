@@ -50,6 +50,8 @@ CLEANED_STR_ROUTING_KEY_PREFIX = "cleaned-stores-routing-key"
 FILTERED_TRN_BY_YEAR_EXCHANGE_PREFIX = "filtered-transactions-by-year-exchange"
 FILTERED_TRN_BY_YEAR_ROUTING_KEY_PREFIX = "filtered-transactions-by-year-routing-key"
 
+FILTERED_TIT_QUEUE_PREFIX = "filtered-transaction-items-by-year-queue"
+
 FILTERED_TRN_BY_YEAR__HOUR_EXCHANGE_PREFIX = (
     "filtered-transactions-by-year-&-hour-exchange"
 )

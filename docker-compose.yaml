@@ -97,7 +97,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CLEANER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - JOINS_AMOUNT=2
+      - JOINS_AMOUNT=1
     networks:
       - custom_net
     depends_on:
@@ -113,7 +113,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CLEANER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - JOINS_AMOUNT=2
+      - JOINS_AMOUNT=1
     networks:
       - custom_net
     depends_on:
@@ -129,7 +129,7 @@ services:
       - LOGGING_LEVEL=DEBUG
       - CLEANER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - FILTERS_AMOUNT=2
+      - FILTERS_AMOUNT=1
     networks:
       - custom_net
     depends_on:
@@ -145,7 +145,7 @@ services:
       - LOGGING_LEVEL=DEBUG
       - CLEANER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - FILTERS_AMOUNT=2
+      - FILTERS_AMOUNT=1
     networks:
       - custom_net
     depends_on:
@@ -161,7 +161,7 @@ services:
       - LOGGING_LEVEL=DEBUG
       - CLEANER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - JOINS_AMOUNT=2
+      - JOINS_AMOUNT=1
     networks:
       - custom_net
     depends_on:

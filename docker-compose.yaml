@@ -135,7 +135,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CLEANER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - FILTERS_AMOUNT=1
+      - FILTERS_AMOUNT=3
     networks:
       - custom_net
     depends_on:
@@ -151,7 +151,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CLEANER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - FILTERS_AMOUNT=1
+      - FILTERS_AMOUNT=3
     networks:
       - custom_net
     depends_on:
@@ -167,7 +167,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CLEANER_ID=2
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - FILTERS_AMOUNT=1
+      - FILTERS_AMOUNT=3
     networks:
       - custom_net
     depends_on:
@@ -341,7 +341,42 @@ services:
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
-      - FILTERS_AMOUNT=1
+      - MAPS_AMOUNT=1
+      - YEARS=2024,2025
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  filter_items_by_year_1:
+    container_name: filter_items_by_year_1
+    image: filter_items_by_year:latest
+    entrypoint: python3 -m controllers.filters.filter_items_by_year.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=1
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=3
+      - MAPS_AMOUNT=1
+      - YEARS=2024,2025
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  filter_items_by_year_2:
+    container_name: filter_items_by_year_2
+    image: filter_items_by_year:latest
+    entrypoint: python3 -m controllers.filters.filter_items_by_year.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=2
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=3
       - MAPS_AMOUNT=1
       - YEARS=2024,2025
     networks:
@@ -361,7 +396,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=1
+      - PREV_CONTROLLERS_AMOUNT=3
       - REDUCERS_AMOUNT=1
     networks:
       - custom_net

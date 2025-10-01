@@ -13,7 +13,6 @@ def main():
             "CONTROLLER_ID",
             "RABBITMQ_HOST",
             "PREV_CONTROLLERS_AMOUNT",
-            "FILTERS_AMOUNT",
             "MAPS_AMOUNT",
             "YEARS",
         ]

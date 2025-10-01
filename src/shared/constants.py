@@ -52,6 +52,9 @@ FILTERED_TRN_BY_YEAR_ROUTING_KEY_PREFIX = "filtered-transactions-by-year-routing
 
 FILTERED_TIT_QUEUE_PREFIX = "filtered-transaction-items-by-year-queue"
 
+MAPPED_YEAR_MONTH_TIT_EXHCHANGE_PREFIX = "mapped-year-month-transaction-items-exchange"
+MAPPED_YEAR_MONTH_TIT_ROUTING_KEY_PREFIX = "mapped-year-month-transaction-items-routing-key"
+
 FILTERED_TRN_BY_YEAR__HOUR_EXCHANGE_PREFIX = (
     "filtered-transactions-by-year-&-hour-exchange"
 )

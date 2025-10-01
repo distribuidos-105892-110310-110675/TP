@@ -1,6 +1,8 @@
 import logging
 
-from controllers.maps.map_month_year_items.map_month_year_items import MapMonthYearItems
+from controllers.mappers.map_month_year_items.map_month_year_items import (
+    MapMonthYearItems,
+)
 from shared import constants, initializer
 
 

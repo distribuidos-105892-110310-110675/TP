@@ -255,7 +255,7 @@ services:
   map_month_year_items_0:
     container_name: map_month_year_items_0
     image: map_month_year_items:latest
-    entrypoint: python3 -m controllers.maps.map_month_year_items.main
+    entrypoint: python3 -m controllers.mappers.map_month_year_items.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO

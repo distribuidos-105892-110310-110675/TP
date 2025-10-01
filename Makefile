@@ -19,7 +19,7 @@ docker-build-image:
 
 	
 	docker build -f ./src/controllers/filters/filter_items_by_year/Dockerfile -t "filter_items_by_year:latest" .
-	docker build -f ./src/controllers/maps/map_month_year_items/Dockerfile -t "map_month_year_items:latest" .
+	docker build -f ./src/controllers/mappers/map_month_year_items/Dockerfile -t "map_month_year_items:latest" .
 
 	docker build -f ./src/controllers/reducers/count_transaction_items/Dockerfile -t "count_transaction_items:latest" .
 	docker build -f ./src/controllers/joiners/join_item_count_with_menu/Dockerfile -t "join_item_count_with_menu:latest" .
@@ -30,8 +30,8 @@ docker-build-image:
 	docker build -f ./src/controllers/sorters/sort_desc_by_year_month_created_at_and_profit_sum/Dockerfile -t "sort_desc_by_year_month_created_at_and_profit_sum:latest" .
 
 
-# 	docker build -f ./src/controllers/maps/map_month_semester/Dockerfile -t "map_month_semester:latest" .
-# 	docker build -f ./src/controllers/maps/map_month_year/Dockerfile -t "map_month_year:latest" .
+# 	docker build -f ./src/controllers/mappers/map_month_semester/Dockerfile -t "map_month_semester:latest" .
+# 	docker build -f ./src/controllers/mappers/map_month_year/Dockerfile -t "map_month_year:latest" .
 # 	docker build -f ./src/controllers/joiners/join_items_with_menu/Dockerfile -t "join_items_with_menu:latest" .
 # 	docker build -f ./src/controllers/joiners/join_users_with_stores/Dockerfile -t "join_users_with_stores:latest" .
 

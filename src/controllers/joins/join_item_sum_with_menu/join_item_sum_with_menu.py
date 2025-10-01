@@ -1,14 +1,23 @@
-import signal
 import logging
+import signal
 from typing import Any, Callable
-from shared import communication_protocol
+
+from middleware.rabbitmq_message_middleware_exchange import (
+    RabbitMQMessageMiddlewareExchange,
+)
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
-from middleware.rabbitmq_message_middleware_exchange import RabbitMQMessageMiddlewareExchange
+from shared import communication_protocol
+
 
 class JoinItemSumWithMenu:
-    
-    def __init_mom_consumers(self, host: str, consumer_queue_prefix: str, consumer_exchange_prefix: str, 
-                                   routing_keys: list[str]) -> None:
+
+    def __init_mom_consumers(
+        self,
+        host: str,
+        consumer_queue_prefix: str,
+        consumer_exchange_prefix: str,
+        routing_keys: list[str],
+    ) -> None:
         queue_name = f"{consumer_queue_prefix}-{self._controller_id}"
         self._mom_queue_consumer = RabbitMQMessageMiddlewareQueue(
             host=host, queue_name=queue_name
@@ -16,7 +25,6 @@ class JoinItemSumWithMenu:
         self._mom_exchange_consumer = RabbitMQMessageMiddlewareExchange(
             host=host, exchange_name=consumer_exchange_prefix, route_keys=routing_keys
         )
-
 
     def __init_mom_producers(
         self, host: str, producer_queue_prefix: str, producer_queue_amount: int
@@ -40,7 +48,7 @@ class JoinItemSumWithMenu:
         producer_queue_prefix: str,
         producer_queue_amount: int,
         consumer_exchange_prefix: str,
-        consumer_routing_key_prefix: str, 
+        consumer_routing_key_prefix: str,
     ) -> None:
         self._controller_id = controller_id
 
@@ -50,8 +58,8 @@ class JoinItemSumWithMenu:
         self.__init_mom_consumers(
             rabbitmq_host,
             consumer_queue_prefix,
-            consumer_exchange_prefix, 
-            [f"{consumer_routing_key_prefix}-{self._controller_id}"]
+            consumer_exchange_prefix,
+            [f"{consumer_routing_key_prefix}.*"],
         )
         self.__init_mom_producers(
             rabbitmq_host,
@@ -92,36 +100,40 @@ class JoinItemSumWithMenu:
 
     # ============================== PRIVATE - JOIN ============================== #
 
-    def __join_with_menu_items_using(self, message: str, decoder: Callable, encoder: Callable) -> str:
+    def __join_with_menu_items_using(
+        self, message: str, decoder: Callable, encoder: Callable
+    ) -> str:
         joined = []
         for item in decoder(message):
             for m_item in self._menu_items:
-                if item.get('item_id') == m_item.get('item_id'):
+                if item.get("item_id") == m_item.get("item_id"):
                     joined.append({**item, **m_item})
         return str(encoder(joined))
 
     def __join_with_menu_items(self, message: str) -> str:
-        return self.__join_with_menu_items_using(message, communication_protocol.decode_transaction_items_batch_message, communication_protocol.encode_transaction_items_batch_message)
+        return self.__join_with_menu_items_using(
+            message,
+            communication_protocol.decode_transaction_items_batch_message,
+            communication_protocol.encode_transaction_items_batch_message,
+        )
 
-    def __receive_menu_items_using(self, message: str, decoder: Callable):
+    def __receive_menu_items_using(self, message: str, decoder: Callable) -> None:
         for item in decoder(message):
             self._menu_items.append(item)
 
-    def __receive_menu_items(self, message: str):
-        self.__receive_menu_items_using(message, communication_protocol.decode_menu_items_batch_message)
+    def __receive_menu_items(self, message: str) -> None:
+        self.__receive_menu_items_using(
+            message, communication_protocol.decode_menu_items_batch_message
+        )
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
     def __mom_send_message_to_next(self, message: str) -> None:
-        mom_cleaned_data_producer = self._mom_producers[
-            self._current_producer_id
-        ]
+        mom_cleaned_data_producer = self._mom_producers[self._current_producer_id]
         mom_cleaned_data_producer.send(message)
 
         self._current_producer_id += 1
-        if self._current_producer_id >= len(
-            self._mom_producers
-        ):
+        if self._current_producer_id >= len(self._mom_producers):
             self._current_producer_id = 0
 
     def __handle_data_batch_message(self, message: str) -> None:
@@ -144,14 +156,17 @@ class JoinItemSumWithMenu:
     def __handle_menu_items_eof(self, message: str) -> None:
         self._eof_received_from_menu_item_cleaners += 1
         logging.debug(f"action: eof_received | result: success")
-        if (self._eof_received_from_menu_item_cleaners == self._previous_menu_items_senders):
+        if (
+            self._eof_received_from_menu_item_cleaners
+            == self._previous_menu_items_senders
+        ):
             logging.info(f"action: all_eofs_received | result: success")
             self._received_all_menu_items = True
 
     def __handle_menu_items(self, message: str) -> None:
         if not self._received_all_menu_items:
             self.__receive_menu_items(message)
-        
+
     def __handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self.__is_running():
             self._mom_queue_consumer.stop_consuming()

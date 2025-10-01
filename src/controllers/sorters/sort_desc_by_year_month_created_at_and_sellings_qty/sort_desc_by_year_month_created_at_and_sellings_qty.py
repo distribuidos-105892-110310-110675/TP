@@ -2,22 +2,22 @@ import logging
 import signal
 from typing import Any, Callable
 
-from middleware.rabbitmq_message_middleware_exchange import (
-    RabbitMQMessageMiddlewareExchange,
-)
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from shared import communication_protocol
 
 
-class CountTransactionItemsByYearAndId:
+class SortDescByYearMonthCreatedAtAndSellingsQty:
 
     # ============================== INITIALIZE ============================== #
 
     def __init_mom_consumer(
-        self, host: str, exchange_prefix: str, routing_keys: list[str]
+        self,
+        host: str,
+        queue_prefix: str,
     ) -> None:
-        self._mom_consumer = RabbitMQMessageMiddlewareExchange(
-            host=host, exchange_name=exchange_prefix, route_keys=routing_keys
+        queue_name = f"{queue_prefix}-{self._controller_id}"
+        self._mom_consumer = RabbitMQMessageMiddlewareQueue(
+            host=host, queue_name=queue_name
         )
 
     def __init_mom_producers(
@@ -41,12 +41,12 @@ class CountTransactionItemsByYearAndId:
         self,
         controller_id: int,
         rabbitmq_host: str,
-        consumer_exchange_prefix: str,
-        consumer_routing_key_prefix: str,
+        consumer_queue_prefix: str,
         producer_queue_prefix: str,
         previous_controllers_amount: int,
         next_controllers_amount: int,
         batch_max_size: int,
+        amount_per_group: int,
     ) -> None:
         self._controller_id = controller_id
 
@@ -55,8 +55,7 @@ class CountTransactionItemsByYearAndId:
 
         self.__init_mom_consumer(
             rabbitmq_host,
-            consumer_exchange_prefix,
-            [f"{consumer_routing_key_prefix}.*"],
+            consumer_queue_prefix,
         )
         self.__init_mom_producers(
             rabbitmq_host,
@@ -67,8 +66,13 @@ class CountTransactionItemsByYearAndId:
         self._previous_controllers_amount = previous_controllers_amount
 
         self._batch_max_size = batch_max_size
+        self._amount_per_group = amount_per_group
 
-        self._purchase_counts: dict[tuple[str, str], int] = {}
+        self._grouping_key = "year_month_created_at"
+        self._primary_sort_key = "year_month_created_at"
+        self._secondary_sort_key = "sellings_qty"
+
+        self._sorted_desc_by_grouping_key: dict[str, list[dict[str, str]]] = {}
 
     # ============================== PRIVATE - ACCESSING ============================== #
 
@@ -95,19 +99,38 @@ class CountTransactionItemsByYearAndId:
 
     # ============================== PRIVATE - HANDLE DATA ============================== #
 
-    def __add_purchase(self, item_id: str, year_month_created_at: str) -> None:
-        key = (item_id, year_month_created_at)
-        if key not in self._purchase_counts:
-            self._purchase_counts[key] = 0
-        self._purchase_counts[key] += 1
+    def __sort_desc_by_purchases_qty(self, batch_item: dict[str, str]) -> None:
+        grouping_key_value = batch_item[self._grouping_key]
+        primary_sort_value = batch_item[self._primary_sort_key]
+        secondary_sort_value = batch_item[self._secondary_sort_key]
+
+        if grouping_key_value not in self._sorted_desc_by_grouping_key:
+            self._sorted_desc_by_grouping_key[grouping_key_value] = []
+        sorted_desc_batch_items = self._sorted_desc_by_grouping_key[grouping_key_value]
+
+        index = 0
+        while index < len(sorted_desc_batch_items):
+            current_batch_item = sorted_desc_batch_items[index]
+            current_primary_sort_value = current_batch_item[self._primary_sort_key]
+            current_secondary_sort_value = current_batch_item[self._secondary_sort_key]
+
+            if primary_sort_value > current_primary_sort_value:
+                break
+            if primary_sort_value == current_primary_sort_value:
+                if secondary_sort_value > current_secondary_sort_value:
+                    break
+            index += 1
+
+        sorted_desc_batch_items.insert(index, batch_item)
+        if len(sorted_desc_batch_items) > self._amount_per_group:
+            sorted_desc_batch_items.pop()
 
     def __pop_next_batch_item(self) -> dict[str, str]:
-        (item_id, year_month_created_at), sellings_qty = self._purchase_counts.popitem()
-        item = {}
-        item["item_id"] = item_id
-        item["year_month_created_at"] = year_month_created_at
-        item["sellings_qty"] = str(sellings_qty)
-        return item
+        key = next(iter(self._sorted_desc_by_grouping_key))
+        batch_item = self._sorted_desc_by_grouping_key[key].pop(0)
+        if not self._sorted_desc_by_grouping_key[key]:
+            del self._sorted_desc_by_grouping_key[key]
+        return batch_item
 
     def __take_next_batch(self) -> list[dict[str, str]]:
         batch: list[dict[str, str]] = []
@@ -116,12 +139,12 @@ class CountTransactionItemsByYearAndId:
         all_batchs_taken = False
 
         while not all_batchs_taken and batch_size < self._batch_max_size:
-            if not self._purchase_counts:
+            if not self._sorted_desc_by_grouping_key:
                 all_batchs_taken = True
                 break
 
-            item = self.__pop_next_batch_item()
-            batch.append(item)
+            batch_item = self.__pop_next_batch_item()
+            batch.append(batch_item)
             batch_size += 1
 
         return batch
@@ -143,9 +166,7 @@ class CountTransactionItemsByYearAndId:
     def __handle_data_batch_message(self, message: str) -> None:
         batch = communication_protocol.decode_batch_message(message)
         for batch_item in batch:
-            item_id = batch_item["item_id"]
-            year_month_created_at = batch_item["year_month_created_at"]
-            self.__add_purchase(item_id, year_month_created_at)
+            self.__sort_desc_by_purchases_qty(batch_item)
 
     def __handle_data_batch_eof(self, message: str) -> None:
         self._eof_received_from_previous_controllers += 1

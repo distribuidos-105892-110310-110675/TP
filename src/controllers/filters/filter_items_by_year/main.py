@@ -28,7 +28,7 @@ def main():
         controller_id=int(config_params["CONTROLLER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
         consumer_queue_prefix=constants.CLEANED_TIT_QUEUE_PREFIX,
-        producer_queue_prefix=constants.FILTERED_TIT_QUEUE_PREFIX,
+        producer_queue_prefix=constants.FILTERED_TIT_BY_YEAR_QUEUE_PREFIX,
         previous_controllers_amount=int(config_params["PREV_CONTROLLERS_AMOUNT"]),
         next_controllers_amount=int(config_params["MAPS_AMOUNT"]),
         years_to_filter=years,

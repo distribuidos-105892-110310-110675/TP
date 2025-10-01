@@ -111,12 +111,18 @@ class UsersCleaner:
 
     def __mom_send_message_to_next(self, message: str) -> None:
         user_batchs_by_hash: dict = {}
-        for user in communication_protocol.decode_users_batch_message(message):
-            user_id = int(user["user_id"])
+        for batch_item in communication_protocol.decode_users_batch_message(message):
+            if batch_item["user_id"] == "":
+                continue
+            user_id_str = batch_item["user_id"]
+            if user_id_str.endswith(".0"):
+                user_id_str = user_id_str[:-2]
+            user_id = int(user_id_str)
+            batch_item["user_id"] = str(user_id)
             key = user_id % self._mom_cleaned_data_producers_amount
             if key not in user_batchs_by_hash:
                 user_batchs_by_hash[key] = []
-            user_batchs_by_hash[key].append(user)
+            user_batchs_by_hash[key].append(batch_item)
 
         for key, user_batch in user_batchs_by_hash.items():
             mom_cleaned_data_producer = self._mom_cleaned_data_producers[key]

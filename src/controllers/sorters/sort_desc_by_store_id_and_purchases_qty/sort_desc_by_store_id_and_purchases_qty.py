@@ -99,7 +99,7 @@ class SortDescByStoreIdAndPurchasesQty:
 
     def __sort_desc_by_purchases_qty(self, batch_item: dict[str, str]) -> None:
         store_id = batch_item["store_id"]
-        purchases_qty = int(batch_item["purchases_qty"])
+        purchases_qty = float(batch_item["purchases_qty"])
 
         if store_id not in self._sorted_desc_by_store_id_and_purchases_qty:
             self._sorted_desc_by_store_id_and_purchases_qty[store_id] = []
@@ -111,7 +111,7 @@ class SortDescByStoreIdAndPurchasesQty:
         while index < len(sorted_desc_by_purchases_qty):
             current_item = sorted_desc_by_purchases_qty[index]
             current_store_id = current_item["store_id"]
-            current_purchases_qty = int(current_item["purchases_qty"])
+            current_purchases_qty = float(current_item["purchases_qty"])
 
             if store_id > current_store_id:
                 break
@@ -153,7 +153,13 @@ class SortDescByStoreIdAndPurchasesQty:
     def __send_batch_based_on_hash(self, batch: list[dict[str, str]]) -> None:
         user_batchs_by_hash: dict[int, list] = {}
         for batch_item in batch:
-            user_id = int(batch_item["user_id"])
+            if batch_item["user_id"] == "":
+                continue
+            user_id_str = batch_item["user_id"]
+            if user_id_str.endswith(".0"):
+                user_id_str = user_id_str[:-2]
+            user_id = int(user_id_str)
+            batch_item["user_id"] = str(user_id)
             mom_producers_amount = len(self._mom_producers)
             key = user_id % mom_producers_amount
             if key not in user_batchs_by_hash:

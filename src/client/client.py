@@ -184,6 +184,8 @@ class Client:
         encoding_callback: Callable,
     ) -> None:
         for file_path in self.__folder_path(folder_name).iterdir():
+            if not file_path.name.lower().endswith(".csv"):
+                continue
             self.__assert_is_file(file_path)
             csv_file = open(file_path, "rt", newline="")
             try:

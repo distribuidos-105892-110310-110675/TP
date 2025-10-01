@@ -26,8 +26,8 @@ def main():
         rabbitmq_host=config_params["RABBITMQ_HOST"],
         base_data_consumer_exchange_prefix=constants.CLEANED_MIT_EXCHANGE_PREFIX,
         base_data_consumer_routing_key_prefix=constants.CLEANED_MIT_ROUTING_KEY_PREFIX,
-        stream_consumer_queue_prefix=constants.SORTED_DESC_SELLING_QTY_BY_YEAR_MONTH__ITEM_ID_QUEUE_PREFIX,
-        producer_queue_prefix=constants.SORTED_DESC_SELLING_QTY_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX,
+        stream_consumer_queue_prefix=constants.SORTED_DESC_SELLINGS_QTY_BY_YEAR_MONTH__ITEM_ID_QUEUE_PREFIX,
+        producer_queue_prefix=constants.SORTED_DESC_SELLINGS_QTY_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX,
         previos_base_data_controllers_amount=int(
             config_params["PREV_BASE_DATA_CONTROLLERS_AMOUNT"]
         ),

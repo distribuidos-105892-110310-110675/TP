@@ -25,6 +25,7 @@ docker-build-image:
 	docker build -f ./src/controllers/joins/join_item_sum_with_menu/Dockerfile -t "join_item_sum_with_menu:latest" .
 
 	docker build -f ./src/controllers/sorters/sort_desc_by_year_month_created_at_and_sellings_qty/Dockerfile -t "sort_desc_by_year_month_created_at_and_sellings_qty:latest" .
+	docker build -f ./src/controllers/sorters/sort_desc_by_year_month_created_at_and_profit_sum/Dockerfile -t "sort_desc_by_year_month_created_at_and_profit_sum:latest" .
 
 	docker build -f ./src/controllers/reducers/count_purchases_by_store_id_and_user_id/Dockerfile -t "count_purchases_by_store_id_and_user_id:latest" .
 	docker build -f ./src/controllers/sorters/sort_desc_by_store_id_and_purchases_qty/Dockerfile -t "sort_desc_by_store_id_and_purchases_qty:latest" .

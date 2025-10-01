@@ -12,9 +12,9 @@ def main():
             "LOGGING_LEVEL",
             "CONTROLLER_ID",
             "RABBITMQ_HOST",
-            "OUTPUT_BUILDERS_AMOUNT",
-            "PREVIOUS_CONTROLLERS_AMOUNT",
-            "PREVIOUS_MENU_ITEMS_SENDERS",
+            "PREV_BASE_DATA_CONTROLLERS_AMOUNT",
+            "PREV_STREAM_DATA_CONTROLLERS_AMOUNT",
+            "NEXT_CONTROLLERS_AMOUNT",
         ]
     )
     initializer.init_log(config_params["LOGGING_LEVEL"])
@@ -23,13 +23,17 @@ def main():
     controller = JoinItemSumWithMenu(
         controller_id=int(config_params["CONTROLLER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
-        consumer_queue_prefix=constants.SORTED_DESC_PROFIT_SUM_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX,
-        producer_queue_prefix=constants.SORTED_DESC_PROFIT_SUM_BY_YEAR_MONTH__ITEM_ID_QUEUE_PREFIX,
-        consumer_exchange_prefix=constants.CLEANED_MIT_EXCHANGE_PREFIX,
-        consumer_routing_key_prefix=constants.CLEANED_MIT_ROUTING_KEY_PREFIX,
-        producer_queue_amount=int(config_params["OUTPUT_BUILDERS_AMOUNT"]),
-        previous_controller_amount=int(config_params["PREVIOUS_CONTROLLERS_AMOUNT"]),
-        previous_menu_items_senders=int(config_params["PREVIOUS_MENU_ITEMS_SENDERS"]),
+        base_data_consumer_exchange_prefix=constants.CLEANED_MIT_EXCHANGE_PREFIX,
+        base_data_consumer_routing_key_prefix=constants.CLEANED_MIT_ROUTING_KEY_PREFIX,
+        stream_consumer_queue_prefix=constants.SORTED_DESC_PROFIT_SUM_BY_YEAR_MONTH__ITEM_ID_QUEUE_PREFIX,
+        producer_queue_prefix=constants.SORTED_DESC_PROFIT_SUM_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX,
+        previos_base_data_controllers_amount=int(
+            config_params["PREV_BASE_DATA_CONTROLLERS_AMOUNT"]
+        ),
+        previos_stream_data_controllers_amount=int(
+            config_params["PREV_STREAM_DATA_CONTROLLERS_AMOUNT"]
+        ),
+        next_controllers_amount=int(config_params["NEXT_CONTROLLERS_AMOUNT"]),
     )
 
     controller.run()

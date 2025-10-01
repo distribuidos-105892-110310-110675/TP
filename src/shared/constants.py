@@ -82,11 +82,11 @@ MAPPED_YEAR_MONTH_TIT_ROUTING_KEY_PREFIX = (
 SELLINGS_QTY_BY_YEAR_MONTH_CREATED_AT__ITEM_ID_QUEUE_PREFIX = (
     "tit-sellings-qty-by-year-month-created-at-&-item-id-queue"
 )
-SORTED_DESC_SELLING_QTY_BY_YEAR_MONTH__ITEM_ID_QUEUE_PREFIX = (
-    "tit-sorted-desc-selling-qty-by-year-month-&-item-id"
+SORTED_DESC_SELLINGS_QTY_BY_YEAR_MONTH__ITEM_ID_QUEUE_PREFIX = (
+    "tit-sorted-desc-sellings-qty-by-year-month-&-item-id"
 )
-SORTED_DESC_SELLING_QTY_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX = (
-    "tit-sorted-desc-selling-qty-by-year-month-&-item-name"
+SORTED_DESC_SELLINGS_QTY_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX = (
+    "tit-sorted-desc-sellings-qty-by-year-month-&-item-name"
 )
 
 # query 2.2

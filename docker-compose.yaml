@@ -341,7 +341,7 @@ services:
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
-      - MAPS_AMOUNT=1
+      - MAPS_AMOUNT=3
       - YEARS=2024,2025
     networks:
       - custom_net
@@ -359,7 +359,7 @@ services:
       - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
-      - MAPS_AMOUNT=1
+      - MAPS_AMOUNT=3
       - YEARS=2024,2025
     networks:
       - custom_net
@@ -377,7 +377,7 @@ services:
       - CONTROLLER_ID=2
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
-      - MAPS_AMOUNT=1
+      - MAPS_AMOUNT=3
       - YEARS=2024,2025
     networks:
       - custom_net
@@ -395,6 +395,40 @@ services:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
       - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=3
+      - REDUCERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  map_month_year_items_1:
+    container_name: map_month_year_items_1
+    image: map_month_year_items:latest
+    entrypoint: python3 -m controllers.mappers.map_month_year_items.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=1
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=3
+      - REDUCERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  map_month_year_items_2:
+    container_name: map_month_year_items_2
+    image: map_month_year_items:latest
+    entrypoint: python3 -m controllers.mappers.map_month_year_items.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=2
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
       - REDUCERS_AMOUNT=1
@@ -449,7 +483,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=1
+      - PREV_CONTROLLERS_AMOUNT=3
       - BATCH_MAX_SIZE=20
     networks:
       - custom_net
@@ -466,7 +500,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=1
+      - PREV_CONTROLLERS_AMOUNT=3
       - BATCH_MAX_SIZE=20
     networks:
       - custom_net

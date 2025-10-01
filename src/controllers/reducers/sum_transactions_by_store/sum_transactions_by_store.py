@@ -131,7 +131,7 @@ class SumTransactionsByStore:
             message = communication_protocol.encode_transaction_items_batch_message(batch)
             mom_producer = self._mom_producers[self._current_producer_id]
             mom_producer.send(message)
-            if self._current_producer_id == len(self._mom_producers):
+            if self._current_producer_id >= len(self._mom_producers) - 1:
                 self._current_producer_id = 0
             else:
                 self._current_producer_id += 1

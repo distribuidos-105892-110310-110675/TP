@@ -491,6 +491,25 @@ services:
       rabbitmq-message-middleware:
         condition: service_healthy
 
+  join_tpv_with_stores_0:
+    container_name: join_tpv_with_stores_0
+    image: join_tpv_with_stores:latest
+    entrypoint: python3 -m controllers.joiners.join_tpv_with_stores.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - OUTPUT_BUILDERS_AMOUNT=1
+      - PREV_BASE_DATA_CONTROLLERS_AMOUNT=1
+      - PREV_STREAM_DATA_CONTROLLERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
   # ============================== OUTPUT BUILDER SERVICES ============================== #
 
   query_1x_output_builder_0:

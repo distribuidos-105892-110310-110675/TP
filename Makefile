@@ -31,6 +31,7 @@ docker-build-image:
 
 	docker build -f ./src/controllers/mappers/map_month_semester_transactions/Dockerfile -t "map_month_semester_transactions:latest" .	
 	docker build -f ./src/controllers/reducers/sum_transactions_by_store/Dockerfile -t "sum_transactions_by_store:latest" .	
+	docker build -f ./src/controllers/joiners/join_tpv_with_stores/Dockerfile -t "join_tpv_with_stores:latest" .	
 
 # 	docker build -f ./src/controllers/mappers/map_month_semester/Dockerfile -t "map_month_semester:latest" .
 # 	docker build -f ./src/controllers/mappers/map_month_year/Dockerfile -t "map_month_year:latest" .

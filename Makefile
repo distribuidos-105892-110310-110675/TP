@@ -19,6 +19,7 @@ docker-build-image:
 	docker build -f ./src/controllers/maps/map_month_year_items/Dockerfile -t "map_month_year_items:latest" .
 
 	docker build -f ./src/controllers/joins/join_item_count_with_menu/Dockerfile -t "join_item_count_with_menu:latest" .
+	docker build -f ./src/controllers/joins/join_item_sum_with_menu/Dockerfile -t "join_item_sum_with_menu:latest" .
 
 # 	docker build -f ./src/controllers/maps/map_month_semester/Dockerfile -t "map_month_semester:latest" .
 # 	docker build -f ./src/controllers/maps/map_month_year/Dockerfile -t "map_month_year:latest" .

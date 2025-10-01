@@ -5,10 +5,10 @@ from shared import communication_protocol
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from middleware.rabbitmq_message_middleware_exchange import RabbitMQMessageMiddlewareExchange
 
-class JoinItemCountWithMenu:
+class JoinItemSumWithMenu:
     
     def __init_mom_consumers(self, host: str, consumer_queue_prefix: str, consumer_exchange_prefix: str, 
-                                routing_keys: list[str]) -> None:
+                                   routing_keys: list[str]) -> None:
         queue_name = f"{consumer_queue_prefix}-{self._controller_id}"
         self._mom_queue_consumer = RabbitMQMessageMiddlewareQueue(
             host=host, queue_name=queue_name

@@ -1,7 +1,7 @@
 import logging
 
-from controllers.joins.join_item_count_with_menu.join_item_count_with_menu import (
-    JoinItemCountWithMenu,
+from controllers.joins.join_item_sum_with_menu.join_item_sum_with_menu import (
+    JoinItemSumWithMenu,
 )
 from shared import constants, initializer
 
@@ -21,11 +21,11 @@ def main():
     logging.debug(f"action: init_config | result: success | params: {config_params}")
 
 
-    controller = JoinItemCountWithMenu(
+    controller = JoinItemSumWithMenu(
         controller_id=int(config_params["CONTROLLER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
-        consumer_queue_prefix=constants.JOIN_ITEM_COUNT_WITH_MENU_ITEMS_QUEUE_PREFIX,
-        producer_queue_prefix=constants.SORTED_DESC_SELLING_QTY_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX,
+        consumer_queue_prefix=constants.JOIN_ITEM_SUM_WITH_MENU_ITEMS_QUEUE_PREFIX,
+        producer_queue_prefix=constants.SORTED_DESC_PROFIT_SUM_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX,
         consumer_exchange_prefix=constants.JOIN_ITEMS_WITH_MENU_EXCHANGE_PREFIX,
         consumer_routing_key_prefix=constants.JOIN_ITEMS_WITH_MENU_ROUTING_KEY_PREFIX,
         producer_queue_amount=int(config_params["OUTPUT_BUILDERS_AMOUNT"]),

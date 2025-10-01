@@ -40,76 +40,6 @@ class StoresCleaner:
             )
             self._mom_cleaned_data_producers.append(mom_cleaned_data_producer)
 
-    def _mock_consumers_using_threads(
-        self,
-        host: str,
-        cleaned_data_mom_prefix: str,
-        cleaned_data_routing_key_prefix: str,
-    ) -> None:
-        exchange_name = cleaned_data_mom_prefix
-        self._mom_cleaned_data_consumer_1 = RabbitMQMessageMiddlewareExchange(
-            host=host,
-            exchange_name=exchange_name,
-            route_keys=[cleaned_data_routing_key_prefix + "-0"],
-        )
-        self._mom_cleaned_data_consumer_2 = RabbitMQMessageMiddlewareExchange(
-            host=host,
-            exchange_name=exchange_name,
-            route_keys=[cleaned_data_routing_key_prefix + "-0"],
-        )
-        self._mom_cleaned_data_consumer_3 = RabbitMQMessageMiddlewareExchange(
-            host=host,
-            exchange_name=exchange_name,
-            route_keys=[cleaned_data_routing_key_prefix + "-1"],
-        )
-        self._mom_cleaned_data_consumer_4 = RabbitMQMessageMiddlewareExchange(
-            host=host,
-            exchange_name=exchange_name,
-            route_keys=[cleaned_data_routing_key_prefix + "-1"],
-        )
-
-        self._spawned_threads = []
-
-        def _start_mock_consumer(
-            consumer: RabbitMQMessageMiddlewareExchange,
-        ) -> None:
-            def thread_safe_callback() -> Callable[[bytes], None]:
-                def callback(message_as_bytes: bytes) -> None:
-                    while self.__is_running():
-                        time.sleep(5)  # simulate processing time
-
-                return callback
-
-            consumer.start_consuming(thread_safe_callback())
-
-        thread = threading.Thread(
-            target=_start_mock_consumer,
-            args=(self._mom_cleaned_data_consumer_1,),
-        )
-        thread.start()
-        self._spawned_threads.append(thread)
-
-        thread = threading.Thread(
-            target=_start_mock_consumer,
-            args=(self._mom_cleaned_data_consumer_2,),
-        )
-        thread.start()
-        self._spawned_threads.append(thread)
-
-        thread = threading.Thread(
-            target=_start_mock_consumer,
-            args=(self._mom_cleaned_data_consumer_3,),
-        )
-        thread.start()
-        self._spawned_threads.append(thread)
-
-        thread = threading.Thread(
-            target=_start_mock_consumer,
-            args=(self._mom_cleaned_data_consumer_4,),
-        )
-        thread.start()
-        self._spawned_threads.append(thread)
-
     def __init__(
         self,
         cleaner_id: int,
@@ -134,13 +64,6 @@ class StoresCleaner:
             cleaned_data_routing_key_prefix,
             cleaned_data_routing_keys_amount,
         )
-
-        # REMOVE THIS WHEN THERE IS A REAL CONSUMER
-        # self._mock_consumers_using_threads(
-        #     rabbitmq_host,
-        #     cleaned_data_exchange_prefix,
-        #     cleaned_data_routing_key_prefix,
-        # )
 
     # ============================== PRIVATE - ACCESSING ============================== #
 

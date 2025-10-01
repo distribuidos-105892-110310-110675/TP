@@ -1,11 +1,10 @@
+
 FROM python:3.13-slim
 
 RUN pip install --upgrade pip && pip3 install pika
 
-COPY src/controllers/joins/join_item_sum_with_menu /controllers/joins/join_item_sum_with_menu
+COPY src/controllers/reducers/sum_transaction_items /controllers/reducers/sum_transaction_items
 COPY src/shared /shared
 COPY src/middleware /middleware
-
-ENV PYTHONPATH=/
 
 ENTRYPOINT ["/bin/sh"]

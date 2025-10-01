@@ -1,6 +1,6 @@
 import logging
 
-from controllers.reduces.count_transaction_items.count_transaction_items import (
+from controllers.reducers.count_transaction_items.count_transaction_items import (
     CountTransactionItemsByYearAndId,
 )
 from shared import constants, initializer

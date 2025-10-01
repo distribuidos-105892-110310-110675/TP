@@ -291,7 +291,7 @@ services:
   count_transaction_items_0:
     container_name: count_transaction_items_0
     image: count_transaction_items:latest
-    entrypoint: python3 -m controllers.reduces.count_transaction_items.main
+    entrypoint: python3 -m controllers.reducers.count_transaction_items.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
@@ -308,7 +308,7 @@ services:
   sum_transaction_items_0:
     container_name: sum_transaction_items_0
     image: sum_transaction_items:latest
-    entrypoint: python3 -m controllers.reduces.sum_transaction_items.main
+    entrypoint: python3 -m controllers.reducers.sum_transaction_items.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
@@ -422,7 +422,7 @@ services:
   join_item_count_with_menu_0:
     container_name: join_item_count_with_menu_0
     image: join_item_count_with_menu:latest
-    entrypoint: python3 -m controllers.joins.join_item_count_with_menu.main
+    entrypoint: python3 -m controllers.joiners.join_item_count_with_menu.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
@@ -441,7 +441,7 @@ services:
   join_item_sum_with_menu_0:
     container_name: join_item_sum_with_menu_0
     image: join_item_sum_with_menu:latest
-    entrypoint: python3 -m controllers.joins.join_item_sum_with_menu.main
+    entrypoint: python3 -m controllers.joiners.join_item_sum_with_menu.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO

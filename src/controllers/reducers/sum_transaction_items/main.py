@@ -1,6 +1,6 @@
 import logging
 
-from controllers.reduces.sum_transaction_items.sum_transaction_items import (
+from controllers.reducers.sum_transaction_items.sum_transaction_items import (
     SumTransactionItemsSubtotal,
 )
 from shared import constants, initializer

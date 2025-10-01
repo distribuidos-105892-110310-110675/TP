@@ -30,6 +30,7 @@ docker-build-image:
 	docker build -f ./src/controllers/sorters/sort_desc_by_year_month_created_at_and_profit_sum/Dockerfile -t "sort_desc_by_year_month_created_at_and_profit_sum:latest" .
 
 	docker build -f ./src/controllers/mappers/map_month_semester_transactions/Dockerfile -t "map_month_semester_transactions:latest" .	
+	docker build -f ./src/controllers/reducers/sum_transactions_by_store/Dockerfile -t "sum_transactions_by_store:latest" .	
 
 # 	docker build -f ./src/controllers/mappers/map_month_semester/Dockerfile -t "map_month_semester:latest" .
 # 	docker build -f ./src/controllers/mappers/map_month_year/Dockerfile -t "map_month_year:latest" .

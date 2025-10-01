@@ -22,13 +22,13 @@ class SumTransactionsByStore:
         producer_queues_amount: int,
     ) -> None:
         self._current_producer_id = 0
-        self._mom_producers : list[RabbitMQMessageMiddlewareQueue ]= []
+        self._mom_producers : list[RabbitMQMessageMiddlewareQueue]= []
         for i in range(producer_queues_amount):
-            queue_name = [f"{producer_queue_prefix}-{i}"]
+            queue_name = f"{producer_queue_prefix}-{i}"
             self._mom_producers.append(
                 RabbitMQMessageMiddlewareQueue(
                     host=host,
-                    exchange_name=queue_name,
+                    queue_name=queue_name,
                 )
             )
 

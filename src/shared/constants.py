@@ -106,6 +106,8 @@ SORTED_DESC_PROFIT_SUM_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX = (
 
 MAPPED_TRN_SEMESTER_QUEUE_PREFIX = "mapped-year-semester-transaction-queue"
 
+SUM_TRN_TPV_BY_STORE_QUEUE_PREFIX = "sum-trn-tpv-by-store-queue"
+
 TPV_BY_HALF_YEAR_CREATED_AT__STORE_NAME_QUEUE_PREFIX = (
     "trn-tpv-by-half-year-created-at-&-store-name"
 )

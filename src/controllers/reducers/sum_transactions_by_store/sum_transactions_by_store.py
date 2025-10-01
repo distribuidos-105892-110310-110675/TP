@@ -11,7 +11,7 @@ class SumTransactionsByStore:
 
     def __init_mom_consumers(self, host: str, consumer_queue_prefix: str)-> None:
         queue_name = f"{consumer_queue_prefix}-{self._controller_id}"
-        self._mom_queue_consumer = RabbitMQMessageMiddlewareQueue(
+        self._mom_consumer = RabbitMQMessageMiddlewareQueue(
             host=host, queue_name=queue_name
         )
 
@@ -90,17 +90,17 @@ class SumTransactionsByStore:
 
 
 
-    def __add_purchase(self, store_id: str, half_year_created_at: str, final_amount: float) -> None:
-        key = (store_id, half_year_created_at)
+    def __add_purchase(self, store_id: str, year_half_created_at: str, final_amount: float) -> None:
+        key = (store_id, year_half_created_at)
         if key not in self._purchase_counts:
             self._purchase_counts[key] = 0
         self._purchase_counts[key] += final_amount
 
     def __pop_next_batch_item(self) -> dict[str, str]:
-        (item_id, half_year_created_at), tpv = self._purchase_counts.popitem()
+        (item_id, year_half_created_at), tpv = self._purchase_counts.popitem()
         item = {}
         item["store_id"] = item_id
-        item["half_year_created_at"] = half_year_created_at
+        item["year_half_created_at"] = year_half_created_at
         item["tpv"] = str(tpv)
         return item
 
@@ -143,9 +143,9 @@ class SumTransactionsByStore:
         batch = communication_protocol.decode_batch_message(message)
         for batch_item in batch:
             store_id = batch_item["store_id"]
-            half_year_created_at = batch_item["half_year_created_at"]
+            year_half_created_at = batch_item["year_half_created_at"]
             final_amount = float(batch_item["final_amount"])
-            self.__add_purchase(store_id, half_year_created_at, final_amount)
+            self.__add_purchase(store_id, year_half_created_at, final_amount)
 
     def __handle_data_batch_eof(self, message: str) -> None:
         self._eof_received_from_previous_controllers += 1
@@ -165,7 +165,7 @@ class SumTransactionsByStore:
 
     def __handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self.__is_running():
-            self._mom_queue_consumer.stop_consuming()
+            self._mom_consumer.stop_consuming()
             return
 
         message = message_as_bytes.decode("utf-8")
@@ -180,7 +180,7 @@ class SumTransactionsByStore:
 
     def __run(self) -> None:
         self.__set_controller_as_running()
-        self._mom_queue_consumer.start_consuming(self.__handle_received_data)
+        self._mom_consumer.start_consuming(self.__handle_received_data)
 
     def __close_all_mom_connections(self) -> None:
         for mom_producer in self._mom_producers:
@@ -188,8 +188,8 @@ class SumTransactionsByStore:
             mom_producer.close()
             logging.debug("action: mom_producer_close | result: success")
 
-        self._mom_queue_consumer.delete()
-        self._mom_queue_consumer.close()
+        self._mom_consumer.delete()
+        self._mom_consumer.close()
         logging.debug("action: mom_consumer_close | result: success")
 
     def __ensure_connections_close_after_doing(self, callback: Callable) -> None:

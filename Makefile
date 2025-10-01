@@ -33,12 +33,6 @@ docker-build-image:
 	docker build -f ./src/controllers/reducers/sum_transactions_by_store/Dockerfile -t "sum_transactions_by_store:latest" .	
 	docker build -f ./src/controllers/joiners/join_tpv_with_stores/Dockerfile -t "join_tpv_with_stores:latest" .	
 
-# 	docker build -f ./src/controllers/mappers/map_month_semester/Dockerfile -t "map_month_semester:latest" .
-# 	docker build -f ./src/controllers/mappers/map_month_year/Dockerfile -t "map_month_year:latest" .
-# 	docker build -f ./src/controllers/joiners/join_items_with_menu/Dockerfile -t "join_items_with_menu:latest" .
-# 	docker build -f ./src/controllers/joiners/join_users_with_stores/Dockerfile -t "join_users_with_stores:latest" .
-
-
 	docker build -f ./src/controllers/reducers/count_purchases_by_store_id_and_user_id/Dockerfile -t "count_purchases_by_store_id_and_user_id:latest" .
 	docker build -f ./src/controllers/sorters/sort_desc_by_store_id_and_purchases_qty/Dockerfile -t "sort_desc_by_store_id_and_purchases_qty:latest" .
 	docker build -f ./src/controllers/joiners/join_transactions_with_users/Dockerfile -t "join_transactions_with_users:latest" .
@@ -63,7 +57,7 @@ docker-compose-down:
 .PHONY: docker-compose-down
 
 docker-compose-logs:
-	docker compose -f docker-compose.yaml logs -f
+	docker compose -f docker-compose.yaml logs -f -n 500
 .PHONY: docker-compose-logs
 
 tests:

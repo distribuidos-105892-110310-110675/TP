@@ -138,6 +138,7 @@ class TransactionsCleaner:
             return
 
         message = message_as_bytes.decode("utf-8")
+        logging.debug(f"action: message_received | result: success | message: {message}")
         message_type = communication_protocol.decode_message_type(message)
         match message_type:
             case communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE:

@@ -39,6 +39,8 @@ class Client:
         self.__set_client_as_not_running()
         signal.signal(signal.SIGTERM, self.__sigterm_signal_handler)
 
+        self._temp_buffer = b""
+
     # ============================== PRIVATE - RUNNING ============================== #
 
     def __is_running(self) -> bool:
@@ -75,7 +77,8 @@ class Client:
         logging.debug(f"action: receive_message | result: in_progress")
 
         buffsize = constants.KiB
-        bytes_received = b""
+        bytes_received = self._temp_buffer
+        self._temp_buffer = b""
 
         all_data_received = False
         while not all_data_received:
@@ -92,7 +95,13 @@ class Client:
             if chunk.endswith(communication_protocol.MSG_END_DELIMITER.encode("utf-8")):
                 all_data_received = True
 
-            bytes_received += chunk
+            if communication_protocol.MSG_END_DELIMITER.encode("utf-8") in chunk:
+                index = chunk.rindex(communication_protocol.MSG_END_DELIMITER.encode("utf-8"))
+                bytes_received += chunk[: index + len(communication_protocol.MSG_END_DELIMITER)]
+                self._temp_buffer = chunk[index + len(communication_protocol.MSG_END_DELIMITER) :]
+                all_data_received = True
+            else:
+                bytes_received += chunk
 
         message = bytes_received.decode("utf-8")
         logging.debug(f"action: receive_message | result: success | msg: {message}")

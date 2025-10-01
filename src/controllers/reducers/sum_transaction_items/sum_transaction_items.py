@@ -68,7 +68,7 @@ class SumTransactionItemsSubtotal:
 
         self._batch_max_size = batch_max_size
 
-        self._purchase_counts: dict[tuple[str, str], int] = {}
+        self._purchase_counts: dict[tuple[str, str], float] = {}
 
     # ============================== PRIVATE - ACCESSING ============================== #
 

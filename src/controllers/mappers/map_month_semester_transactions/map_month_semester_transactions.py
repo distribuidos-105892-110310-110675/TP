@@ -99,7 +99,7 @@ class MapMonthSemesterTransactions:
         else:
             semester = "H2"
         year = date.split('-')[0]
-        batch_item['half_year_created_at'] = f"{year}-{semester}"
+        batch_item['year_half_created_at'] = f"{year}-{semester}"
         return batch_item
 
     def __transform_batch_message_using(

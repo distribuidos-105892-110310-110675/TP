@@ -18,12 +18,16 @@ docker-build-image:
 	docker build -f ./src/controllers/filters/filter_items_by_year/Dockerfile -t "filter_items_by_year:latest" .
 	docker build -f ./src/controllers/maps/map_month_year_items/Dockerfile -t "map_month_year_items:latest" .
 
-	docker build -f ./src/controllers/joins/join_item_count_with_menu/Dockerfile -t "join_item_count_with_menu:latest" .
-	docker build -f ./src/controllers/joins/join_item_sum_with_menu/Dockerfile -t "join_item_sum_with_menu:latest" .
-
 	docker build -f ./src/controllers/reduces/count_transaction_items/Dockerfile -t "count_transaction_items:latest" .
 	docker build -f ./src/controllers/reduces/sum_transaction_items/Dockerfile -t "sum_transaction_items:latest" .
 
+	docker build -f ./src/controllers/joins/join_item_count_with_menu/Dockerfile -t "join_item_count_with_menu:latest" .
+	docker build -f ./src/controllers/joins/join_item_sum_with_menu/Dockerfile -t "join_item_sum_with_menu:latest" .
+
+	docker build -f ./src/controllers/reducers/count_purchases_by_store_id_and_user_id/Dockerfile -t "count_purchases_by_store_id_and_user_id:latest" .
+	docker build -f ./src/controllers/sorters/sort_desc_by_store_id_and_purchases_qty/Dockerfile -t "sort_desc_by_store_id_and_purchases_qty:latest" .
+	docker build -f ./src/controllers/joiners/join_transactions_with_users/Dockerfile -t "join_transactions_with_users:latest" .
+	docker build -f ./src/controllers/joiners/join_transactions_with_stores/Dockerfile -t "join_transactions_with_stores:latest" .
 
 # 	docker build -f ./src/controllers/maps/map_month_semester/Dockerfile -t "map_month_semester:latest" .
 # 	docker build -f ./src/controllers/maps/map_month_year/Dockerfile -t "map_month_year:latest" .
@@ -31,8 +35,6 @@ docker-build-image:
 # 	docker build -f ./src/controllers/sorts/sort_by_sum/Dockerfile -t "sort_by_sum:latest" .
 # 	docker build -f ./src/controllers/sorts/sort_by_birthday/Dockerfile -t "sort_by_birthday:latest" .
 # 	docker build -f ./src/controllers/joins/join_items_with_menu/Dockerfile -t "join_items_with_menu:latest" .
-# 	docker build -f ./src/controllers/joins/join_transactions_with_stores/Dockerfile -t "join_transactions_with_stores:latest" .
-# 	docker build -f ./src/controllers/joins/join_transactions_with_users/Dockerfile -t "join_transactions_with_users:latest" .
 # 	docker build -f ./src/controllers/joins/join_users_with_stores/Dockerfile -t "join_users_with_stores:latest" .
 
 	docker build -f ./src/controllers/output_builders/query_1x_output_builder/Dockerfile -t "query_1x_output_builder:latest" .

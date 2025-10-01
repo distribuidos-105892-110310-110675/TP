@@ -155,8 +155,8 @@ def __encode_field(key: str, value: str) -> str:
 
 def __encode_row(row: dict[str, str]) -> str:
     encoded_fields = [__encode_field(key, value) for key, value in row.items()]
-    encoded_fields = ROW_FIELD_SEPARATOR.join(encoded_fields)
-    return BATCH_START_DELIMITER + encoded_fields + BATCH_END_DELIMITER
+    ecoded_row = ROW_FIELD_SEPARATOR.join(encoded_fields)
+    return BATCH_START_DELIMITER + ecoded_row + BATCH_END_DELIMITER
 
 
 # ============================= PUBLIC ============================== #

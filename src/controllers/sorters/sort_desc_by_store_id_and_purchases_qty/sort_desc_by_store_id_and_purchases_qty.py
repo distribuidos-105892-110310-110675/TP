@@ -1,20 +1,21 @@
 import logging
 import signal
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
-from middleware.rabbitmq_message_middleware_exchange import (
-    RabbitMQMessageMiddlewareExchange,
-)
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from shared import communication_protocol
 
 
-class FilterTransactionsByYear:
+class SortDescByStoreIdAndPurchasesQty:
 
     # ============================== INITIALIZE ============================== #
 
-    def __init_mom_consumer(self, host: str, data_queue_prefix: str) -> None:
-        queue_name = f"{data_queue_prefix}-{self._controller_id}"
+    def __init_mom_consumer(
+        self,
+        host: str,
+        queue_prefix: str,
+    ) -> None:
+        queue_name = f"{queue_prefix}-{self._controller_id}"
         self._mom_consumer = RabbitMQMessageMiddlewareQueue(
             host=host, queue_name=queue_name
         )
@@ -22,20 +23,17 @@ class FilterTransactionsByYear:
     def __init_mom_producers(
         self,
         host: str,
-        producer_exchange_prefix: str,
-        producer_routing_key_prefix: str,
-        producer_routing_keys_amount: int,
+        producer_queue_prefix: str,
+        next_controllers_amount: int,
     ) -> None:
         self._current_producer_id = 0
-        self._mom_producers = []
-        exchange_name = producer_exchange_prefix
-        for i in range(producer_routing_keys_amount):
-            routing_key = [f"{producer_routing_key_prefix}.{i}"]
+        self._mom_producers: list[RabbitMQMessageMiddlewareQueue] = []
+        for i in range(next_controllers_amount):
+            queue_name = f"{producer_queue_prefix}-{i}"
             self._mom_producers.append(
-                RabbitMQMessageMiddlewareExchange(
+                RabbitMQMessageMiddlewareQueue(
                     host=host,
-                    exchange_name=exchange_name,
-                    route_keys=routing_key,
+                    queue_name=queue_name,
                 )
             )
 
@@ -44,11 +42,11 @@ class FilterTransactionsByYear:
         controller_id: int,
         rabbitmq_host: str,
         consumer_queue_prefix: str,
-        producer_exchange_prefix: str,
-        producer_routing_key_prefix: str,
-        producer_routing_keys_amount: int,
+        producer_queue_prefix: str,
         previous_controllers_amount: int,
-        years_to_filter: list[int],
+        next_controllers_amount: int,
+        batch_max_size: int,
+        number_of_customers_per_store: int,
     ) -> None:
         self._controller_id = controller_id
 
@@ -61,15 +59,18 @@ class FilterTransactionsByYear:
         )
         self.__init_mom_producers(
             rabbitmq_host,
-            producer_exchange_prefix,
-            producer_routing_key_prefix,
-            producer_routing_keys_amount,
+            producer_queue_prefix,
+            next_controllers_amount,
         )
-
         self._eof_received_from_previous_controllers = 0
         self._previous_controllers_amount = previous_controllers_amount
 
-        self._years_to_filter = set(years_to_filter)
+        self._batch_max_size = batch_max_size
+        self._number_of_customers_per_store = number_of_customers_per_store
+
+        self._sorted_desc_by_store_id_and_purchases_qty: dict[
+            str, list[dict[str, str]]
+        ] = {}
 
     # ============================== PRIVATE - ACCESSING ============================== #
 
@@ -94,56 +95,77 @@ class FilterTransactionsByYear:
 
         logging.info("action: sigterm_signal_handler | result: success")
 
-    # ============================== PRIVATE - TRANSFORM DATA ============================== #
+    # ============================== PRIVATE - HANDLE DATA ============================== #
 
-    def __transform_batch_item(self, batch_item: dict[str, str]) -> Optional[dict]:
-        created_at = batch_item["created_at"]
-        date = created_at.split(" ")[0]
-        year = int(date.split("-")[0])
-        if year not in self._years_to_filter:
-            return None
+    def __sort_desc_by_purchases_qty(self, batch_item: dict[str, str]) -> None:
+        store_id = batch_item["store_id"]
+        purchases_qty = int(batch_item["purchases_qty"])
+
+        if store_id not in self._sorted_desc_by_store_id_and_purchases_qty:
+            self._sorted_desc_by_store_id_and_purchases_qty[store_id] = []
+        sorted_desc_by_purchases_qty = self._sorted_desc_by_store_id_and_purchases_qty[
+            store_id
+        ]
+
+        index = 0
+        while index < len(sorted_desc_by_purchases_qty):
+            current_item = sorted_desc_by_purchases_qty[index]
+            current_store_id = current_item["store_id"]
+            current_purchases_qty = int(current_item["purchases_qty"])
+
+            if store_id > current_store_id:
+                break
+            if store_id == current_store_id:
+                if purchases_qty > current_purchases_qty:
+                    break
+            index += 1
+
+        sorted_desc_by_purchases_qty.insert(index, batch_item)
+        if len(sorted_desc_by_purchases_qty) > self._number_of_customers_per_store:
+            sorted_desc_by_purchases_qty.pop()
+
+    def __pop_next_batch_item(self) -> dict[str, str]:
+        store_id = next(iter(self._sorted_desc_by_store_id_and_purchases_qty))
+        batch_item = self._sorted_desc_by_store_id_and_purchases_qty[store_id].pop(0)
+        if not self._sorted_desc_by_store_id_and_purchases_qty[store_id]:
+            del self._sorted_desc_by_store_id_and_purchases_qty[store_id]
         return batch_item
 
-    def __transform_batch_message_using(
-        self,
-        message: str,
-        decoder: Callable,
-        encoder: Callable,
-        output_message_type: Optional[str] = None,
-    ) -> str:
-        message_type = output_message_type
-        if output_message_type is None:
-            message_type = communication_protocol.decode_message_type(message)
+    def __take_next_batch(self) -> list[dict[str, str]]:
+        batch: list[dict[str, str]] = []
 
-        new_batch = []
-        for item in decoder(message):
-            modified_item = self.__transform_batch_item(item)
-            if modified_item is not None:
-                new_batch.append(modified_item)
-        return str(encoder(message_type, new_batch))
+        batch_size = 0
+        all_batchs_taken = False
 
-    def __transform_batch_message(self, message: str) -> str:
-        return self.__transform_batch_message_using(
-            message,
-            communication_protocol.decode_batch_message,
-            communication_protocol.encode_batch_message,
-        )
+        while not all_batchs_taken and batch_size < self._batch_max_size:
+            if not self._sorted_desc_by_store_id_and_purchases_qty:
+                all_batchs_taken = True
+                break
+
+            batch_item = self.__pop_next_batch_item()
+            batch.append(batch_item)
+            batch_size += 1
+
+        return batch
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
-    def __mom_send_message_to_next(self, message: str) -> None:
-        mom_producer = self._mom_producers[self._current_producer_id]
-        mom_producer.send(message)
-
-        self._current_producer_id += 1
-        if self._current_producer_id >= len(self._mom_producers):
-            self._current_producer_id = 0
+    def __send_data_using_batchs(
+        self, mom_producer: RabbitMQMessageMiddlewareQueue
+    ) -> None:
+        batch = self.__take_next_batch()
+        while len(batch) != 0 and self.__is_running():
+            message = communication_protocol.encode_transactions_batch_message(batch)
+            mom_producer.send(message)
+            logging.debug(
+                f"action: message_sent | result: success | message: {message}"
+            )
+            batch = self.__take_next_batch()
 
     def __handle_data_batch_message(self, message: str) -> None:
-        output_message = self.__transform_batch_message(message)
-        if not communication_protocol.decode_is_empty_message(output_message):
-            logging.debug(f"action: message_sent | result: success | message: {output_message}")
-            self.__mom_send_message_to_next(output_message)
+        batch = communication_protocol.decode_batch_message(message)
+        for batch_item in batch:
+            self.__sort_desc_by_purchases_qty(batch_item)
 
     def __handle_data_batch_eof(self, message: str) -> None:
         self._eof_received_from_previous_controllers += 1
@@ -154,6 +176,9 @@ class FilterTransactionsByYear:
             == self._previous_controllers_amount
         ):
             logging.info("action: all_eofs_received | result: success")
+            for mom_producer in self._mom_producers:
+                self.__send_data_using_batchs(mom_producer)
+
             for mom_producer in self._mom_producers:
                 mom_producer.send(message)
             logging.info("action: eof_sent | result: success")

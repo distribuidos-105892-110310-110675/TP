@@ -168,8 +168,8 @@ services:
       rabbitmq-message-middleware:
         condition: service_healthy
 
-      # ============================== FILTERS SERVICES ============================== #
-      
+  # ============================== FILTER TRANSACTIONS SERVICES ============================== #
+
   filter_transactions_by_year_0:
     container_name: filter_transactions_by_year_0
     image: filter_transactions_by_year:latest
@@ -332,6 +332,83 @@ services:
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=1
       - BATCH_MAX_SIZE=20
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  # ============================== REDUCER TRANSACTIONS SERVICES ============================== #
+
+  count_purchases_by_store_id_and_user_id_0:
+    container_name: count_purchases_by_store_id_and_user_id_0
+    image: count_purchases_by_store_id_and_user_id:latest
+    entrypoint: python3 -m controllers.reducers.count_purchases_by_store_id_and_user_id.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=1
+      - BATCH_MAX_SIZE=20
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  # ============================== SORT TRANSACTIONS SERVICES ============================== #
+
+  sort_desc_by_store_id_and_purchases_qty_0:
+    container_name: sort_desc_by_store_id_and_purchases_qty_0
+    image: sort_desc_by_store_id_and_purchases_qty:latest
+    entrypoint: python3 -m controllers.sorters.sort_desc_by_store_id_and_purchases_qty.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=1
+      - BATCH_MAX_SIZE=20
+      - NUMBER_OF_USERS_PER_STORE=3
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  # ============================== JOIN SERVICES ============================== #
+
+  join_transactions_with_users_0:
+    container_name: join_transactions_with_users_0
+    image: join_transactions_with_users:latest
+    entrypoint: python3 -m controllers.joiners.join_transactions_with_users.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_BASE_DATA_CONTROLLERS_AMOUNT=1
+      - PREV_STREAM_DATA_CONTROLLERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  join_transactions_with_stores_0:
+    container_name: join_transactions_with_stores_0
+    image: join_transactions_with_stores:latest
+    entrypoint: python3 -m controllers.joiners.join_transactions_with_stores.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_BASE_DATA_CONTROLLERS_AMOUNT=1
+      - PREV_STREAM_DATA_CONTROLLERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=1
     networks:
       - custom_net
     depends_on:

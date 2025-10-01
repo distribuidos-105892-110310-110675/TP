@@ -146,6 +146,7 @@ class JoinItemCountWithMenu:
         logging.debug(f"action: eof_received | result: success")
         if (self._eof_received_from_menu_item_cleaners == self._previous_menu_items_senders):
             logging.info(f"action: all_eofs_received | result: success")
+            logging.info(f"{self._menu_items}")
             self._received_all_menu_items = True
 
     def __handle_menu_items(self, message: str) -> None:

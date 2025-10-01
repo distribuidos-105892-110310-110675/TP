@@ -21,6 +21,8 @@ docker-build-image:
 	docker build -f ./src/controllers/joins/join_item_count_with_menu/Dockerfile -t "join_item_count_with_menu:latest" .
 	docker build -f ./src/controllers/joins/join_item_sum_with_menu/Dockerfile -t "join_item_sum_with_menu:latest" .
 
+	docker build -f ./src/controllers/reduces/count_transaction_items/Dockerfile -t "count_transaction_items:latest" .
+
 # 	docker build -f ./src/controllers/maps/map_month_semester/Dockerfile -t "map_month_semester:latest" .
 # 	docker build -f ./src/controllers/maps/map_month_year/Dockerfile -t "map_month_year:latest" .
 # 	docker build -f ./src/controllers/sorts/sort_by_count/Dockerfile -t "sort_by_count:latest" .

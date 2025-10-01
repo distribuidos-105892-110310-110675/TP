@@ -24,7 +24,7 @@ def main():
         rabbitmq_host=config_params["RABBITMQ_HOST"],
         consumer_queue_prefix=constants.FILTERED_TIT_QUEUE_PREFIX,
         producer_exchange_prefix=constants.MAPPED_YEAR_MONTH_TIT_EXHCHANGE_PREFIX,
-        producer_routing_key_prefix=constants.MAPPED_YEAR_MONTH_TIT_EXHCHANGE_PREFIX,
+        producer_routing_key_prefix=constants.MAPPED_YEAR_MONTH_TIT_ROUTING_KEY_PREFIX,
         producer_routing_keys_amount=int(config_params["REDUCERS_AMOUNT"]),
         previous_controllers_amount=int(config_params["PREV_CONTROLLERS_AMOUNT"]),
     )

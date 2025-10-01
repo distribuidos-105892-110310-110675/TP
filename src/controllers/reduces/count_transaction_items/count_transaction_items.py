@@ -1,6 +1,6 @@
 import logging
 import signal
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from middleware.rabbitmq_message_middleware_exchange import (
     RabbitMQMessageMiddlewareExchange,
@@ -9,45 +9,44 @@ from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewa
 from shared import communication_protocol
 
 
-class MapMonthYearItems:
+class CountTransactionItemsByYearAndId:
 
     # ============================== INITIALIZE ============================== #
 
-    def __init_mom_consumer(self, host: str, data_queue_prefix: str) -> None:
-        queue_name = f"{data_queue_prefix}-{self._controller_id}"
-        self._mom_consumer = RabbitMQMessageMiddlewareQueue(
-            host=host, queue_name=queue_name
+    def __init_mom_consumer(
+        self, host: str, exchange_prefix: str, routing_keys: list[str]
+    ) -> None:
+        self._mom_consumer = RabbitMQMessageMiddlewareExchange(
+            host=host, exchange_name=exchange_prefix, route_keys=routing_keys
         )
 
     def __init_mom_producers(
-            self,
-            host: str,
-            producer_exchange_prefix: str,
-            producer_routing_key_prefix: str,
-            producer_routing_keys_amount: int,
+        self,
+        host: str,
+        producer_queue_prefix: str,
+        next_controllers_amount: int,
     ) -> None:
         self._current_producer_id = 0
-        self._mom_producers = []
-        exchange_name = producer_exchange_prefix
-        for i in range(producer_routing_keys_amount):
-            routing_key = [f"{producer_routing_key_prefix}.{i}"]
+        self._mom_producers: list[RabbitMQMessageMiddlewareQueue] = []
+        for i in range(next_controllers_amount):
+            queue_name = f"{producer_queue_prefix}-{i}"
             self._mom_producers.append(
-                RabbitMQMessageMiddlewareExchange(
+                RabbitMQMessageMiddlewareQueue(
                     host=host,
-                    exchange_name=exchange_name,
-                    route_keys=routing_key,
+                    queue_name=queue_name,
                 )
             )
 
     def __init__(
-            self,
-            controller_id: int,
-            rabbitmq_host: str,
-            consumer_queue_prefix: str,
-            producer_exchange_prefix: str,
-            producer_routing_key_prefix: str,
-            producer_routing_keys_amount: int,
-            previous_controllers_amount: int,
+        self,
+        controller_id: int,
+        rabbitmq_host: str,
+        consumer_exchange_prefix: str,
+        consumer_routing_key_prefix: str,
+        producer_queue_prefix: str,
+        previous_controllers_amount: int,
+        next_controllers_amount: int,
+        batch_max_size: int,
     ) -> None:
         self._controller_id = controller_id
 
@@ -56,17 +55,20 @@ class MapMonthYearItems:
 
         self.__init_mom_consumer(
             rabbitmq_host,
-            consumer_queue_prefix,
+            consumer_exchange_prefix,
+            [f"{consumer_routing_key_prefix}.*"],
         )
         self.__init_mom_producers(
             rabbitmq_host,
-            producer_exchange_prefix,
-            producer_routing_key_prefix,
-            producer_routing_keys_amount,
+            producer_queue_prefix,
+            next_controllers_amount,
         )
-
         self._eof_received_from_previous_controllers = 0
         self._previous_controllers_amount = previous_controllers_amount
+
+        self._batch_max_size = batch_max_size
+
+        self._purchase_counts: dict[tuple[str, str], int] = {}
 
     # ============================== PRIVATE - ACCESSING ============================== #
 
@@ -91,60 +93,74 @@ class MapMonthYearItems:
 
         logging.info("action: sigterm_signal_handler | result: success")
 
-    # ============================== PRIVATE - TRANSFORM DATA ============================== #
+    # ============================== PRIVATE - HANDLE DATA ============================== #
 
-    def __transform_batch_item(self, batch_item: dict[str, str]) -> Optional[dict]:
-        date = batch_item['created_at'].split(" ")[0]
-        month = date.split('-')[1]
-        year = date.split('-')[0]
-        batch_item['year_month_created_at'] = f"{year}-{month}"
-        return batch_item
 
-    def __transform_batch_message_using(
-            self,
-            message: str,
-            decoder: Callable,
-            encoder: Callable,
-            output_message_type: Optional[str] = None,
-    ) -> str:
-        message_type = output_message_type
-        if output_message_type is None:
-            message_type = communication_protocol.decode_message_type(message)
 
-        new_batch = []
-        for item in decoder(message):
-            modified_item = self.__transform_batch_item(item)
-            if modified_item is not None:
-                new_batch.append(modified_item)
-        return str(encoder(message_type, new_batch))
+    def __add_purchase(self, item_id: str, year_month_created_at: str) -> None:
+        key = (item_id, year_month_created_at)
+        if key not in self._purchase_counts:
+            self._purchase_counts[key] = 0
+        self._purchase_counts[key] += 1
 
-    def __transform_batch_message(self, message: str) -> str:
-        return self.__transform_batch_message_using(
-            message,
-            communication_protocol.decode_batch_message,
-            communication_protocol.encode_batch_message,
-        )
+    def __pop_next_batch_item(self) -> dict[str, str]:
+        (item_id, year_month_created_at), selling_qty = self._purchase_counts.popitem()
+        item = {}
+        item["item_id"] = item_id
+        item["year_month_created_at"] = year_month_created_at
+        item["selling_qty"] = str(selling_qty)
+        return item
+
+    def __take_next_batch(self) -> list[dict[str, str]]:
+        batch: list[dict[str, str]] = []
+
+        batch_size = 0
+        all_batchs_taken = False
+
+        while not all_batchs_taken and batch_size < self._batch_max_size:
+            if not self._purchase_counts:
+                all_batchs_taken = True
+                break
+
+            item = self.__pop_next_batch_item()
+            batch.append(item)
+            batch_size += 1
+
+        return batch
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
-    def __mom_send_message_to_next(self, message: str) -> None:
-        for mom_producer in self._mom_producers:
+    def __send_data_using_batchs(
+        self, mom_producer: RabbitMQMessageMiddlewareQueue
+    ) -> None:
+        batch = self.__take_next_batch()
+        while len(batch) != 0 and self.__is_running():
+            message = communication_protocol.encode_transactions_batch_message(batch)
             mom_producer.send(message)
+            logging.debug(
+                f"action: message_sent | result: success | message: {message}"
+            )
+            batch = self.__take_next_batch()
 
     def __handle_data_batch_message(self, message: str) -> None:
-        output_message = self.__transform_batch_message(message)
-        if not communication_protocol.decode_is_empty_message(output_message):
-            self.__mom_send_message_to_next(output_message)
+        batch = communication_protocol.decode_batch_message(message)
+        for batch_item in batch:
+            item_id = batch_item["item_id"]
+            year_month_created_at = batch_item["year_month_created_at"]
+            self.__add_purchase(item_id, year_month_created_at)
 
     def __handle_data_batch_eof(self, message: str) -> None:
         self._eof_received_from_previous_controllers += 1
         logging.debug(f"action: eof_received | result: success")
 
         if (
-                self._eof_received_from_previous_controllers
-                == self._previous_controllers_amount
+            self._eof_received_from_previous_controllers
+            == self._previous_controllers_amount
         ):
             logging.info("action: all_eofs_received | result: success")
+            for mom_producer in self._mom_producers:
+                self.__send_data_using_batchs(mom_producer)
+
             for mom_producer in self._mom_producers:
                 mom_producer.send(message)
             logging.info("action: eof_sent | result: success")

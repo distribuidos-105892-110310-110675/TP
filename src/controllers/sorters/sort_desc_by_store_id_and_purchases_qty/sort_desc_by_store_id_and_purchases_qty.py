@@ -46,7 +46,7 @@ class SortDescByStoreIdAndPurchasesQty:
         previous_controllers_amount: int,
         next_controllers_amount: int,
         batch_max_size: int,
-        number_of_customers_per_store: int,
+        amount_per_group: int,
     ) -> None:
         self._controller_id = controller_id
 
@@ -66,7 +66,7 @@ class SortDescByStoreIdAndPurchasesQty:
         self._previous_controllers_amount = previous_controllers_amount
 
         self._batch_max_size = batch_max_size
-        self._number_of_customers_per_store = number_of_customers_per_store
+        self._number_of_customers_per_store = amount_per_group
 
         self._sorted_desc_by_store_id_and_purchases_qty: dict[
             str, list[dict[str, str]]

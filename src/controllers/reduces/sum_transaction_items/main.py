@@ -24,8 +24,8 @@ def main():
         rabbitmq_host=config_params["RABBITMQ_HOST"],
         consumer_exchange_prefix=constants.MAPPED_YEAR_MONTH_TIT_EXHCHANGE_PREFIX,
         consumer_routing_key_prefix=constants.MAPPED_YEAR_MONTH_TIT_ROUTING_KEY_PREFIX,
-        producer_queue_prefix=constants.PROFIT_SUM_TIT_QUEUE_PREFIX,
-        previous_controllers_amount= int(config_params["PREV_CONTROLLERS_AMOUNT"]),
+        producer_queue_prefix=constants.PROFIT_SUM_BY_YEAR_MONTH_CREATED_AT__ITEM_ID_QUEUE_PREFIX,
+        previous_controllers_amount=int(config_params["PREV_CONTROLLERS_AMOUNT"]),
         next_controllers_amount=1,
         batch_max_size=int(config_params["BATCH_MAX_SIZE"]),
     )

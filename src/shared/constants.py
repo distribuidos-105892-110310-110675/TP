@@ -52,61 +52,76 @@ CLEANED_STR_ROUTING_KEY_PREFIX = "cleaned-stores-routing-key"
 
 # query 1
 
-FILTERED_TRN_BY_YEAR_EXCHANGE_PREFIX = "filtered-transactions-by-year-exchange"
-FILTERED_TRN_BY_YEAR_ROUTING_KEY_PREFIX = "filtered-transactions-by-year-routing-key"
+FILTERED_TRN_BY_YEAR_EXCHANGE_PREFIX = "trn-filtered-transactions-by-year-exchange"
+FILTERED_TRN_BY_YEAR_ROUTING_KEY_PREFIX = (
+    "trn-filtered-transactions-by-year-routing-key"
+)
+FILTERED_TRN_BY_YEAR__HOUR_EXCHANGE_PREFIX = (
+    "trn-filtered-transactions-by-year-&-hour-exchange"
+)
+FILTERED_TRN_BY_YEAR__HOUR_ROUTING_KEY_PREFIX = (
+    "trn-filtered-transactions-by-year-&-hour-routing-key"
+)
+FILTERED_TRN_BY_YEAR__HOUR__FINAL_AMOUNT_QUEUE_PREFIX = (
+    "trn-filtered-transactions-by-year-&-time-&-final-amount"
+)
 
 # query 2
 
-FILTERED_TIT_QUEUE_PREFIX = "filtered-transaction-items-by-year-queue"
-MAPPED_YEAR_MONTH_TIT_EXHCHANGE_PREFIX = "mapped-year-month-transaction-items-exchange"
+FILTERED_TIT_BY_YEAR_QUEUE_PREFIX = "tit-filtered-transaction-items-by-year-queue"
+
+MAPPED_YEAR_MONTH_TIT_EXHCHANGE_PREFIX = (
+    "tit-mapped-year-month-transaction-items-exchange"
+)
 MAPPED_YEAR_MONTH_TIT_ROUTING_KEY_PREFIX = (
-    "mapped-year-month-transaction-items-routing-key"
+    "tit-mapped-year-month-transaction-items-routing-key"
 )
 
-SELLING_QTY_TIT_QUEUE_PREFIX = "selling-qty-transaction-items-queue"
-PROFIT_SUM_TIT_QUEUE_PREFIX = "profit-sum-transaction-items-queue"
+# query 2.1
 
-JOIN_ITEM_COUNT_WITH_MENU_ITEMS_QUEUE_PREFIX = "join-item-count-with-menu-items-queue"
-JOIN_ITEM_SUM_WITH_MENU_ITEMS_QUEUE_PREFIX = "join-item-sum-with-menu-items-queue"
-
-JOIN_ITEMS_WITH_MENU_EXCHANGE_PREFIX = "join-item-count-with-menu-items-exchange"
-JOIN_ITEMS_WITH_MENU_ROUTING_KEY_PREFIX = "join-item-count-with-menu-items-routing-key"
-
-FILTERED_TRN_BY_YEAR__HOUR_EXCHANGE_PREFIX = (
-    "filtered-transactions-by-year-&-hour-exchange"
+SELLINGS_QTY_BY_YEAR_MONTH_CREATED_AT__ITEM_ID_QUEUE_PREFIX = (
+    "tit-sellings-qty-by-year-month-created-at-&-item-id-queue"
 )
-FILTERED_TRN_BY_YEAR__HOUR_ROUTING_KEY_PREFIX = (
-    "filtered-transactions-by-year-&-hour-routing-key"
+SORTED_DESC_SELLINGS_QTY_BY_YEAR_MONTH__ITEM_ID_QUEUE_PREFIX = (
+    "tit-sorted-desc-sellings-qty-by-year-month-&-item-id"
 )
-FILTERED_TRN_BY_YEAR__HOUR__FINAL_AMOUNT_QUEUE_PREFIX = (
-    "filtered-transactions-by-year-&-time-&-final-amount"
+SORTED_DESC_SELLINGS_QTY_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX = (
+    "tit-sorted-desc-sellings-qty-by-year-month-&-item-name"
+)
+
+# query 2.2
+
+PROFIT_SUM_BY_YEAR_MONTH_CREATED_AT__ITEM_ID_QUEUE_PREFIX = (
+    "tit-profit-sum-by-year-month-created-at-&-item-id-queue"
+)
+SORTED_DESC_PROFIT_SUM_BY_YEAR_MONTH__ITEM_ID_QUEUE_PREFIX = (
+    "tit-sorted-desc-profit-sum-by-year-month-&-item-id"
+)
+SORTED_DESC_PROFIT_SUM_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX = (
+    "tit-sorted-desc-profit-sum-by-year-month-&-item-name"
 )
 
 
 # query 3
 
-SORTED_DESC_SELLING_QTY_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX = (
-    "sorted-desc-selling-qty-by-year-month-&-item-name"
-)
-SORTED_DESC_PROFIT_SUM_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX = (
-    "sorted-desc-profit-sum-by-year-month-&-item-name"
-)
 TPV_BY_HALF_YEAR_CREATED_AT__STORE_NAME_QUEUE_PREFIX = (
-    "tpv-by-half-year-created-at-&-store-name"
+    "trn-tpv-by-half-year-created-at-&-store-name"
 )
 
 # query 4
 
-PURCHASES_QTY_BY_USR_ID__STORE_ID_QUEUE_PREFIX = "purchases-qty-by-user-id-&-store-id"
+PURCHASES_QTY_BY_USR_ID__STORE_ID_QUEUE_PREFIX = (
+    "trn-purchases-qty-by-user-id-&-store-id"
+)
 
 SORTED_DESC_BY_STORE_ID__PURCHASES_QTY_WITH_USER_ID = (
-    "sorted-desc-by-store-id-&-purchases-qty-with-user-id"
+    "trn-sorted-desc-by-store-id-&-purchases-qty-with-user-id"
 )
 SORTED_DESC_BY_STORE_ID__PURCHASES_QTY_WITH_USER_BITHDATE = (
-    "sorted-desc-by-store-id-&-purchases-qty-with-user-birthdate"
+    "trn-sorted-desc-by-store-id-&-purchases-qty-with-user-birthdate"
 )
 SORTED_DESC_BY_STORE_NAME__PURCHASES_QTY_WITH_USER_BITHDATE = (
-    "sorted-desc-by-store-name-&-purchases-qty-with-user-birthdate"
+    "trn-sorted-desc-by-store-name-&-purchases-qty-with-user-birthdate"
 )
 
 # query results

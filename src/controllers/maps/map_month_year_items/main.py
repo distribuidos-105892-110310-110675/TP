@@ -1,8 +1,6 @@
 import logging
 
-from controllers.maps.map_month_year_items.map_month_year_items import (
-    MapMonthYearItems,
-)
+from controllers.maps.map_month_year_items.map_month_year_items import MapMonthYearItems
 from shared import constants, initializer
 
 
@@ -22,7 +20,7 @@ def main():
     controller = MapMonthYearItems(
         controller_id=int(config_params["CONTROLLER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
-        consumer_queue_prefix=constants.FILTERED_TIT_QUEUE_PREFIX,
+        consumer_queue_prefix=constants.FILTERED_TIT_BY_YEAR_QUEUE_PREFIX,
         producer_exchange_prefix=constants.MAPPED_YEAR_MONTH_TIT_EXHCHANGE_PREFIX,
         producer_routing_key_prefix=constants.MAPPED_YEAR_MONTH_TIT_ROUTING_KEY_PREFIX,
         producer_routing_keys_amount=int(config_params["REDUCERS_AMOUNT"]),

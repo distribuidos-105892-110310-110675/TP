@@ -26,6 +26,7 @@ docker-build-image:
 
 	docker build -f ./src/controllers/reducers/count_purchases_by_store_id_and_user_id/Dockerfile -t "count_purchases_by_store_id_and_user_id:latest" .
 	docker build -f ./src/controllers/sorters/sort_desc_by_store_id_and_purchases_qty/Dockerfile -t "sort_desc_by_store_id_and_purchases_qty:latest" .
+	docker build -f ./src/controllers/joiners/join_transactions_with_users/Dockerfile -t "join_transactions_with_users:latest" .
 
 # 	docker build -f ./src/controllers/maps/map_month_semester/Dockerfile -t "map_month_semester:latest" .
 # 	docker build -f ./src/controllers/maps/map_month_year/Dockerfile -t "map_month_year:latest" .

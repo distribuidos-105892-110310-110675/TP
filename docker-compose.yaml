@@ -88,53 +88,53 @@ services:
 
   # ============================== CLEANERS SERVICES ============================== #
 
-  menu_items_cleaner_items_0:
-    container_name: menu_items_cleaner_items_0
-    image: menu_items_cleaner:latest
-    entrypoint: python3 -m controllers.cleaners.menu_items_cleaner.main
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=INFO
-      - CLEANER_ID=0
-      - RABBITMQ_HOST=rabbitmq-message-middleware
-      - JOINS_AMOUNT=1
-    networks:
-      - custom_net
-    depends_on:
-      rabbitmq-message-middleware:
-        condition: service_healthy
+  # menu_items_cleaner_items_0:
+  #   container_name: menu_items_cleaner_items_0
+  #   image: menu_items_cleaner:latest
+  #   entrypoint: python3 -m controllers.cleaners.menu_items_cleaner.main
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #     - LOGGING_LEVEL=INFO
+  #     - CLEANER_ID=0
+  #     - RABBITMQ_HOST=rabbitmq-message-middleware
+  #     - JOINS_AMOUNT=1
+  #   networks:
+  #     - custom_net
+  #   depends_on:
+  #     rabbitmq-message-middleware:
+  #       condition: service_healthy
 
-  stores_cleaner_items_0:
-    container_name: stores_cleaner_items_0
-    image: stores_cleaner:latest
-    entrypoint: python3 -m controllers.cleaners.stores_cleaner.main
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=INFO
-      - CLEANER_ID=0
-      - RABBITMQ_HOST=rabbitmq-message-middleware
-      - JOINS_AMOUNT=1
-    networks:
-      - custom_net
-    depends_on:
-      rabbitmq-message-middleware:
-        condition: service_healthy
+  # stores_cleaner_items_0:
+  #   container_name: stores_cleaner_items_0
+  #   image: stores_cleaner:latest
+  #   entrypoint: python3 -m controllers.cleaners.stores_cleaner.main
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #     - LOGGING_LEVEL=INFO
+  #     - CLEANER_ID=0
+  #     - RABBITMQ_HOST=rabbitmq-message-middleware
+  #     - JOINS_AMOUNT=1
+  #   networks:
+  #     - custom_net
+  #   depends_on:
+  #     rabbitmq-message-middleware:
+  #       condition: service_healthy
 
-  transaction_items_cleaner_0:
-    container_name: transaction_items_cleaner_0
-    image: transaction_items_cleaner:latest
-    entrypoint: python3 -m controllers.cleaners.transaction_items_cleaner.main
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=INFO
-      - CLEANER_ID=0
-      - RABBITMQ_HOST=rabbitmq-message-middleware
-      - FILTERS_AMOUNT=1
-    networks:
-      - custom_net
-    depends_on:
-      rabbitmq-message-middleware:
-        condition: service_healthy
+  # transaction_items_cleaner_0:
+  #   container_name: transaction_items_cleaner_0
+  #   image: transaction_items_cleaner:latest
+  #   entrypoint: python3 -m controllers.cleaners.transaction_items_cleaner.main
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #     - LOGGING_LEVEL=INFO
+  #     - CLEANER_ID=0
+  #     - RABBITMQ_HOST=rabbitmq-message-middleware
+  #     - FILTERS_AMOUNT=1
+  #   networks:
+  #     - custom_net
+  #   depends_on:
+  #     rabbitmq-message-middleware:
+  #       condition: service_healthy
 
   transactions_cleaner_0:
     container_name: transactions_cleaner_0
@@ -358,7 +358,7 @@ services:
         condition: service_healthy
 
   # ============================== SORT TRANSACTIONS SERVICES ============================== #
-  
+
   sort_desc_by_store_id_and_purchases_qty_0:
     container_name: sort_desc_by_store_id_and_purchases_qty_0
     image: sort_desc_by_store_id_and_purchases_qty:latest
@@ -371,6 +371,26 @@ services:
       - PREV_CONTROLLERS_AMOUNT=1
       - BATCH_MAX_SIZE=20
       - NUMBER_OF_USERS_PER_STORE=3
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  # ============================== JOIN SERVICES ============================== #
+
+  join_transactions_with_users_0:
+    container_name: join_transactions_with_users_0
+    image: join_transactions_with_users:latest
+    entrypoint: python3 -m controllers.joiners.join_transactions_with_users.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_BASE_DATA_CONTROLLERS_AMOUNT=1
+      - PREV_STREAM_DATA_CONTROLLERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=1
     networks:
       - custom_net
     depends_on:

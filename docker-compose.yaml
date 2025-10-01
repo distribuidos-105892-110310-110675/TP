@@ -225,24 +225,118 @@ services:
       rabbitmq-message-middleware:
         condition: service_healthy
 
-  # filter_items_by_year_0:
-  #   container_name: filter_items_by_year_0
-  #   image: filter_items_by_year:latest
-  #   entrypoint: python3 -m controllers.filters.filter_items_by_year.main
-  #   environment:
-  #     - PYTHONUNBUFFERED=1
-  #     - LOGGING_LEVEL=INFO
-  #     - CONTROLLER_ID=0
-  #     - RABBITMQ_HOST=rabbitmq-message-middleware
-  #     - PREV_CONTROLLERS_AMOUNT=1
-  #     - FILTERS_AMOUNT=1
-  #     - MAPS_AMOUNT=1
-  #     - YEARS=2024,2025
-  #   networks:
-  #     - custom_net
-  #   depends_on:
-  #     rabbitmq-message-middleware:
-  #       condition: service_healthy
+  filter_items_by_year_0:
+    container_name: filter_items_by_year_0
+    image: filter_items_by_year:latest
+    entrypoint: python3 -m controllers.filters.filter_items_by_year.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=1
+      - FILTERS_AMOUNT=1
+      - MAPS_AMOUNT=1
+      - YEARS=2024,2025
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  # ============================== MAP SERVICES ============================== #
+
+  map_month_year_items_0:
+    container_name: map_month_year_items_0
+    image: map_month_year_items:latest
+    entrypoint: python3 -m controllers.maps.map_month_year_items.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=1
+      - REDUCERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  # ============================== JOIN SERVICES ============================== #
+
+  join_item_count_with_menu_0:
+    container_name: join_item_count_with_menu_0
+    image: join_item_count_with_menu:latest
+    entrypoint: python3 -m controllers.joins.join_item_count_with_menu.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - OUTPUT_BUILDERS_AMOUNT=1
+      - PREVIOUS_MENU_ITEMS_SENDERS=1
+      - PREVIOUS_CONTROLLERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+
+  join_item_sum_with_menu_0:
+    container_name: join_item_sum_with_menu_0
+    image: join_item_sum_with_menu:latest
+    entrypoint: python3 -m controllers.joins.join_item_sum_with_menu.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - OUTPUT_BUILDERS_AMOUNT=1
+      - PREVIOUS_MENU_ITEMS_SENDERS=1
+      - PREVIOUS_CONTROLLERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+ # ============================== REDUCERS SERVICES ============================== #
+
+  count_transaction_items_0:
+    container_name: count_transaction_items_0
+    image: count_transaction_items:latest
+    entrypoint: python3 -m controllers.reduces.count_transaction_items.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=1
+      - BATCH_MAX_SIZE=20
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  sum_transaction_items_0:
+    container_name: sum_transaction_items_0
+    image: sum_transaction_items:latest
+    entrypoint: python3 -m controllers.reduces.sum_transaction_items.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=1
+      - BATCH_MAX_SIZE=20
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
 
   # ============================== OUTPUT BUILDER SERVICES ============================== #
 

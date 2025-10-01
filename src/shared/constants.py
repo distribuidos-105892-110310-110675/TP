@@ -52,6 +52,18 @@ FILTERED_TRN_BY_YEAR_ROUTING_KEY_PREFIX = "filtered-transactions-by-year-routing
 
 FILTERED_TIT_QUEUE_PREFIX = "filtered-transaction-items-by-year-queue"
 
+MAPPED_YEAR_MONTH_TIT_EXHCHANGE_PREFIX = "mapped-year-month-transaction-items-exchange"
+MAPPED_YEAR_MONTH_TIT_ROUTING_KEY_PREFIX = "mapped-year-month-transaction-items-routing-key"
+
+SELLING_QTY_TIT_QUEUE_PREFIX = "selling-qty-transaction-items-queue"
+PROFIT_SUM_TIT_QUEUE_PREFIX = "profit-sum-transaction-items-queue"
+
+JOIN_ITEM_COUNT_WITH_MENU_ITEMS_QUEUE_PREFIX = "join-item-count-with-menu-items-queue"
+JOIN_ITEM_SUM_WITH_MENU_ITEMS_QUEUE_PREFIX = "join-item-sum-with-menu-items-queue"
+
+JOIN_ITEMS_WITH_MENU_EXCHANGE_PREFIX = "join-item-count-with-menu-items-exchange"
+JOIN_ITEMS_WITH_MENU_ROUTING_KEY_PREFIX = "join-item-count-with-menu-items-routing-key"
+
 FILTERED_TRN_BY_YEAR__HOUR_EXCHANGE_PREFIX = (
     "filtered-transactions-by-year-&-hour-exchange"
 )

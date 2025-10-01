@@ -67,7 +67,7 @@ services:
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - MENU_ITEMS_CLN_AMOUNT=1
       - STORES_CLN_AMOUNT=1
-      - TRANSACTION_ITEMS_CLN_AMOUNT=1
+      - TRANSACTION_ITEMS_CLN_AMOUNT=3
       - TRANSACTIONS_CLN_AMOUNT=3
       - USERS_CLN_AMOUNT=1
       - Q1X_OB_AMOUNT=1
@@ -134,6 +134,38 @@ services:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
       - CLEANER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - FILTERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+  
+  transaction_items_cleaner_1:
+    container_name: transaction_items_cleaner_1
+    image: transaction_items_cleaner:latest
+    entrypoint: python3 -m controllers.cleaners.transaction_items_cleaner.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CLEANER_ID=1
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - FILTERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  transaction_items_cleaner_2:
+    container_name: transaction_items_cleaner_2
+    image: transaction_items_cleaner:latest
+    entrypoint: python3 -m controllers.cleaners.transaction_items_cleaner.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CLEANER_ID=2
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - FILTERS_AMOUNT=1
     networks:
@@ -272,7 +304,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=1
+      - PREV_CONTROLLERS_AMOUNT=3
       - FILTERS_AMOUNT=1
       - MAPS_AMOUNT=1
       - YEARS=2024,2025

@@ -269,6 +269,23 @@ services:
       rabbitmq-message-middleware:
         condition: service_healthy
 
+  map_month_semester_transactions_0:
+    container_name: map_month_semester_transactions_0
+    image: map_month_semester_transactions:latest
+    entrypoint: python3 -m controllers.mappers.map_month_semester_transactions.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=1
+      - REDUCERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
   # ============================== REDUCERS SERVICES ============================== #
 
   count_purchases_by_store_id_and_user_id_0:

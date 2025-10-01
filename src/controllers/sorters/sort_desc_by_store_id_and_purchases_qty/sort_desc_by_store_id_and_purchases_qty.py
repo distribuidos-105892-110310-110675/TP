@@ -150,16 +150,30 @@ class SortDescByStoreIdAndPurchasesQty:
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
-    def __send_data_using_batchs(
-        self, mom_producer: RabbitMQMessageMiddlewareQueue
-    ) -> None:
+    def __send_batch_based_on_hash(self, batch: list[dict[str, str]]) -> None:
+        user_batchs_by_hash: dict[int, list] = {}
+        for batch_item in batch:
+            user_id = int(batch_item["user_id"])
+            mom_producers_amount = len(self._mom_producers)
+            key = user_id % mom_producers_amount
+            if key not in user_batchs_by_hash:
+                user_batchs_by_hash[key] = []
+            user_batchs_by_hash[key].append(batch_item)
+
+        for key, user_batch in user_batchs_by_hash.items():
+            mom_cleaned_data_producer = self._mom_producers[key]
+            message = communication_protocol.encode_transactions_batch_message(
+                user_batch
+            )
+            mom_cleaned_data_producer.send(message)
+        logging.debug(
+            f"action: message_sent | result: success | batch_size: {len(batch)}"
+        )
+
+    def __send_data_using_batchs(self) -> None:
         batch = self.__take_next_batch()
         while len(batch) != 0 and self.__is_running():
-            message = communication_protocol.encode_transactions_batch_message(batch)
-            mom_producer.send(message)
-            logging.debug(
-                f"action: message_sent | result: success | message: {message}"
-            )
+            self.__send_batch_based_on_hash(batch)
             batch = self.__take_next_batch()
 
     def __handle_data_batch_message(self, message: str) -> None:
@@ -176,8 +190,7 @@ class SortDescByStoreIdAndPurchasesQty:
             == self._previous_controllers_amount
         ):
             logging.info("action: all_eofs_received | result: success")
-            for mom_producer in self._mom_producers:
-                self.__send_data_using_batchs(mom_producer)
+            self.__send_data_using_batchs()
 
             for mom_producer in self._mom_producers:
                 mom_producer.send(message)

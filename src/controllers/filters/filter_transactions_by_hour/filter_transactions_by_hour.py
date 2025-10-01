@@ -30,7 +30,7 @@ class FilterTransactionsByHour:
         self._mom_producers = []
         exchange_name = producer_exchange_prefix
         for i in range(producer_routing_keys_amount):
-            routing_key = [f"{producer_routing_key_prefix}-{i}"]
+            routing_key = [f"{producer_routing_key_prefix}.{i}"]
             self._mom_producers.append(
                 RabbitMQMessageMiddlewareExchange(
                     host=host,
@@ -60,7 +60,7 @@ class FilterTransactionsByHour:
         self.__init_mom_consumer(
             rabbitmq_host,
             consumer_exchange_prefix,
-            [f"{consumer_routing_key_prefix}-{self._controller_id}"],
+            [f"{consumer_routing_key_prefix}.{self._controller_id}"],
         )
         self.__init_mom_producers(
             rabbitmq_host,

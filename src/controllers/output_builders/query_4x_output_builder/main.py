@@ -21,7 +21,7 @@ def main():
     cleaner = Query4XOutputBuilder(
         controller_id=int(config_params["OUTPUT_BUILDER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
-        consumer_queue_prefix=constants.SORTED_DESC_PURCHASES_QTY_BY_USR_BIRTHDATE__STORE_NAME_QUEUE_PREFIX,
+        consumer_queue_prefix=constants.SORTED_DESC_BY_STORE_NAME__PURCHASES_QTY_WITH_USER_BITHDATE,
         producer_queue_prefix=constants.QRS_QUEUE_PREFIX,
         previous_controllers_amount=int(config_params["PREV_CONTROLLERS_AMOUNT"]),
     )

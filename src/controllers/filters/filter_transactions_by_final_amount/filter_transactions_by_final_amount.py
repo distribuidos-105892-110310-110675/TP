@@ -56,7 +56,7 @@ class FilterTransactionsByFinalAmount:
         self.__init_mom_consumer(
             rabbitmq_host,
             consumer_exchange_prefix,
-            [f"{consumer_routing_key_prefix}-{self._controller_id}"],
+            [f"{consumer_routing_key_prefix}.{self._controller_id}"],
         )
         self.__init_mom_producers(
             rabbitmq_host,

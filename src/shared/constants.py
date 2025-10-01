@@ -85,7 +85,6 @@ FILTERED_TRN_BY_YEAR__HOUR__FINAL_AMOUNT_QUEUE_PREFIX = (
 
 # query 3
 
-
 SORTED_DESC_SELLING_QTY_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX = (
     "sorted-desc-selling-qty-by-year-month-&-item-name"
 )
@@ -100,15 +99,14 @@ TPV_BY_HALF_YEAR_CREATED_AT__STORE_NAME_QUEUE_PREFIX = (
 
 PURCHASES_QTY_BY_USR_ID__STORE_ID_QUEUE_PREFIX = "purchases-qty-by-user-id-&-store-id"
 
-SORTED_DESC_PURCHASES_QTY_BY_USR_ID__STORE_ID_QUEUE_PREFIX = (
-    "sorted-desc-purchases-qty-by-user-id-&-store-id"
+SORTED_DESC_BY_STORE_ID__PURCHASES_QTY_WITH_USER_ID = (
+    "sorted-desc-by-store-id-&-purchases-qty-with-user-id"
 )
-SORTED_DESC_PURCHASES_QTY_BY_USR_BIRTHDATE__STORE_ID_QUEUE_PREFIX = (
-    "sorted-desc-purchases-qty-by-user-birtdate-&-store-id"
+SORTED_DESC_BY_STORE_ID__PURCHASES_QTY_WITH_USER_BITHDATE = (
+    "sorted-desc-by-store-id-&-purchases-qty-with-user-birthdate"
 )
-
-SORTED_DESC_PURCHASES_QTY_BY_USR_BIRTHDATE__STORE_NAME_QUEUE_PREFIX = (
-    "sorted-desc-purchases-qty-by-user-birthdate-&-store-name"
+SORTED_DESC_BY_STORE_NAME__PURCHASES_QTY_WITH_USER_BITHDATE = (
+    "sorted-desc-by-store-name-&-purchases-qty-with-user-birthdate"
 )
 
 # query results

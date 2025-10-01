@@ -32,7 +32,7 @@ class StoresCleaner:
         self._mom_cleaned_data_producers: list[RabbitMQMessageMiddlewareExchange] = []
         for id in range(cleaned_data_routing_keys_amount):
             exchange_name = cleaned_data_exchange_prefix
-            routing_keys = [f"{cleaned_data_routing_key_prefix}-{id}"]
+            routing_keys = [f"{cleaned_data_routing_key_prefix}.{id}"]
             mom_cleaned_data_producer = RabbitMQMessageMiddlewareExchange(
                 host=host,
                 exchange_name=exchange_name,

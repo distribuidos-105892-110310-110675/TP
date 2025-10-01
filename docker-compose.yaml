@@ -359,6 +359,23 @@ services:
 
   # ============================== SORT TRANSACTIONS SERVICES ============================== #
   
+  sort_desc_by_store_id_and_purchases_qty_0:
+    container_name: sort_desc_by_store_id_and_purchases_qty_0
+    image: sort_desc_by_store_id_and_purchases_qty:latest
+    entrypoint: python3 -m controllers.sorters.sort_desc_by_store_id_and_purchases_qty.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=1
+      - BATCH_MAX_SIZE=20
+      - NUMBER_OF_USERS_PER_STORE=3
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
 
   # ============================== OUTPUT BUILDER SERVICES ============================== #
 

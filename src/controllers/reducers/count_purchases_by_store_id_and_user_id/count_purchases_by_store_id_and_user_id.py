@@ -56,7 +56,7 @@ class CountPurchasesByStoreIdAndUserId:
         self.__init_mom_consumer(
             rabbitmq_host,
             consumer_exchange_prefix,
-            [f"{consumer_routing_key_prefix}-{self._controller_id}"],
+            [f"{consumer_routing_key_prefix}.*"],
         )
         self.__init_mom_producers(
             rabbitmq_host,
@@ -68,7 +68,7 @@ class CountPurchasesByStoreIdAndUserId:
 
         self._batch_max_size = batch_max_size
 
-        self.purchase_counts: dict[tuple[str, str], int] = {}
+        self._purchase_counts: dict[tuple[str, str], int] = {}
 
     # ============================== PRIVATE - ACCESSING ============================== #
 
@@ -97,12 +97,12 @@ class CountPurchasesByStoreIdAndUserId:
 
     def __add_purchase(self, store_id: str, user_id: str) -> None:
         key = (store_id, user_id)
-        if key not in self.purchase_counts:
-            self.purchase_counts[key] = 0
-        self.purchase_counts[key] += 1
+        if key not in self._purchase_counts:
+            self._purchase_counts[key] = 0
+        self._purchase_counts[key] += 1
 
-    def __pop_next_item(self) -> dict[str, str]:
-        (store_id, user_id), purchases_qty = self.purchase_counts.popitem()
+    def __pop_next_batch_item(self) -> dict[str, str]:
+        (store_id, user_id), purchases_qty = self._purchase_counts.popitem()
         item = {}
         item["store_id"] = store_id
         item["user_id"] = user_id
@@ -116,11 +116,11 @@ class CountPurchasesByStoreIdAndUserId:
         all_batchs_taken = False
 
         while not all_batchs_taken and batch_size < self._batch_max_size:
-            if not self.purchase_counts:
+            if not self._purchase_counts:
                 all_batchs_taken = True
                 break
 
-            item = self.__pop_next_item()
+            item = self.__pop_next_batch_item()
             batch.append(item)
             batch_size += 1
 
@@ -142,9 +142,9 @@ class CountPurchasesByStoreIdAndUserId:
 
     def __handle_data_batch_message(self, message: str) -> None:
         batch = communication_protocol.decode_batch_message(message)
-        for item in batch:
-            store_id = item["store_id"]
-            user_id = item["user_id"]
+        for batch_item in batch:
+            store_id = batch_item["store_id"]
+            user_id = batch_item["user_id"]
             self.__add_purchase(store_id, user_id)
 
     def __handle_data_batch_eof(self, message: str) -> None:

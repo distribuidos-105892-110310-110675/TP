@@ -121,6 +121,9 @@ class CountPurchasesByStoreIdAndUserId:
                 break
 
             item = self.__pop_next_batch_item()
+            if item["user_id"] == "":
+                logging.warning("action: empty_user_id | result: skipped")
+                continue
             batch.append(item)
             batch_size += 1
 

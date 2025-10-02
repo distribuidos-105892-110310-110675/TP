@@ -110,14 +110,14 @@ class UsersCleaner:
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
     def __mom_send_message_to_next(self, message: str) -> None:
-        user_batchs_by_hash: dict = {}
+        user_batchs_by_hash: dict[int, list] = {}
         for batch_item in communication_protocol.decode_users_batch_message(message):
             if batch_item["user_id"] == "":
+                logging.warning(
+                    f"action: invalid_user_id | user_id: {batch_item['user_id']} | result: skipped"
+                )
                 continue
-            user_id_str = batch_item["user_id"]
-            if user_id_str.endswith(".0"):
-                user_id_str = user_id_str[:-2]
-            user_id = int(user_id_str)
+            user_id = int(float(batch_item["user_id"]))
             batch_item["user_id"] = str(user_id)
             key = user_id % self._mom_cleaned_data_producers_amount
             if key not in user_batchs_by_hash:

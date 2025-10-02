@@ -154,11 +154,11 @@ class SortDescByStoreIdAndPurchasesQty:
         user_batchs_by_hash: dict[int, list] = {}
         for batch_item in batch:
             if batch_item["user_id"] == "":
+                logging.warning(
+                    f"action: invalid_user_id | user_id: {batch_item['user_id']} | result: skipped"
+                )
                 continue
-            user_id_str = batch_item["user_id"]
-            if user_id_str.endswith(".0"):
-                user_id_str = user_id_str[:-2]
-            user_id = int(user_id_str)
+            user_id = int(float(batch_item["user_id"]))
             batch_item["user_id"] = str(user_id)
             mom_producers_amount = len(self._mom_producers)
             key = user_id % mom_producers_amount

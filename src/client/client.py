@@ -270,7 +270,7 @@ class Client:
         file_name = f"client_{self._client_id}_{message_type}_result.txt"
         for item_batch in communication_protocol.decode_batch_message(message):
             shell_cmd.shell_silent(
-                f"echo '{item_batch}' >> {self._output_path / file_name}"
+                f"echo '{",".join(item_batch.values())}' >> {self._output_path / file_name}"
             )
             logging.debug(
                 f"action: {message_type}_save_query_result | result: success | file: {file_name}",

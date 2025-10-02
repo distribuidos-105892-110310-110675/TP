@@ -123,9 +123,9 @@ El sistema funciona con archivos de entrada y salida, se pasa a detallar el func
 
 ### Archivos de entrada
 
-Residen en el directorio ".data", estos son los que envía el cliente junto con las queries, y le brindan al sistema los datos para realizar el procesamiento pedido.
+Residen en el directorio ".data/full_data", estos son los que envía el cliente junto con las queries, y le brindan al sistema los datos para realizar el procesamiento pedido.
 
-En este repositorio se encuentran unos pequeños ejemplos de los mismos, se utilizaron como testeo inicial del sistema para validar funcionamiento, pero para trabajar sobre la resolución del trabajo práctico solicitado deben cargarse los brindados por la cátedra.
+Por motivos de tamaño excesivo no se pueden cargas los datasets directamente en el repositorio, por lo que deben cargarse manualmente.
 
 Estos mismos pueden ser encontrados en el siguiente: [🔗 Link al dataset completo](https://www.kaggle.com/datasets/geraldooizx/g-coffee-shop-transaction-202307-to-202506/data)
 
@@ -134,3 +134,21 @@ Estos mismos pueden ser encontrados en el siguiente: [🔗 Link al dataset compl
 Las respuestas a las queries se generarán en archivos separados por cada una, que se crearán dentro del directorio '.results'.
 
 Al finalizar la ejecución completa del procesamiento para todas las queries, dentro de ese directorio encontraremos el reporte final con los resultados para cada consulta realizada por el cliente.
+
+## 💻 Script comparativo
+
+Para validar el correcto funcionamiento del sistema, se cuenta con el script 'compare_results.py' dentro del directorio 'expected_output'.
+
+Dentro del mismo directorio se encuentran cargadas las salidas esperadas para las queries del usuario, y el script se encarga de comparar dichos valores con los obtenidos en el directorio '.results'.
+
+Para ejecutar el script comparativo se debe utilizar el siguiente comando:
+
+```bash
+
+python3 ./expected_output/compare_results.py --expected ./expected_output --actual ./.results/query_results
+
+```
+
+## 🎥 Desmotración de funcionamiento
+
+[🔗 Link al video tutorial de funcionamiento](https://drive.google.com/drive/folders/1iDnXWh1Dd8fJBw4gxLcIzglYpP3rrnXQ?usp=sharing)

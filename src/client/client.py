@@ -96,9 +96,15 @@ class Client:
                 all_data_received = True
 
             if communication_protocol.MSG_END_DELIMITER.encode("utf-8") in chunk:
-                index = chunk.rindex(communication_protocol.MSG_END_DELIMITER.encode("utf-8"))
-                bytes_received += chunk[: index + len(communication_protocol.MSG_END_DELIMITER)]
-                self._temp_buffer = chunk[index + len(communication_protocol.MSG_END_DELIMITER) :]
+                index = chunk.rindex(
+                    communication_protocol.MSG_END_DELIMITER.encode("utf-8")
+                )
+                bytes_received += chunk[
+                    : index + len(communication_protocol.MSG_END_DELIMITER)
+                ]
+                self._temp_buffer = chunk[
+                    index + len(communication_protocol.MSG_END_DELIMITER) :
+                ]
                 all_data_received = True
             else:
                 bytes_received += chunk
@@ -261,14 +267,14 @@ class Client:
 
     def __handle_query_result_message(self, message: str, message_type: str) -> None:
         logging.info(f"action: {message_type}_receive_query_result | result: success")
-
-        payload = communication_protocol.get_message_payload(message)
         file_name = f"client_{self._client_id}_{message_type}_result.txt"
-
-        shell_cmd.shell_silent(f"echo '{payload}' >> {self._output_path / file_name}")
-        logging.debug(
-            f"action: {message_type}_save_query_result | result: success | file: {file_name}",
-        )
+        for item_batch in communication_protocol.decode_batch_message(message):
+            shell_cmd.shell_silent(
+                f"echo '{item_batch}' >> {self._output_path / file_name}"
+            )
+            logging.debug(
+                f"action: {message_type}_save_query_result | result: success | file: {file_name}",
+            )
 
     def __handle_server_message(self, message: str, all_eof_received: dict) -> None:
         message_type = communication_protocol.decode_message_type(message)

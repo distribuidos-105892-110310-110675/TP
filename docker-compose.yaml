@@ -67,8 +67,8 @@ services:
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - MENU_ITEMS_CLN_AMOUNT=1
       - STORES_CLN_AMOUNT=1
-      - TRANSACTION_ITEMS_CLN_AMOUNT=3
-      - TRANSACTIONS_CLN_AMOUNT=3
+      - TRANSACTION_ITEMS_CLN_AMOUNT=4
+      - TRANSACTIONS_CLN_AMOUNT=4
       - USERS_CLN_AMOUNT=1
       - Q1X_OB_AMOUNT=1
       - Q21_OB_AMOUNT=1
@@ -174,6 +174,22 @@ services:
       rabbitmq-message-middleware:
         condition: service_healthy
 
+  transaction_items_cleaner_3:
+    container_name: transaction_items_cleaner_3
+    image: transaction_items_cleaner:latest
+    entrypoint: python3 -m controllers.cleaners.transaction_items_cleaner.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CLEANER_ID=3
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - FILTERS_AMOUNT=3
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
   transactions_cleaner_0:
     container_name: transactions_cleaner_0
     image: transactions_cleaner:latest
@@ -222,6 +238,22 @@ services:
       rabbitmq-message-middleware:
         condition: service_healthy
 
+  transactions_cleaner_3:
+    container_name: transactions_cleaner_3
+    image: transactions_cleaner:latest
+    entrypoint: python3 -m controllers.cleaners.transactions_cleaner.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CLEANER_ID=3
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - FILTERS_AMOUNT=3
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
   users_cleaner_0:
     container_name: users_cleaner_0
     image: users_cleaner:latest
@@ -249,7 +281,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=3
+      - PREV_CONTROLLERS_AMOUNT=4
       - FILTERS_AMOUNT=1
       - YEARS=2024,2025
     networks:
@@ -267,7 +299,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=3
+      - PREV_CONTROLLERS_AMOUNT=4
       - FILTERS_AMOUNT=1
       - YEARS=2024,2025
     networks:
@@ -285,7 +317,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CONTROLLER_ID=2
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=3
+      - PREV_CONTROLLERS_AMOUNT=4
       - FILTERS_AMOUNT=1
       - YEARS=2024,2025
     networks:
@@ -340,7 +372,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=3
+      - PREV_CONTROLLERS_AMOUNT=4
       - MAPS_AMOUNT=3
       - YEARS=2024,2025
     networks:
@@ -358,7 +390,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=3
+      - PREV_CONTROLLERS_AMOUNT=4
       - MAPS_AMOUNT=3
       - YEARS=2024,2025
     networks:
@@ -376,7 +408,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CONTROLLER_ID=2
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=3
+      - PREV_CONTROLLERS_AMOUNT=4
       - MAPS_AMOUNT=3
       - YEARS=2024,2025
     networks:

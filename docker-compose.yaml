@@ -39,7 +39,7 @@ services:
       - custom_net
     volumes:
       - type: bind
-        source: ./.data/reduced_data
+        source: ./.data/full_data
         target: /data
         read_only: true
       - type: bind
@@ -119,7 +119,7 @@ services:
       - LOGGING_LEVEL=INFO
       - CLEANER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - JOINS_AMOUNT=1
+      - JOINS_AMOUNT=2
     networks:
       - custom_net
     depends_on:
@@ -598,7 +598,7 @@ services:
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_BASE_DATA_CONTROLLERS_AMOUNT=1
       - PREV_STREAM_DATA_CONTROLLERS_AMOUNT=1
-      - NEXT_CONTROLLERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=2
     networks:
       - custom_net
     depends_on:
@@ -616,7 +616,7 @@ services:
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_BASE_DATA_CONTROLLERS_AMOUNT=1
       - PREV_STREAM_DATA_CONTROLLERS_AMOUNT=1
-      - NEXT_CONTROLLERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=2
     networks:
       - custom_net
     depends_on:
@@ -631,6 +631,24 @@ services:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
       - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_BASE_DATA_CONTROLLERS_AMOUNT=1
+      - PREV_STREAM_DATA_CONTROLLERS_AMOUNT=2
+      - NEXT_CONTROLLERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  join_transactions_with_stores_1:
+    container_name: join_transactions_with_stores_1
+    image: join_transactions_with_stores:latest
+    entrypoint: python3 -m controllers.joiners.join_transactions_with_stores.main
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOGGING_LEVEL=INFO
+      - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_BASE_DATA_CONTROLLERS_AMOUNT=1
       - PREV_STREAM_DATA_CONTROLLERS_AMOUNT=2

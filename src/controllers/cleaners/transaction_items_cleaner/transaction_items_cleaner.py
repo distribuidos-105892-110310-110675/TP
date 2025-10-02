@@ -63,7 +63,7 @@ class TransactionItemsCleaner:
         self._server_running = True
 
     def __columns_to_keep(self) -> list[str]:
-        return ["created_at", "item_id", "subtotal"]
+        return ["created_at", "item_id", "subtotal", "quantity"]
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 

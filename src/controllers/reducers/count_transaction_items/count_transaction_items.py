@@ -95,11 +95,13 @@ class CountTransactionItemsByYearAndId:
 
     # ============================== PRIVATE - HANDLE DATA ============================== #
 
-    def __add_purchase(self, item_id: str, year_month_created_at: str) -> None:
+    def __add_purchase(
+        self, item_id: str, year_month_created_at: str, quantity: int
+    ) -> None:
         key = (item_id, year_month_created_at)
         if key not in self._purchase_counts:
             self._purchase_counts[key] = 0
-        self._purchase_counts[key] += 1
+        self._purchase_counts[key] += quantity
 
     def __pop_next_batch_item(self) -> dict[str, str]:
         (item_id, year_month_created_at), sellings_qty = self._purchase_counts.popitem()
@@ -145,7 +147,8 @@ class CountTransactionItemsByYearAndId:
         for batch_item in batch:
             item_id = batch_item["item_id"]
             year_month_created_at = batch_item["year_month_created_at"]
-            self.__add_purchase(item_id, year_month_created_at)
+            quantity = int(float(batch_item["quantity"]))
+            self.__add_purchase(item_id, year_month_created_at, quantity)
 
     def __handle_data_batch_eof(self, message: str) -> None:
         self._eof_received_from_previous_controllers += 1

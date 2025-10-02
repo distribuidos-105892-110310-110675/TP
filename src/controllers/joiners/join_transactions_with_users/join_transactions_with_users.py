@@ -123,6 +123,7 @@ class JoinTransactionsWithUsers:
                     joined_item = {**stream_item, **base_item}
                     joined_data.append(joined_item)
                     was_joined = True
+                    break
             if not was_joined:
                 logging.warning(
                     f"action: join_failed | user_id: {stream_item['user_id']} | result: skipped"

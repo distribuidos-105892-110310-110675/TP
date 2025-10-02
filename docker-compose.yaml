@@ -39,7 +39,7 @@ services:
       - custom_net
     volumes:
       - type: bind
-        source: ./.data/reduced_data
+        source: ./.data/full_data
         target: /data
         read_only: true
       - type: bind

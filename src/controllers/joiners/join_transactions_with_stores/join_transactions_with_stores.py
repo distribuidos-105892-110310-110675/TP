@@ -132,6 +132,7 @@ class JoinTransactionsWithStores:
                     joined_item = {**stream_item, **base_item}
                     joined_data.append(joined_item)
                     was_joined = True
+                    break
             if not was_joined:
                 logging.warning(
                     f"action: join_failed | store_id: {stream_item['store_id']} | result: skipped"

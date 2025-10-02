@@ -115,12 +115,18 @@ class JoinTransactionsWithUsers:
         stream_data = communication_protocol.decode_batch_message(message)
         joined_data: list[dict[str, str]] = []
         for stream_item in stream_data:
-            user_id = stream_item["user_id"]
+            was_joined = False
+            stream_user_id = int(float(stream_item["user_id"]))
             for base_item in self._base_data:
-                if base_item["user_id"] == user_id:
+                base_user_id = int(float(base_item["user_id"]))
+                if base_user_id == stream_user_id:
                     joined_item = {**stream_item, **base_item}
                     joined_data.append(joined_item)
-                    break
+                    was_joined = True
+            if not was_joined:
+                logging.warning(
+                    f"action: join_failed | user_id: {stream_item['user_id']} | result: skipped"
+                )
         return communication_protocol.encode_batch_message(message_type, joined_data)
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #

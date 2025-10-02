@@ -39,7 +39,7 @@ services:
       - custom_net
     volumes:
       - type: bind
-        source: ./.data/full_data
+        source: ./.data/reduced_data
         target: /data
         read_only: true
       - type: bind
@@ -570,7 +570,7 @@ services:
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=1
-      - NEXT_CONTROLLERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=2
       - BATCH_MAX_SIZE=20
       - AMOUNT_PER_GROUP=3
     networks:

@@ -110,7 +110,7 @@ class UsersCleaner:
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
     def __mom_send_message_to_next(self, message: str) -> None:
-        user_batchs_by_hash: dict = {}
+        user_batchs_by_hash: dict[int, list] = {}
         for batch_item in communication_protocol.decode_users_batch_message(message):
             if batch_item["user_id"] == "":
                 logging.warning(

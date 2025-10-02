@@ -1,25 +1,10 @@
 import logging
 import signal
-from typing import Any, Optional, Callable
+from typing import Any, Callable, Optional
 
+from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from shared import communication_protocol
 
-from middleware.rabbitmq_message_middleware_exchange import (
-    RabbitMQMessageMiddlewareExchange,
-)
-from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
-
-ITEMS = [
-    {"transaction_id": "ac6f851c-649f-42fb-a606-72be0fdcf8d2", "item_id": "6", "quantity": "1", "unit_price": "9.5", "subtotal": "9.5", "created_at": "2021-01-01 10:06:50"},
-    {"transaction_id": "ac6f851c-649f-42fb-a606-72be0fdcf8d2", "item_id": "4", "quantity": "3", "unit_price": "8.0", "subtotal": "24.0", "created_at": "2022-01-01 10:06:50"},
-    {"transaction_id": "ac6f851c-649f-42fb-a606-72be0fdcf8d2", "item_id": "8", "quantity": "3", "unit_price": "10.0", "subtotal": "30.0", "created_at": "2023-01-01 10:06:50"},
-    {"transaction_id": "d7856e66-c613-45c4-b9ca-7a3cec6c6db3", "item_id": "2", "quantity": "3", "unit_price": "7.0", "subtotal": "21.0", "created_at": "2024-01-01 10:06:52"},
-    {"transaction_id": "d7856e66-c613-45c4-b9ca-7a3cec6c6db3", "item_id": "6", "quantity": "1", "unit_price": "9.5", "subtotal": "9.5", "created_at": "2025-01-01 10:06:52"},
-    {"transaction_id": "78015742-1f8b-4f9c-bde2-0e68b822890c", "item_id": "1", "quantity": "1", "unit_price": "6.0", "subtotal": "6.0", "created_at": "2021-01-01 10:06:53"},
-    {"transaction_id": "78015742-1f8b-4f9c-bde2-0e68b822890c", "item_id": "4", "quantity": "3", "unit_price": "8.0", "subtotal": "24.0", "created_at": "2024-01-01 10:06:53"},
-    {"transaction_id": "78015742-1f8b-4f9c-bde2-0e68b822890c", "item_id": "4", "quantity": "3", "unit_price": "8.0", "subtotal": "24.0", "created_at": "2025-01-01 10:06:53"},
-    {"transaction_id": "78015742-1f8b-4f9c-bde2-0e68b822890c", "item_id": "7", "quantity": "3", "unit_price": "8.0", "subtotal": "24.0", "created_at": "2022-01-01 10:06:53"},
-]
 
 class FilterItemsByYear:
     # ============================== INITIALIZE ============================== #
@@ -31,9 +16,10 @@ class FilterItemsByYear:
         )
 
     def __init_mom_producers(
-            self,
-            host: str,
-            filtered_items_queue_prefix: str, filtered_items_queues_amount: int
+        self,
+        host: str,
+        filtered_items_queue_prefix: str,
+        filtered_items_queues_amount: int,
     ) -> None:
         self._current_filtered_items_producer_id = 0
         self._mom_producers: list[RabbitMQMessageMiddlewareQueue] = []
@@ -45,14 +31,14 @@ class FilterItemsByYear:
             self._mom_producers.append(mom_cleaned_data_producer)
 
     def __init__(
-            self,
-            controller_id: int,
-            rabbitmq_host: str,
-            consumer_queue_prefix: str,
-            producer_queue_prefix: str,
-            previous_controllers_amount: int,
-            next_controllers_amount: int,
-            years_to_filter: list[int],
+        self,
+        controller_id: int,
+        rabbitmq_host: str,
+        consumer_queue_prefix: str,
+        producer_queue_prefix: str,
+        previous_controllers_amount: int,
+        next_controllers_amount: int,
+        years_to_filter: list[int],
     ) -> None:
         self._controller_id = controller_id
 
@@ -108,11 +94,11 @@ class FilterItemsByYear:
         return batch_item
 
     def __transform_batch_message_using(
-            self,
-            message: str,
-            decoder: Callable,
-            encoder: Callable,
-            output_message_type: Optional[str] = None,
+        self,
+        message: str,
+        decoder: Callable,
+        encoder: Callable,
+        output_message_type: Optional[str] = None,
     ) -> str:
         message_type = output_message_type
         if output_message_type is None:
@@ -141,9 +127,7 @@ class FilterItemsByYear:
         mom_filtered_items_producer.send(message)
 
         self._current_filtered_items_producer_id += 1
-        if self._current_filtered_items_producer_id >= len(
-                self._mom_producers
-        ):
+        if self._current_filtered_items_producer_id >= len(self._mom_producers):
             self._current_filtered_items_producer_id = 0
 
     def __handle_data_batch_message(self, message: str) -> None:
@@ -156,8 +140,8 @@ class FilterItemsByYear:
         logging.debug(f"action: eof_received | result: success")
 
         if (
-                self._eof_received_from_previous_controllers
-                == self._previous_controllers_amount
+            self._eof_received_from_previous_controllers
+            == self._previous_controllers_amount
         ):
             logging.info("action: all_eofs_received | result: success")
             for mom_producer in self._mom_producers:

@@ -38,14 +38,14 @@ class MapMonthSemesterTransactions:
             )
 
     def __init__(
-            self,
-            controller_id: int,
-            rabbitmq_host: str,
-            consumer_exchange_prefix: str,
-            consumer_routing_key_prefix: str,
-            producer_queue_prefix: str,
-            next_controllers_amount: int,
-            previous_controllers_amount: int,
+        self,
+        controller_id: int,
+        rabbitmq_host: str,
+        consumer_exchange_prefix: str,
+        consumer_routing_key_prefix: str,
+        producer_queue_prefix: str,
+        next_controllers_amount: int,
+        previous_controllers_amount: int,
     ) -> None:
         self._controller_id = controller_id
 
@@ -55,7 +55,7 @@ class MapMonthSemesterTransactions:
         self.__init_mom_consumer(
             rabbitmq_host,
             consumer_exchange_prefix,
-            [f"{consumer_routing_key_prefix}.*"]
+            [f"{consumer_routing_key_prefix}.*"],
         )
         self.__init_mom_producers(
             rabbitmq_host,
@@ -92,22 +92,22 @@ class MapMonthSemesterTransactions:
     # ============================== PRIVATE - TRANSFORM DATA ============================== #
 
     def __transform_batch_item(self, batch_item: dict[str, str]) -> Optional[dict]:
-        date = batch_item['created_at'].split(" ")[0]
-        month = date.split('-')[1]
+        date = batch_item["created_at"].split(" ")[0]
+        month = date.split("-")[1]
         if int(month) <= 6:
             semester = "H1"
         else:
             semester = "H2"
-        year = date.split('-')[0]
-        batch_item['year_half_created_at'] = f"{year}-{semester}"
+        year = date.split("-")[0]
+        batch_item["year_half_created_at"] = f"{year}-{semester}"
         return batch_item
 
     def __transform_batch_message_using(
-            self,
-            message: str,
-            decoder: Callable,
-            encoder: Callable,
-            output_message_type: Optional[str] = None,
+        self,
+        message: str,
+        decoder: Callable,
+        encoder: Callable,
+        output_message_type: Optional[str] = None,
     ) -> str:
         message_type = output_message_type
         if output_message_type is None:
@@ -143,8 +143,8 @@ class MapMonthSemesterTransactions:
         logging.debug(f"action: eof_received | result: success")
 
         if (
-                self._eof_received_from_previous_controllers
-                == self._previous_controllers_amount
+            self._eof_received_from_previous_controllers
+            == self._previous_controllers_amount
         ):
             logging.info("action: all_eofs_received | result: success")
             for mom_producer in self._mom_producers:

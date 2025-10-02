@@ -95,9 +95,9 @@ class SumTransactionItemsSubtotal:
 
     # ============================== PRIVATE - HANDLE DATA ============================== #
 
-
-
-    def __add_purchase(self, item_id: str, year_month_created_at: str, subtotal: float) -> None:
+    def __add_purchase(
+        self, item_id: str, year_month_created_at: str, subtotal: float
+    ) -> None:
         key = (item_id, year_month_created_at)
         if key not in self._purchase_counts:
             self._purchase_counts[key] = 0

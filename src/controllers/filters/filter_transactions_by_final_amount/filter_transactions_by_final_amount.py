@@ -138,7 +138,9 @@ class FilterTransactionsByFinalAmount:
     def __handle_data_batch_message(self, message: str) -> None:
         output_message = self.__transform_batch_message(message)
         if not communication_protocol.decode_is_empty_message(output_message):
-            logging.debug(f"action: message_sent | result: success | message: {output_message}")
+            logging.debug(
+                f"action: message_sent | result: success | message: {output_message}"
+            )
             self.__mom_send_message_to_next(output_message)
 
     def __handle_data_batch_eof(self, message: str) -> None:

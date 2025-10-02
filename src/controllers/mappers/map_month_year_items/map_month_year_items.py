@@ -20,11 +20,11 @@ class MapMonthYearItems:
         )
 
     def __init_mom_producers(
-            self,
-            host: str,
-            producer_exchange_prefix: str,
-            producer_routing_key_prefix: str,
-            producer_routing_keys_amount: int,
+        self,
+        host: str,
+        producer_exchange_prefix: str,
+        producer_routing_key_prefix: str,
+        producer_routing_keys_amount: int,
     ) -> None:
         self._current_producer_id = 0
         self._mom_producers = []
@@ -40,14 +40,14 @@ class MapMonthYearItems:
             )
 
     def __init__(
-            self,
-            controller_id: int,
-            rabbitmq_host: str,
-            consumer_queue_prefix: str,
-            producer_exchange_prefix: str,
-            producer_routing_key_prefix: str,
-            producer_routing_keys_amount: int,
-            previous_controllers_amount: int,
+        self,
+        controller_id: int,
+        rabbitmq_host: str,
+        consumer_queue_prefix: str,
+        producer_exchange_prefix: str,
+        producer_routing_key_prefix: str,
+        producer_routing_keys_amount: int,
+        previous_controllers_amount: int,
     ) -> None:
         self._controller_id = controller_id
 
@@ -94,18 +94,18 @@ class MapMonthYearItems:
     # ============================== PRIVATE - TRANSFORM DATA ============================== #
 
     def __transform_batch_item(self, batch_item: dict[str, str]) -> Optional[dict]:
-        date = batch_item['created_at'].split(" ")[0]
-        month = date.split('-')[1]
-        year = date.split('-')[0]
-        batch_item['year_month_created_at'] = f"{year}-{month}"
+        date = batch_item["created_at"].split(" ")[0]
+        month = date.split("-")[1]
+        year = date.split("-")[0]
+        batch_item["year_month_created_at"] = f"{year}-{month}"
         return batch_item
 
     def __transform_batch_message_using(
-            self,
-            message: str,
-            decoder: Callable,
-            encoder: Callable,
-            output_message_type: Optional[str] = None,
+        self,
+        message: str,
+        decoder: Callable,
+        encoder: Callable,
+        output_message_type: Optional[str] = None,
     ) -> str:
         message_type = output_message_type
         if output_message_type is None:
@@ -141,8 +141,8 @@ class MapMonthYearItems:
         logging.debug(f"action: eof_received | result: success")
 
         if (
-                self._eof_received_from_previous_controllers
-                == self._previous_controllers_amount
+            self._eof_received_from_previous_controllers
+            == self._previous_controllers_amount
         ):
             logging.info("action: all_eofs_received | result: success")
             for mom_producer in self._mom_producers:

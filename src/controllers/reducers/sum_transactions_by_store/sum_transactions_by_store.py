@@ -1,6 +1,7 @@
 import logging
 import signal
 from typing import Any, Callable
+
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from shared import communication_protocol
 
@@ -9,7 +10,7 @@ class SumTransactionsByStore:
 
     # ============================== INITIALIZE ============================== #
 
-    def __init_mom_consumers(self, host: str, consumer_queue_prefix: str)-> None:
+    def __init_mom_consumers(self, host: str, consumer_queue_prefix: str) -> None:
         queue_name = f"{consumer_queue_prefix}-{self._controller_id}"
         self._mom_consumer = RabbitMQMessageMiddlewareQueue(
             host=host, queue_name=queue_name
@@ -22,7 +23,7 @@ class SumTransactionsByStore:
         producer_queues_amount: int,
     ) -> None:
         self._current_producer_id = 0
-        self._mom_producers : list[RabbitMQMessageMiddlewareQueue]= []
+        self._mom_producers: list[RabbitMQMessageMiddlewareQueue] = []
         for i in range(producer_queues_amount):
             queue_name = f"{producer_queue_prefix}-{i}"
             self._mom_producers.append(
@@ -88,9 +89,9 @@ class SumTransactionsByStore:
 
     # ============================== PRIVATE - HANDLE DATA ============================== #
 
-
-
-    def __add_purchase(self, store_id: str, year_half_created_at: str, final_amount: float) -> None:
+    def __add_purchase(
+        self, store_id: str, year_half_created_at: str, final_amount: float
+    ) -> None:
         key = (store_id, year_half_created_at)
         if key not in self._purchase_counts:
             self._purchase_counts[key] = 0
@@ -123,12 +124,16 @@ class SumTransactionsByStore:
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
-    def __send_data_using_batchs(self,) -> None:
+    def __send_data_using_batchs(
+        self,
+    ) -> None:
         while self.__is_running():
             batch = self.__take_next_batch()
             if len(batch) == 0:
                 break
-            message = communication_protocol.encode_transaction_items_batch_message(batch)
+            message = communication_protocol.encode_transaction_items_batch_message(
+                batch
+            )
             mom_producer = self._mom_producers[self._current_producer_id]
             mom_producer.send(message)
             if self._current_producer_id >= len(self._mom_producers) - 1:

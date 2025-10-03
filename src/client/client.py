@@ -193,7 +193,8 @@ class Client:
             if not file_path.name.lower().endswith(".csv"):
                 continue
             self.__assert_is_file(file_path)
-            csv_file = open(file_path, "rt", newline="")
+            # csv_file = open(file_path, "rt", newline="")
+            csv_file = open(file_path, "r", buffering=1024*1024)
             try:
                 self.__send_data_from_file_using_batchs(
                     folder_name,

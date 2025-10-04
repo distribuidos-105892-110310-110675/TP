@@ -5,8 +5,6 @@ __pycache__/
 *.py[codz]
 *$py.class
 
-.results
-.data
 
 # C extensions
 *.so
@@ -212,5 +210,6 @@ marimo/_lsp/
 __marimo__/
 
 # Data
-.data/data/
-.data/data.zip
+.data/
+.results/
+integration-tests/data/

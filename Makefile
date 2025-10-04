@@ -60,6 +60,17 @@ docker-compose-logs:
 	docker compose -f docker-compose.yaml logs -f -n 500
 .PHONY: docker-compose-logs
 
-tests:
+unit-tests:
 	pytest --verbose
-.PHONY: tests
+.PHONY: unit-tests
+
+integration-tests:
+	sort .results/query_results/client_0_Q1X_result.txt > integration-tests/data/query_results/client_0_Q1X_result.txt
+	sort .results/query_results/client_0_Q21_result.txt > integration-tests/data/query_results/client_0_Q21_result.txt
+	sort .results/query_results/client_0_Q22_result.txt > integration-tests/data/query_results/client_0_Q22_result.txt
+	sort .results/query_results/client_0_Q3X_result.txt > integration-tests/data/query_results/client_0_Q3X_result.txt
+	sort .results/query_results/client_0_Q4X_result.txt > integration-tests/data/query_results/client_0_Q4X_result.txt
+
+	python3 ./integration-tests/compare_results.py --expected ./integration-tests/data/expected_output --actual ./integration-tests/data/query_results
+
+.PHONY: integration-tests

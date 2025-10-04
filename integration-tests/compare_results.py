@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# -- coding: utf-8 --
 """
 Compara archivos "esperados" vs "actuales" para Q1X, Q3X, Q4X, Q21 y Q22.
 
-- Para Q1X: Solo verifica que la CANTIDAD de filas coincida.
-- Para Q3X, Q4X, Q21, Q22: verifica que el CONTENIDO sea el mismo
+- Para Q1X y Q22: Solo verifica que la CANTIDAD de filas coincida.
+- Para Q3X, Q4X, Q21: verifica que el CONTENIDO sea el mismo
   independientemente del orden de las filas (multiconjunto de líneas).
 
 Imprime un resultado por cada archivo y un resumen final.
@@ -26,11 +26,11 @@ import sys
 from collections import Counter
 
 DEFAULT_TAGS = {
-    "Q1X": "count_only",
-    "Q3X": "multiset",
+    "Q1X": "count_only",   # <-- cuenta filas
+    "Q3X": "multiset",     # <-- contenido (orden ignorado)
     "Q4X": "multiset",
     "Q21": "multiset",
-    "Q22": "multiset",
+    "Q22": "count_only",   # <-- cuenta filas (antes era multiset)
 }
 
 def norm_line(s: str, case_sensitive: bool) -> str:
@@ -83,12 +83,18 @@ def compare_multiset(exp_path, act_path, encoding, include_empty, case_sensitive
         extra = list((c_act - c_exp).elements())
         msg_parts = []
         if missing:
-            msg_parts.append(f"faltan {len(missing)} línea(s) en 'actual' (p.ej.: {', '.join(repr(x) for x in missing[:max_diff_examples])}{'...' if len(missing)>max_diff_examples else ''})")
+            msg_parts.append(
+                f"faltan {len(missing)} línea(s) en 'actual' (p.ej.: {', '.join(repr(x) for x in missing[:max_diff_examples])}{'...' if len(missing)>max_diff_examples else ''})"
+            )
         if extra:
-            msg_parts.append(f"sobra(n) {len(extra)} línea(s) en 'actual' (p.ej.: {', '.join(repr(x) for x in extra[:max_diff_examples])}{'...' if len(extra)>max_diff_examples else ''})")
+            msg_parts.append(
+                f"sobra(n) {len(extra)} línea(s) en 'actual' (p.ej.: {', '.join(repr(x) for x in extra[:max_diff_examples])}{'...' if len(extra)>max_diff_examples else ''})"
+            )
         return False, "; ".join(msg_parts) if msg_parts else "Los multisets difieren."
 
 def main():
+    # TODO: see if we can improve this
+
     ap = argparse.ArgumentParser(description="Comparador de resultados por archivo (Q1X/Q3X/Q4X/Q21/Q22).")
     ap.add_argument("--expected", required=True, help="Carpeta con archivos esperados (los que me enviaste).")
     ap.add_argument("--actual", required=True, help="Carpeta con archivos actuales (salidas a validar).")

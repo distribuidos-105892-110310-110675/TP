@@ -1,7 +1,7 @@
 import logging
 
-from controllers.output_builders.query_4x_output_builder.query_4x_output_builder import (
-    Query4XOutputBuilder,
+from controllers.mappers.year_half_created_at_transactions_mapper.year_half_created_at_transactions_mapper import (
+    YearHalfCreatedAtTransactonsMapper,
 )
 from shared import constants, initializer
 
@@ -13,26 +13,29 @@ def main():
             "CONTROLLER_ID",
             "RABBITMQ_HOST",
             "PREV_CONTROLLERS_AMOUNT",
+            "NEXT_CONTROLLERS_AMOUNT",
         ]
     )
     initializer.init_log(config_params["LOGGING_LEVEL"])
     logging.info(f"action: init_config | result: success | params: {config_params}")
 
     consumers_config = {
-        "queue_name_prefix": constants.SORTED_DESC_BY_STORE_NAME__PURCHASES_QTY_WITH_USER_BITHDATE,
+        "exchange_name_prefix": constants.FILTERED_TRN_BY_YEAR__HOUR_EXCHANGE_PREFIX,
+        "routing_key_prefix": constants.FILTERED_TRN_BY_YEAR__HOUR_ROUTING_KEY_PREFIX,
         "prev_controllers_amount": int(config_params["PREV_CONTROLLERS_AMOUNT"]),
     }
     producers_config = {
-        "queue_name_prefix": constants.QRS_QUEUE_PREFIX,
+        "queue_name_prefix": constants.MAPPED_TRN_SEMESTER_QUEUE_PREFIX,
+        "next_controllers_amount": int(config_params["NEXT_CONTROLLERS_AMOUNT"]),
     }
 
-    cleaner = Query4XOutputBuilder(
+    controller = YearHalfCreatedAtTransactonsMapper(
         controller_id=int(config_params["CONTROLLER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
         consumers_config=consumers_config,
         producers_config=producers_config,
     )
-    cleaner.run()
+    controller.run()
 
 
 if __name__ == "__main__":

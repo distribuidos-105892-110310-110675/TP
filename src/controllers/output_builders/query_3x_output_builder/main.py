@@ -20,6 +20,7 @@ def main():
 
     consumers_config = {
         "queue_name_prefix": constants.TPV_BY_HALF_YEAR_CREATED_AT__STORE_NAME_QUEUE_PREFIX,
+        "prev_controllers_amount": int(config_params["PREV_CONTROLLERS_AMOUNT"]),
     }
     producers_config = {
         "queue_name_prefix": constants.QRS_QUEUE_PREFIX,
@@ -30,7 +31,6 @@ def main():
         rabbitmq_host=config_params["RABBITMQ_HOST"],
         consumers_config=consumers_config,
         producers_config=producers_config,
-        prev_controllers_amount=int(config_params["PREV_CONTROLLERS_AMOUNT"]),
     )
     cleaner.run()
 

@@ -438,68 +438,68 @@ services:
 
   # ============================== MAP SERVICES ============================== #
 
-  map_month_year_items_0:
-    container_name: map_month_year_items_0
-    image: map_month_year_items:latest
-    entrypoint: python3 -m controllers.mappers.map_month_year_items.main
+  year_month_created_at_transaction_items_mapper_0:
+    container_name: year_month_created_at_transaction_items_mapper_0
+    image: year_month_created_at_transaction_items_mapper:latest
+    entrypoint: python3 -m controllers.mappers.year_month_created_at_transaction_items_mapper.main
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
-      - REDUCERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=1
     networks:
       - custom_net
     depends_on:
       rabbitmq-message-middleware:
         condition: service_healthy
 
-  map_month_year_items_1:
-    container_name: map_month_year_items_1
-    image: map_month_year_items:latest
-    entrypoint: python3 -m controllers.mappers.map_month_year_items.main
+  year_month_created_at_transaction_items_mapper_1:
+    container_name: year_month_created_at_transaction_items_mapper_1
+    image: year_month_created_at_transaction_items_mapper:latest
+    entrypoint: python3 -m controllers.mappers.year_month_created_at_transaction_items_mapper.main
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
-      - REDUCERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=1
     networks:
       - custom_net
     depends_on:
       rabbitmq-message-middleware:
         condition: service_healthy
 
-  map_month_year_items_2:
-    container_name: map_month_year_items_2
-    image: map_month_year_items:latest
-    entrypoint: python3 -m controllers.mappers.map_month_year_items.main
+  year_month_created_at_transaction_items_mapper_2:
+    container_name: year_month_created_at_transaction_items_mapper_2
+    image: year_month_created_at_transaction_items_mapper:latest
+    entrypoint: python3 -m controllers.mappers.year_month_created_at_transaction_items_mapper.main
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=2
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
-      - REDUCERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=1
     networks:
       - custom_net
     depends_on:
       rabbitmq-message-middleware:
         condition: service_healthy
 
-  map_month_semester_transactions_0:
-    container_name: map_month_semester_transactions_0
-    image: map_month_semester_transactions:latest
-    entrypoint: python3 -m controllers.mappers.map_month_semester_transactions.main
+  year_half_created_at_transactions_mapper_0:
+    container_name: year_half_created_at_transactions_mapper_0
+    image: year_half_created_at_transactions_mapper:latest
+    entrypoint: python3 -m controllers.mappers.year_half_created_at_transactions_mapper.main
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=2
-      - REDUCERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=1
     networks:
       - custom_net
     depends_on:

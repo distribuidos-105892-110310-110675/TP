@@ -52,8 +52,8 @@ class FilterTransactionsByYear:
     ) -> None:
         self._controller_id = controller_id
 
-        self.__set_controller_as_not_running()
-        signal.signal(signal.SIGTERM, self.__sigterm_signal_handler)
+        self._set_controller_as_not_running()
+        signal.signal(signal.SIGTERM, self._sigterm_signal_handler)
 
         self.__init_mom_consumer(
             rabbitmq_host,
@@ -73,21 +73,21 @@ class FilterTransactionsByYear:
 
     # ============================== PRIVATE - ACCESSING ============================== #
 
-    def __is_running(self) -> bool:
+    def _is_running(self) -> bool:
         return self._controller_running
 
-    def __set_controller_as_not_running(self) -> None:
+    def _set_controller_as_not_running(self) -> None:
         self._controller_running = False
 
-    def __set_controller_as_running(self) -> None:
+    def _set_controller_as_running(self) -> None:
         self._controller_running = True
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
-    def __sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
+    def _sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
         logging.info("action: sigterm_signal_handler | result: in_progress")
 
-        self.__set_controller_as_not_running()
+        self._set_controller_as_not_running()
 
         self._mom_consumer.stop_consuming()
         logging.debug("action: sigterm_mom_stop_consuming | result: success")
@@ -96,7 +96,7 @@ class FilterTransactionsByYear:
 
     # ============================== PRIVATE - TRANSFORM DATA ============================== #
 
-    def __transform_batch_item(self, batch_item: dict[str, str]) -> Optional[dict]:
+    def _transform_batch_item(self, batch_item: dict[str, str]) -> Optional[dict]:
         created_at = batch_item["created_at"]
         date = created_at.split(" ")[0]
         year = int(date.split("-")[0])
@@ -104,7 +104,7 @@ class FilterTransactionsByYear:
             return None
         return batch_item
 
-    def __transform_batch_message_using(
+    def _transform_batch_message_using(
         self,
         message: str,
         decoder: Callable,
@@ -117,13 +117,13 @@ class FilterTransactionsByYear:
 
         new_batch = []
         for item in decoder(message):
-            modified_item = self.__transform_batch_item(item)
+            modified_item = self._transform_batch_item(item)
             if modified_item is not None:
                 new_batch.append(modified_item)
         return str(encoder(message_type, new_batch))
 
-    def __transform_batch_message(self, message: str) -> str:
-        return self.__transform_batch_message_using(
+    def _transform_batch_message(self, message: str) -> str:
+        return self._transform_batch_message_using(
             message,
             communication_protocol.decode_batch_message,
             communication_protocol.encode_batch_message,
@@ -131,7 +131,7 @@ class FilterTransactionsByYear:
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
-    def __mom_send_message_to_next(self, message: str) -> None:
+    def _mom_send_message_to_next(self, message: str) -> None:
         mom_producer = self._mom_producers[self._current_producer_id]
         mom_producer.send(message)
 
@@ -139,15 +139,15 @@ class FilterTransactionsByYear:
         if self._current_producer_id >= len(self._mom_producers):
             self._current_producer_id = 0
 
-    def __handle_data_batch_message(self, message: str) -> None:
-        output_message = self.__transform_batch_message(message)
+    def _handle_data_batch_message(self, message: str) -> None:
+        output_message = self._transform_batch_message(message)
         if not communication_protocol.decode_is_empty_message(output_message):
             logging.debug(
                 f"action: message_sent | result: success | message: {output_message}"
             )
-            self.__mom_send_message_to_next(output_message)
+            self._mom_send_message_to_next(output_message)
 
-    def __handle_data_batch_eof(self, message: str) -> None:
+    def _handle_data_batch_eof(self, message: str) -> None:
         self._eof_received_from_previous_controllers += 1
         logging.debug(f"action: eof_received | result: success")
 
@@ -160,8 +160,8 @@ class FilterTransactionsByYear:
                 mom_producer.send(message)
             logging.info("action: eof_sent | result: success")
 
-    def __handle_received_data(self, message_as_bytes: bytes) -> None:
-        if not self.__is_running():
+    def _handle_received_data(self, message_as_bytes: bytes) -> None:
+        if not self._is_running():
             self._mom_consumer.stop_consuming()
             return
 
@@ -169,17 +169,17 @@ class FilterTransactionsByYear:
         message_type = communication_protocol.decode_message_type(message)
 
         if message_type != communication_protocol.EOF:
-            self.__handle_data_batch_message(message)
+            self._handle_data_batch_message(message)
         else:
-            self.__handle_data_batch_eof(message)
+            self._handle_data_batch_eof(message)
 
     # ============================== PRIVATE - RUN ============================== #
 
-    def __run(self) -> None:
-        self.__set_controller_as_running()
-        self._mom_consumer.start_consuming(self.__handle_received_data)
+    def _run(self) -> None:
+        self._set_controller_as_running()
+        self._mom_consumer.start_consuming(self._handle_received_data)
 
-    def __close_all_mom_connections(self) -> None:
+    def _close_all_mom_connections(self) -> None:
         for mom_producer in self._mom_producers:
             mom_producer.delete()
             mom_producer.close()
@@ -189,14 +189,14 @@ class FilterTransactionsByYear:
         self._mom_consumer.close()
         logging.debug("action: mom_consumer_close | result: success")
 
-    def __ensure_connections_close_after_doing(self, callback: Callable) -> None:
+    def _ensure_connections_close_after_doing(self, callback: Callable) -> None:
         try:
             callback()
         except Exception as e:
             logging.error(f"action: controller_run | result: fail | error: {e}")
             raise e
         finally:
-            self.__close_all_mom_connections()
+            self._close_all_mom_connections()
             logging.debug("action: all_mom_connections_close | result: success")
 
     # ============================== PUBLIC ============================== #
@@ -204,6 +204,6 @@ class FilterTransactionsByYear:
     def run(self) -> None:
         logging.info("action: controller_startup | result: success")
 
-        self.__ensure_connections_close_after_doing(self.__run)
+        self._ensure_connections_close_after_doing(self._run)
 
         logging.info("action: controller_shutdown | result: success")

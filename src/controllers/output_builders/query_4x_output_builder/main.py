@@ -10,7 +10,7 @@ def main():
     config_params = initializer.init_config(
         [
             "LOGGING_LEVEL",
-            "OUTPUT_BUILDER_ID",
+            "CONTROLLER_ID",
             "RABBITMQ_HOST",
             "PREV_CONTROLLERS_AMOUNT",
         ]
@@ -18,12 +18,19 @@ def main():
     initializer.init_log(config_params["LOGGING_LEVEL"])
     logging.debug(f"action: init_config | result: success | params: {config_params}")
 
+    consumers_config = {
+        "queue_name_prefix": constants.SORTED_DESC_BY_STORE_NAME__PURCHASES_QTY_WITH_USER_BITHDATE,
+    }
+    producers_config = {
+        "queue_name_prefix": constants.QRS_QUEUE_PREFIX,
+    }
+
     cleaner = Query4XOutputBuilder(
-        controller_id=int(config_params["OUTPUT_BUILDER_ID"]),
+        controller_id=int(config_params["CONTROLLER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
-        consumer_queue_prefix=constants.SORTED_DESC_BY_STORE_NAME__PURCHASES_QTY_WITH_USER_BITHDATE,
-        producer_queue_prefix=constants.QRS_QUEUE_PREFIX,
-        previous_controllers_amount=int(config_params["PREV_CONTROLLERS_AMOUNT"]),
+        consumers_config=consumers_config,
+        producers_config=producers_config,
+        prev_controllers_amount=int(config_params["PREV_CONTROLLERS_AMOUNT"]),
     )
     cleaner.run()
 

@@ -50,8 +50,8 @@ class SortDescByYearMonthCreatedAtAndSellingsQty:
     ) -> None:
         self._controller_id = controller_id
 
-        self.__set_controller_as_not_running()
-        signal.signal(signal.SIGTERM, self.__sigterm_signal_handler)
+        self._set_controller_as_not_running()
+        signal.signal(signal.SIGTERM, self._sigterm_signal_handler)
 
         self.__init_mom_consumer(
             rabbitmq_host,
@@ -76,21 +76,21 @@ class SortDescByYearMonthCreatedAtAndSellingsQty:
 
     # ============================== PRIVATE - ACCESSING ============================== #
 
-    def __is_running(self) -> bool:
+    def _is_running(self) -> bool:
         return self._controller_running
 
-    def __set_controller_as_not_running(self) -> None:
+    def _set_controller_as_not_running(self) -> None:
         self._controller_running = False
 
-    def __set_controller_as_running(self) -> None:
+    def _set_controller_as_running(self) -> None:
         self._controller_running = True
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
-    def __sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
+    def _sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
         logging.info("action: sigterm_signal_handler | result: in_progress")
 
-        self.__set_controller_as_not_running()
+        self._set_controller_as_not_running()
 
         self._mom_consumer.stop_consuming()
         logging.debug("action: sigterm_mom_stop_consuming | result: success")
@@ -99,7 +99,7 @@ class SortDescByYearMonthCreatedAtAndSellingsQty:
 
     # ============================== PRIVATE - HANDLE DATA ============================== #
 
-    def __sort_desc_by_purchases_qty(self, batch_item: dict[str, str]) -> None:
+    def _sort_desc_by_purchases_qty(self, batch_item: dict[str, str]) -> None:
         grouping_key_value = batch_item[self._grouping_key]
         primary_sort_value = batch_item[self._primary_sort_key]
         secondary_sort_value = batch_item[self._secondary_sort_key]
@@ -125,14 +125,14 @@ class SortDescByYearMonthCreatedAtAndSellingsQty:
         if len(sorted_desc_batch_items) > self._amount_per_group:
             sorted_desc_batch_items.pop()
 
-    def __pop_next_batch_item(self) -> dict[str, str]:
+    def _pop_next_batch_item(self) -> dict[str, str]:
         key = next(iter(self._sorted_desc_by_grouping_key))
         batch_item = self._sorted_desc_by_grouping_key[key].pop(0)
         if not self._sorted_desc_by_grouping_key[key]:
             del self._sorted_desc_by_grouping_key[key]
         return batch_item
 
-    def __take_next_batch(self) -> list[dict[str, str]]:
+    def _take_next_batch(self) -> list[dict[str, str]]:
         batch: list[dict[str, str]] = []
 
         batch_size = 0
@@ -143,7 +143,7 @@ class SortDescByYearMonthCreatedAtAndSellingsQty:
                 all_batchs_taken = True
                 break
 
-            batch_item = self.__pop_next_batch_item()
+            batch_item = self._pop_next_batch_item()
             batch.append(batch_item)
             batch_size += 1
 
@@ -151,24 +151,24 @@ class SortDescByYearMonthCreatedAtAndSellingsQty:
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
-    def __send_data_using_batchs(
+    def _send_data_using_batchs(
         self, mom_producer: RabbitMQMessageMiddlewareQueue
     ) -> None:
-        batch = self.__take_next_batch()
-        while len(batch) != 0 and self.__is_running():
+        batch = self._take_next_batch()
+        while len(batch) != 0 and self._is_running():
             message = communication_protocol.encode_transactions_batch_message(batch)
             mom_producer.send(message)
             logging.debug(
                 f"action: message_sent | result: success | message: {message}"
             )
-            batch = self.__take_next_batch()
+            batch = self._take_next_batch()
 
-    def __handle_data_batch_message(self, message: str) -> None:
+    def _handle_data_batch_message(self, message: str) -> None:
         batch = communication_protocol.decode_batch_message(message)
         for batch_item in batch:
-            self.__sort_desc_by_purchases_qty(batch_item)
+            self._sort_desc_by_purchases_qty(batch_item)
 
-    def __handle_data_batch_eof(self, message: str) -> None:
+    def _handle_data_batch_eof(self, message: str) -> None:
         self._eof_received_from_previous_controllers += 1
         logging.debug(f"action: eof_received | result: success")
 
@@ -178,14 +178,14 @@ class SortDescByYearMonthCreatedAtAndSellingsQty:
         ):
             logging.info("action: all_eofs_received | result: success")
             for mom_producer in self._mom_producers:
-                self.__send_data_using_batchs(mom_producer)
+                self._send_data_using_batchs(mom_producer)
 
             for mom_producer in self._mom_producers:
                 mom_producer.send(message)
             logging.info("action: eof_sent | result: success")
 
-    def __handle_received_data(self, message_as_bytes: bytes) -> None:
-        if not self.__is_running():
+    def _handle_received_data(self, message_as_bytes: bytes) -> None:
+        if not self._is_running():
             self._mom_consumer.stop_consuming()
             return
 
@@ -193,17 +193,17 @@ class SortDescByYearMonthCreatedAtAndSellingsQty:
         message_type = communication_protocol.decode_message_type(message)
 
         if message_type != communication_protocol.EOF:
-            self.__handle_data_batch_message(message)
+            self._handle_data_batch_message(message)
         else:
-            self.__handle_data_batch_eof(message)
+            self._handle_data_batch_eof(message)
 
     # ============================== PRIVATE - RUN ============================== #
 
-    def __run(self) -> None:
-        self.__set_controller_as_running()
-        self._mom_consumer.start_consuming(self.__handle_received_data)
+    def _run(self) -> None:
+        self._set_controller_as_running()
+        self._mom_consumer.start_consuming(self._handle_received_data)
 
-    def __close_all_mom_connections(self) -> None:
+    def _close_all_mom_connections(self) -> None:
         for mom_producer in self._mom_producers:
             mom_producer.delete()
             mom_producer.close()
@@ -213,14 +213,14 @@ class SortDescByYearMonthCreatedAtAndSellingsQty:
         self._mom_consumer.close()
         logging.debug("action: mom_consumer_close | result: success")
 
-    def __ensure_connections_close_after_doing(self, callback: Callable) -> None:
+    def _ensure_connections_close_after_doing(self, callback: Callable) -> None:
         try:
             callback()
         except Exception as e:
             logging.error(f"action: controller_run | result: fail | error: {e}")
             raise e
         finally:
-            self.__close_all_mom_connections()
+            self._close_all_mom_connections()
             logging.debug("action: all_mom_connections_close | result: success")
 
     # ============================== PUBLIC ============================== #
@@ -228,6 +228,6 @@ class SortDescByYearMonthCreatedAtAndSellingsQty:
     def run(self) -> None:
         logging.info("action: controller_startup | result: success")
 
-        self.__ensure_connections_close_after_doing(self.__run)
+        self._ensure_connections_close_after_doing(self._run)
 
         logging.info("action: controller_shutdown | result: success")

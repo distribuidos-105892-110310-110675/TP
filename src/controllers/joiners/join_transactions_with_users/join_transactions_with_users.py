@@ -56,8 +56,8 @@ class JoinTransactionsWithUsers:
     ) -> None:
         self._controller_id = controller_id
 
-        self.__set_controller_as_not_running()
-        signal.signal(signal.SIGTERM, self.__sigterm_signal_handler)
+        self._set_controller_as_not_running()
+        signal.signal(signal.SIGTERM, self._sigterm_signal_handler)
 
         self.__init_mom_base_data_consumer(
             rabbitmq_host,
@@ -86,21 +86,21 @@ class JoinTransactionsWithUsers:
 
     # ============================== PRIVATE - ACCESSING ============================== #
 
-    def __is_running(self) -> bool:
+    def _is_running(self) -> bool:
         return self._server_running
 
-    def __set_controller_as_not_running(self) -> None:
+    def _set_controller_as_not_running(self) -> None:
         self._server_running = False
 
-    def __set_controller_as_running(self) -> None:
+    def _set_controller_as_running(self) -> None:
         self._server_running = True
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
-    def __sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
+    def _sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
         logging.info("action: sigterm_signal_handler | result: in_progress")
 
-        self.__set_controller_as_not_running()
+        self._set_controller_as_not_running()
 
         self._mom_base_data_consumer.stop_consuming()
         self._mom_stream_data_consumer.stop_consuming()
@@ -110,7 +110,7 @@ class JoinTransactionsWithUsers:
 
     # ============================== PRIVATE - JOIN ============================== #
 
-    def __join_with_base_data(self, message: str) -> str:
+    def _join_with_base_data(self, message: str) -> str:
         message_type = communication_protocol.decode_message_type(message)
         stream_data = communication_protocol.decode_batch_message(message)
         joined_data: list[dict[str, str]] = []
@@ -132,7 +132,7 @@ class JoinTransactionsWithUsers:
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
-    def __mom_send_message_to_next(self, message: str) -> None:
+    def _mom_send_message_to_next(self, message: str) -> None:
         mom_cleaned_data_producer = self._mom_producers[self._current_producer_id]
         mom_cleaned_data_producer.send(message)
 
@@ -140,12 +140,12 @@ class JoinTransactionsWithUsers:
         if self._current_producer_id >= len(self._mom_producers):
             self._current_producer_id = 0
 
-    def __handle_base_data_batch_message(self, message: str) -> None:
+    def _handle_base_data_batch_message(self, message: str) -> None:
         batch_message = communication_protocol.decode_batch_message(message)
         for item_batch in batch_message:
             self._base_data.append(item_batch)
 
-    def __handle_base_data_batch_eof(self, message: str) -> None:
+    def _handle_base_data_batch_eof(self, message: str) -> None:
         self._eof_received_from_base_data_controllers += 1
         logging.debug(f"action: eof_received | result: success")
 
@@ -157,8 +157,8 @@ class JoinTransactionsWithUsers:
             self._mom_base_data_consumer.stop_consuming()
             logging.info("action: stop_consuming_base_data | result: success")
 
-    def __handle_base_data(self, message_as_bytes: bytes) -> None:
-        if not self.__is_running():
+    def _handle_base_data(self, message_as_bytes: bytes) -> None:
+        if not self._is_running():
             self._mom_base_data_consumer.stop_consuming()
             return
 
@@ -166,16 +166,16 @@ class JoinTransactionsWithUsers:
         message_type = communication_protocol.decode_message_type(message)
 
         if message_type != communication_protocol.EOF:
-            self.__handle_base_data_batch_message(message)
+            self._handle_base_data_batch_message(message)
         else:
-            self.__handle_base_data_batch_eof(message)
+            self._handle_base_data_batch_eof(message)
 
-    def __handle_stream_data_batch_message(self, message: str) -> None:
-        joined_message = self.__join_with_base_data(message)
+    def _handle_stream_data_batch_message(self, message: str) -> None:
+        joined_message = self._join_with_base_data(message)
         if not communication_protocol.decode_is_empty_message(joined_message):
-            self.__mom_send_message_to_next(joined_message)
+            self._mom_send_message_to_next(joined_message)
 
-    def __handle_stream_data_batch_eof(self, message: str) -> None:
+    def _handle_stream_data_batch_eof(self, message: str) -> None:
         self._eof_received_from_stream_data_controllers += 1
         logging.debug(f"action: eof_received | result: success")
 
@@ -188,8 +188,8 @@ class JoinTransactionsWithUsers:
                 mom_producer.send(message)
             logging.info("action: eof_sent | result: success")
 
-    def __handle_stream_data(self, message_as_bytes: bytes) -> None:
-        if not self.__is_running():
+    def _handle_stream_data(self, message_as_bytes: bytes) -> None:
+        if not self._is_running():
             self._mom_stream_data_consumer.stop_consuming()
             return
 
@@ -197,18 +197,18 @@ class JoinTransactionsWithUsers:
         message_type = communication_protocol.decode_message_type(message)
 
         if message_type != communication_protocol.EOF:
-            self.__handle_stream_data_batch_message(message)
+            self._handle_stream_data_batch_message(message)
         else:
-            self.__handle_stream_data_batch_eof(message)
+            self._handle_stream_data_batch_eof(message)
 
     # ============================== PRIVATE - RUN ============================== #
 
-    def __run(self) -> None:
-        self.__set_controller_as_running()
-        self._mom_base_data_consumer.start_consuming(self.__handle_base_data)
-        self._mom_stream_data_consumer.start_consuming(self.__handle_stream_data)
+    def _run(self) -> None:
+        self._set_controller_as_running()
+        self._mom_base_data_consumer.start_consuming(self._handle_base_data)
+        self._mom_stream_data_consumer.start_consuming(self._handle_stream_data)
 
-    def __close_all_mom_connections(self) -> None:
+    def _close_all_mom_connections(self) -> None:
         for mom_producer in self._mom_producers:
             mom_producer.delete()
             mom_producer.close()
@@ -220,14 +220,14 @@ class JoinTransactionsWithUsers:
         self._mom_stream_data_consumer.close()
         logging.debug("action: mom_data_consumer_close | result: success")
 
-    def __ensure_connections_close_after_doing(self, callback: Callable) -> None:
+    def _ensure_connections_close_after_doing(self, callback: Callable) -> None:
         try:
             callback()
         except Exception as e:
             logging.error(f"action: cleaner_run | result: fail | error: {e}")
             raise e
         finally:
-            self.__close_all_mom_connections()
+            self._close_all_mom_connections()
             logging.debug("action: all_mom_connections_close | result: success")
 
     # ============================== PUBLIC ============================== #
@@ -235,6 +235,6 @@ class JoinTransactionsWithUsers:
     def run(self) -> None:
         logging.info("action: cleaner_startup | result: success")
 
-        self.__ensure_connections_close_after_doing(self.__run)
+        self._ensure_connections_close_after_doing(self._run)
 
         logging.info("action: cleaner_shutdown | result: success")

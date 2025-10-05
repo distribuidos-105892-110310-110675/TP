@@ -1,6 +1,4 @@
-from controllers.output_builders.query_output_builder.query_output_builder import (
-    QueryOutputBuilder,
-)
+from controllers.output_builders.query_output_builder import QueryOutputBuilder
 from shared import communication_protocol
 
 

@@ -32,7 +32,7 @@ EOF = "EOF"
 # ============================= PRIVATE - DECODE ============================== #
 
 
-def __assert_message_format(message: str, expected_message_type: str) -> None:
+def _assert_message_format(message: str, expected_message_type: str) -> None:
     received_message_type = decode_message_type(message)
     if received_message_type != expected_message_type:
         raise ValueError(
@@ -46,14 +46,14 @@ def __assert_message_format(message: str, expected_message_type: str) -> None:
         raise ValueError("Unexpected message format")
 
 
-def __decode_field(key_value_pair: str) -> tuple[str, str]:
+def _decode_field(key_value_pair: str) -> tuple[str, str]:
     key, value = key_value_pair.split(":", 1)
     key = key.strip('"')
     value = value.strip('"')
     return key, value
 
 
-def __decode_row(encoded_row: str) -> dict[str, str]:
+def _decode_row(encoded_row: str) -> dict[str, str]:
     encoded_row = encoded_row.strip(BATCH_START_DELIMITER)
     encoded_row = encoded_row.strip(BATCH_END_DELIMITER)
 
@@ -67,7 +67,7 @@ def __decode_row(encoded_row: str) -> dict[str, str]:
     return row
 
 
-def __decode_batch_message_with_type(
+def _decode_batch_message_with_type(
     message: str, message_type: str
 ) -> list[dict[str, str]]:
     __assert_message_format(message, message_type)
@@ -138,7 +138,7 @@ def decode_eof_message(message: str) -> str:
 # ============================= PRIVATE - ENCODE ============================== #
 
 
-def __encode_message(message_type: str, payload: str) -> str:
+def _encode_message(message_type: str, payload: str) -> str:
     encoded_payload = message_type
     encoded_payload += MSG_START_DELIMITER
     encoded_payload += payload
@@ -149,11 +149,11 @@ def __encode_message(message_type: str, payload: str) -> str:
 # ============================= PRIVATE - ENCODE BATCH ============================== #
 
 
-def __encode_field(key: str, value: str) -> str:
+def _encode_field(key: str, value: str) -> str:
     return f'"{key}":"{value}"'
 
 
-def __encode_row(row: dict[str, str]) -> str:
+def _encode_row(row: dict[str, str]) -> str:
     encoded_fields = [__encode_field(key, value) for key, value in row.items()]
     ecoded_row = ROW_FIELD_SEPARATOR.join(encoded_fields)
     return BATCH_START_DELIMITER + ecoded_row + BATCH_END_DELIMITER

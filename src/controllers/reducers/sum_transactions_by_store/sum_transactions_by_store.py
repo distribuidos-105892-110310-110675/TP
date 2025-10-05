@@ -45,8 +45,8 @@ class SumTransactionsByStore:
     ) -> None:
         self._controller_id = controller_id
 
-        self.__set_controller_as_not_running()
-        signal.signal(signal.SIGTERM, self.__sigterm_signal_handler)
+        self._set_controller_as_not_running()
+        signal.signal(signal.SIGTERM, self._sigterm_signal_handler)
 
         self.__init_mom_consumers(
             rabbitmq_host,
@@ -66,21 +66,21 @@ class SumTransactionsByStore:
 
     # ============================== PRIVATE - ACCESSING ============================== #
 
-    def __is_running(self) -> bool:
+    def _is_running(self) -> bool:
         return self._controller_running
 
-    def __set_controller_as_not_running(self) -> None:
+    def _set_controller_as_not_running(self) -> None:
         self._controller_running = False
 
-    def __set_controller_as_running(self) -> None:
+    def _set_controller_as_running(self) -> None:
         self._controller_running = True
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
-    def __sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
+    def _sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
         logging.info("action: sigterm_signal_handler | result: in_progress")
 
-        self.__set_controller_as_not_running()
+        self._set_controller_as_not_running()
 
         self._mom_consumer.stop_consuming()
         logging.debug("action: sigterm_mom_stop_consuming | result: success")
@@ -89,7 +89,7 @@ class SumTransactionsByStore:
 
     # ============================== PRIVATE - HANDLE DATA ============================== #
 
-    def __add_purchase(
+    def _add_purchase(
         self, store_id: str, year_half_created_at: str, final_amount: float
     ) -> None:
         key = (store_id, year_half_created_at)
@@ -97,7 +97,7 @@ class SumTransactionsByStore:
             self._purchase_counts[key] = 0
         self._purchase_counts[key] += final_amount
 
-    def __pop_next_batch_item(self) -> dict[str, str]:
+    def _pop_next_batch_item(self) -> dict[str, str]:
         (item_id, year_half_created_at), tpv = self._purchase_counts.popitem()
         item = {}
         item["store_id"] = item_id
@@ -105,7 +105,7 @@ class SumTransactionsByStore:
         item["tpv"] = str(tpv)
         return item
 
-    def __take_next_batch(self) -> list[dict[str, str]]:
+    def _take_next_batch(self) -> list[dict[str, str]]:
         batch: list[dict[str, str]] = []
 
         batch_size = 0
@@ -116,7 +116,7 @@ class SumTransactionsByStore:
                 all_batchs_taken = True
                 break
 
-            item = self.__pop_next_batch_item()
+            item = self._pop_next_batch_item()
             batch.append(item)
             batch_size += 1
 
@@ -124,11 +124,11 @@ class SumTransactionsByStore:
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
-    def __send_data_using_batchs(
+    def _send_data_using_batchs(
         self,
     ) -> None:
-        while self.__is_running():
-            batch = self.__take_next_batch()
+        while self._is_running():
+            batch = self._take_next_batch()
             if len(batch) == 0:
                 break
             message = communication_protocol.encode_transaction_items_batch_message(
@@ -144,15 +144,15 @@ class SumTransactionsByStore:
                 f"action: message_sent | result: success | message: {message}"
             )
 
-    def __handle_data_batch_message(self, message: str) -> None:
+    def _handle_data_batch_message(self, message: str) -> None:
         batch = communication_protocol.decode_batch_message(message)
         for batch_item in batch:
             store_id = batch_item["store_id"]
             year_half_created_at = batch_item["year_half_created_at"]
             final_amount = float(batch_item["final_amount"])
-            self.__add_purchase(store_id, year_half_created_at, final_amount)
+            self._add_purchase(store_id, year_half_created_at, final_amount)
 
-    def __handle_data_batch_eof(self, message: str) -> None:
+    def _handle_data_batch_eof(self, message: str) -> None:
         self._eof_received_from_previous_controllers += 1
         logging.debug(f"action: eof_received | result: success")
 
@@ -162,14 +162,14 @@ class SumTransactionsByStore:
         ):
             logging.info("action: all_eofs_received | result: success")
 
-            self.__send_data_using_batchs()
+            self._send_data_using_batchs()
 
             for mom_producer in self._mom_producers:
                 mom_producer.send(message)
             logging.info("action: eof_sent | result: success")
 
-    def __handle_received_data(self, message_as_bytes: bytes) -> None:
-        if not self.__is_running():
+    def _handle_received_data(self, message_as_bytes: bytes) -> None:
+        if not self._is_running():
             self._mom_consumer.stop_consuming()
             return
 
@@ -177,17 +177,17 @@ class SumTransactionsByStore:
         message_type = communication_protocol.decode_message_type(message)
 
         if message_type != communication_protocol.EOF:
-            self.__handle_data_batch_message(message)
+            self._handle_data_batch_message(message)
         else:
-            self.__handle_data_batch_eof(message)
+            self._handle_data_batch_eof(message)
 
     # ============================== PRIVATE - RUN ============================== #
 
-    def __run(self) -> None:
-        self.__set_controller_as_running()
-        self._mom_consumer.start_consuming(self.__handle_received_data)
+    def _run(self) -> None:
+        self._set_controller_as_running()
+        self._mom_consumer.start_consuming(self._handle_received_data)
 
-    def __close_all_mom_connections(self) -> None:
+    def _close_all_mom_connections(self) -> None:
         for mom_producer in self._mom_producers:
             mom_producer.delete()
             mom_producer.close()
@@ -197,14 +197,14 @@ class SumTransactionsByStore:
         self._mom_consumer.close()
         logging.debug("action: mom_consumer_close | result: success")
 
-    def __ensure_connections_close_after_doing(self, callback: Callable) -> None:
+    def _ensure_connections_close_after_doing(self, callback: Callable) -> None:
         try:
             callback()
         except Exception as e:
             logging.error(f"action: controller_run | result: fail | error: {e}")
             raise e
         finally:
-            self.__close_all_mom_connections()
+            self._close_all_mom_connections()
             logging.debug("action: all_mom_connections_close | result: success")
 
     # ============================== PUBLIC ============================== #
@@ -212,6 +212,6 @@ class SumTransactionsByStore:
     def run(self) -> None:
         logging.info("action: controller_startup | result: success")
 
-        self.__ensure_connections_close_after_doing(self.__run)
+        self._ensure_connections_close_after_doing(self._run)
 
         logging.info("action: controller_shutdown | result: success")

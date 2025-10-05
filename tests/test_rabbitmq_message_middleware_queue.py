@@ -15,12 +15,12 @@ class TestRabbitMQMessageMiddlewareQueue:
 
     # ============================== PRIVATE - ACCESSING ============================== #
 
-    def __rabbitmq_host(self) -> str:
+    def _rabbitmq_host(self) -> str:
         return "rabbitmq-dev"
 
     # ============================== PRIVATE - TESTS SUPPORT ============================== #
 
-    def __consumer_handler_with_id(
+    def _consumer_handler_with_id(
         self,
         consumer_id: int,
         queue_name: str,
@@ -28,7 +28,7 @@ class TestRabbitMQMessageMiddlewareQueue:
         message_received_lock: threading.Lock,
     ) -> None:
         queue_consumer = RabbitMQMessageMiddlewareQueue(
-            self.__rabbitmq_host(), queue_name
+            self._rabbitmq_host(), queue_name
         )
 
         def on_message_callback(message_as_bytes: bytes) -> None:
@@ -44,7 +44,7 @@ class TestRabbitMQMessageMiddlewareQueue:
 
         queue_consumer.close()
 
-    def __spawn_queue_consumers(
+    def _spawn_queue_consumers(
         self,
         number_of_consumers: int,
         queue_name: str,
@@ -55,7 +55,7 @@ class TestRabbitMQMessageMiddlewareQueue:
 
         for i in range(number_of_consumers):
             thread = threading.Thread(
-                target=self.__consumer_handler_with_id,
+                target=self._consumer_handler_with_id,
                 args=(i, queue_name, messages_received, message_received_lock),
             )
             thread.start()
@@ -63,7 +63,7 @@ class TestRabbitMQMessageMiddlewareQueue:
 
         return spawned_threads
 
-    def __test_working_queue_communication_1_to(
+    def _test_working_queue_communication_1_to(
         self, number_of_consumers: int, queue_name: str
     ) -> None:
         message_published = "Testing message"
@@ -71,7 +71,7 @@ class TestRabbitMQMessageMiddlewareQueue:
         messages_received = {f"consumer_{i}": "" for i in range(number_of_consumers)}
         messages_received_lock = threading.Lock()
 
-        spawned_threads: list[threading.Thread] = self.__spawn_queue_consumers(
+        spawned_threads: list[threading.Thread] = self._spawn_queue_consumers(
             number_of_consumers,
             queue_name,
             messages_received,
@@ -79,7 +79,7 @@ class TestRabbitMQMessageMiddlewareQueue:
         )
 
         queue_publisher = RabbitMQMessageMiddlewareQueue(
-            self.__rabbitmq_host(), queue_name
+            self._rabbitmq_host(), queue_name
         )
         for _ in range(number_of_consumers):
             queue_publisher.send(message_published)
@@ -96,16 +96,16 @@ class TestRabbitMQMessageMiddlewareQueue:
     # ============================== TESTS - COMMUNICATION ============================== #
 
     def test_working_queue_communication_1_to_1(self) -> None:
-        self.__test_working_queue_communication_1_to(1, "queue-communication-1-to-many")
+        self._test_working_queue_communication_1_to(1, "queue-communication-1-to-many")
 
     def test_working_queue_communication_1_to_many(self) -> None:
-        self.__test_working_queue_communication_1_to(5, "queue-communication-1-to-many")
+        self._test_working_queue_communication_1_to(5, "queue-communication-1-to-many")
 
     # ============================== TESTS - FUNCTIONS ============================== #
 
     def test_stop_consuming_multiple_times(self) -> None:
         middleware = RabbitMQMessageMiddlewareQueue(
-            self.__rabbitmq_host(), "testing-stop-consuming-multiple-times-queue"
+            self._rabbitmq_host(), "testing-stop-consuming-multiple-times-queue"
         )
 
         middleware.stop_consuming()
@@ -127,7 +127,7 @@ class TestRabbitMQMessageMiddlewareQueue:
 
     def test_error_while_starting_consuming_from_closed_connection(self) -> None:
         middleware = RabbitMQMessageMiddlewareQueue(
-            self.__rabbitmq_host(), "testing-error-queue"
+            self._rabbitmq_host(), "testing-error-queue"
         )
         middleware.delete()
         middleware.close()
@@ -139,7 +139,7 @@ class TestRabbitMQMessageMiddlewareQueue:
 
     def test_consumer_callback_failure_raises_exception(self) -> None:
         middleware = RabbitMQMessageMiddlewareQueue(
-            self.__rabbitmq_host(), "testing-error-queue"
+            self._rabbitmq_host(), "testing-error-queue"
         )
         middleware.send("message that will cause failure")
 
@@ -159,7 +159,7 @@ class TestRabbitMQMessageMiddlewareQueue:
 
     def test_error_while_stopping_consuming_from_closed_connection(self) -> None:
         middleware = RabbitMQMessageMiddlewareQueue(
-            self.__rabbitmq_host(), "testing-error-queue"
+            self._rabbitmq_host(), "testing-error-queue"
         )
         middleware.delete()
         middleware.close()
@@ -171,7 +171,7 @@ class TestRabbitMQMessageMiddlewareQueue:
 
     def test_error_while_sending_msg_to_closed_connection(self) -> None:
         middleware = RabbitMQMessageMiddlewareQueue(
-            self.__rabbitmq_host(), "testing-error-queue"
+            self._rabbitmq_host(), "testing-error-queue"
         )
         middleware.delete()
         middleware.close()
@@ -183,7 +183,7 @@ class TestRabbitMQMessageMiddlewareQueue:
 
     def test_error_while_sending_wrong_msg(self) -> None:
         middleware = RabbitMQMessageMiddlewareQueue(
-            self.__rabbitmq_host(), "testing-error-queue"
+            self._rabbitmq_host(), "testing-error-queue"
         )
 
         with pytest.raises(MessageMiddlewareMessageError) as exc_info:
@@ -199,7 +199,7 @@ class TestRabbitMQMessageMiddlewareQueue:
 
     def test_error_while_closing_already_closed_connection(self) -> None:
         middleware = RabbitMQMessageMiddlewareQueue(
-            self.__rabbitmq_host(), "testing-error-queue"
+            self._rabbitmq_host(), "testing-error-queue"
         )
         middleware.delete()
         middleware.close()
@@ -211,7 +211,7 @@ class TestRabbitMQMessageMiddlewareQueue:
 
     def test_error_while_deleting_from_closed_connection(self) -> None:
         middleware = RabbitMQMessageMiddlewareQueue(
-            self.__rabbitmq_host(), "testing-error-queue"
+            self._rabbitmq_host(), "testing-error-queue"
         )
         middleware.delete()
         middleware.close()

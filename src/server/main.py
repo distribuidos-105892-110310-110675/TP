@@ -4,7 +4,7 @@ from server.server import Server
 from shared import constants, initializer
 
 
-def __build_cleaners_data(config_params: dict) -> dict:
+def _build_cleaners_data(config_params: dict) -> dict:
     menu_items_workers_amount = int(config_params["MENU_ITEMS_CLN_AMOUNT"])
     stores_workers_amount = int(config_params["STORES_CLN_AMOUNT"])
     transaction_items_workers_amount = config_params["TRANSACTION_ITEMS_CLN_AMOUNT"]
@@ -35,7 +35,7 @@ def __build_cleaners_data(config_params: dict) -> dict:
     }
 
 
-def __build_output_builders_data(config_params: dict) -> dict:
+def _build_output_builders_data(config_params: dict) -> dict:
     q1x_worker_amount = config_params["Q1X_OB_AMOUNT"]
     q21_worker_amount = config_params["Q21_OB_AMOUNT"]
     q22_worker_amount = config_params["Q22_OB_AMOUNT"]

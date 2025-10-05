@@ -86,14 +86,14 @@ def main():
         ]
     )
     initializer.init_log(config_params["LOGGING_LEVEL"])
-    logging.debug(f"action: init_config | result: success | params: {config_params}")
+    logging.info(f"action: init_config | result: success | params: {config_params}")
 
     server = Server(
         port=int(config_params["SERVER_PORT"]),
         listen_backlog=int(config_params["SERVER_LISTEN_BACKLOG"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
-        cleaners_data=__build_cleaners_data(config_params),
-        output_builders_data=__build_output_builders_data(config_params),
+        cleaners_data=_build_cleaners_data(config_params),
+        output_builders_data=_build_output_builders_data(config_params),
     )
     server.run()
 

@@ -14,20 +14,20 @@ def main():
             "RABBITMQ_HOST",
             "PREV_CONTROLLERS_AMOUNT",
             "BATCH_MAX_SIZE",
-            "JOINS_AMOUNT"
+            "JOINS_AMOUNT",
         ]
     )
     initializer.init_log(config_params["LOGGING_LEVEL"])
-    logging.debug(f"action: init_config | result: success | params: {config_params}")
+    logging.info(f"action: init_config | result: success | params: {config_params}")
 
     controller = SumTransactionsByStore(
         controller_id=int(config_params["CONTROLLER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
-        consumer_queue_prefix= constants.MAPPED_TRN_SEMESTER_QUEUE_PREFIX,
+        consumer_queue_prefix=constants.MAPPED_TRN_SEMESTER_QUEUE_PREFIX,
         previous_controllers_amount=int(config_params["PREV_CONTROLLERS_AMOUNT"]),
-        producer_queue_prefix= constants.SUM_TRN_TPV_BY_STORE_QUEUE_PREFIX,
+        producer_queue_prefix=constants.SUM_TRN_TPV_BY_STORE_QUEUE_PREFIX,
         next_controllers_amount=int(config_params["JOINS_AMOUNT"]),
-        batch_max_size=int(config_params["BATCH_MAX_SIZE"])
+        batch_max_size=int(config_params["BATCH_MAX_SIZE"]),
     )
 
     controller.run()

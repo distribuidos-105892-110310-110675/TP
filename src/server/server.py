@@ -322,7 +322,7 @@ class Server:
                 self._mom_output_builders_connection.stop_consuming()
                 logging.info("action: all_results_received | result: success")
 
-        return __on_message_callback
+        return _on_message_callback
 
     def _receive_all_query_results_from_output_builders(
         self, client_socket: socket.socket

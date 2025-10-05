@@ -16,7 +16,7 @@ def main():
         ]
     )
     initializer.init_log(config_params["LOGGING_LEVEL"])
-    logging.debug(f"action: init_config | result: success | params: {config_params}")
+    logging.info(f"action: init_config | result: success | params: {config_params}")
 
     cleaner = TransactionItemsCleaner(
         cleaner_id=int(config_params["CLEANER_ID"]),

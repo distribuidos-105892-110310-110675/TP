@@ -17,7 +17,7 @@ def main():
         ]
     )
     initializer.init_log(config_params["LOGGING_LEVEL"])
-    logging.debug(f"action: init_config | result: success | params: {config_params}")
+    logging.info(f"action: init_config | result: success | params: {config_params}")
 
     controller = MapMonthSemesterTransactions(
         controller_id=int(config_params["CONTROLLER_ID"]),
@@ -26,7 +26,7 @@ def main():
         consumer_routing_key_prefix=constants.FILTERED_TRN_BY_YEAR__HOUR_ROUTING_KEY_PREFIX,
         producer_queue_prefix=constants.MAPPED_TRN_SEMESTER_QUEUE_PREFIX,
         next_controllers_amount=int(config_params["REDUCERS_AMOUNT"]),
-        previous_controllers_amount=int(config_params["PREV_CONTROLLERS_AMOUNT"])
+        previous_controllers_amount=int(config_params["PREV_CONTROLLERS_AMOUNT"]),
     )
     controller.run()
 

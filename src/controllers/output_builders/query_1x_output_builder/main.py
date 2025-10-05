@@ -16,7 +16,7 @@ def main():
         ]
     )
     initializer.init_log(config_params["LOGGING_LEVEL"])
-    logging.debug(f"action: init_config | result: success | params: {config_params}")
+    logging.info(f"action: init_config | result: success | params: {config_params}")
 
     consumers_config = {
         "queue_name_prefix": constants.FILTERED_TRN_BY_YEAR__HOUR__FINAL_AMOUNT_QUEUE_PREFIX,

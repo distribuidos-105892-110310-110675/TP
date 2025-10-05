@@ -61,7 +61,7 @@ def _decode_row(encoded_row: str) -> dict[str, str]:
 
     row = {}
     for key_value_pair in key_value_pairs:
-        key, value = __decode_field(key_value_pair)
+        key, value = _decode_field(key_value_pair)
         row[key] = value
 
     return row
@@ -70,7 +70,7 @@ def _decode_row(encoded_row: str) -> dict[str, str]:
 def _decode_batch_message_with_type(
     message: str, message_type: str
 ) -> list[dict[str, str]]:
-    __assert_message_format(message, message_type)
+    _assert_message_format(message, message_type)
     return decode_batch_message(message)
 
 
@@ -104,34 +104,34 @@ def decode_batch_message(message: str) -> list[dict[str, str]]:
     decoded_rows = []
 
     for encoded_row in encoded_rows:
-        bet = __decode_row(encoded_row)
+        bet = _decode_row(encoded_row)
         decoded_rows.append(bet)
 
     return decoded_rows
 
 
 def decode_menu_items_batch_message(message: str) -> list[dict[str, str]]:
-    return __decode_batch_message_with_type(message, MENU_ITEMS_BATCH_MSG_TYPE)
+    return _decode_batch_message_with_type(message, MENU_ITEMS_BATCH_MSG_TYPE)
 
 
 def decode_stores_batch_message(message: str) -> list[dict[str, str]]:
-    return __decode_batch_message_with_type(message, STORES_BATCH_MSG_TYPE)
+    return _decode_batch_message_with_type(message, STORES_BATCH_MSG_TYPE)
 
 
 def decode_transaction_items_batch_message(message: str) -> list[dict[str, str]]:
-    return __decode_batch_message_with_type(message, TRANSACTION_ITEMS_BATCH_MSG_TYPE)
+    return _decode_batch_message_with_type(message, TRANSACTION_ITEMS_BATCH_MSG_TYPE)
 
 
 def decode_transactions_batch_message(message: str) -> list[dict[str, str]]:
-    return __decode_batch_message_with_type(message, TRANSACTIONS_BATCH_MSG_TYPE)
+    return _decode_batch_message_with_type(message, TRANSACTIONS_BATCH_MSG_TYPE)
 
 
 def decode_users_batch_message(message: str) -> list[dict[str, str]]:
-    return __decode_batch_message_with_type(message, USERS_BATCH_MSG_TYPE)
+    return _decode_batch_message_with_type(message, USERS_BATCH_MSG_TYPE)
 
 
 def decode_eof_message(message: str) -> str:
-    __assert_message_format(message, EOF)
+    _assert_message_format(message, EOF)
     return get_message_payload(message)
 
 
@@ -154,7 +154,7 @@ def _encode_field(key: str, value: str) -> str:
 
 
 def _encode_row(row: dict[str, str]) -> str:
-    encoded_fields = [__encode_field(key, value) for key, value in row.items()]
+    encoded_fields = [_encode_field(key, value) for key, value in row.items()]
     ecoded_row = ROW_FIELD_SEPARATOR.join(encoded_fields)
     return BATCH_START_DELIMITER + ecoded_row + BATCH_END_DELIMITER
 
@@ -163,18 +163,18 @@ def _encode_row(row: dict[str, str]) -> str:
 
 
 def encode_ack_message(message: str) -> str:
-    return __encode_message(ACK_MSG_TYPE, message)
+    return _encode_message(ACK_MSG_TYPE, message)
 
 
 def encode_batch_message(batch_msg_type: str, batch: list[dict[str, str]]) -> str:
     encoded_rows = []
 
     for item in batch:
-        encoded_row = __encode_row(item)
+        encoded_row = _encode_row(item)
         encoded_rows.append(encoded_row)
 
     encoded_payload = BATCH_ROW_SEPARATOR.join(encoded_rows)
-    return __encode_message(batch_msg_type, encoded_payload)
+    return _encode_message(batch_msg_type, encoded_payload)
 
 
 def encode_menu_items_batch_message(
@@ -223,4 +223,4 @@ def encode_users_batch_message(
 
 
 def encode_eof_message(message_type: str) -> str:
-    return __encode_message(EOF, message_type)
+    return _encode_message(EOF, message_type)

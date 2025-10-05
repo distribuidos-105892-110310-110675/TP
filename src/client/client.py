@@ -191,10 +191,12 @@ class Client:
     ) -> None:
         for file_path in self.__folder_path(folder_name).iterdir():
             if not file_path.name.lower().endswith(".csv"):
+                logging.warning(
+                    f"action: {folder_name}_file_skip | result: success | file: {file_path} | reason: not_csv"
+                )
                 continue
             self.__assert_is_file(file_path)
-            # csv_file = open(file_path, "rt", newline="")
-            csv_file = open(file_path, "r", buffering=1024*1024)
+            csv_file = open(file_path, "r", encoding="utf-8", buffering=constants.KiB)
             try:
                 self.__send_data_from_file_using_batchs(
                     folder_name,

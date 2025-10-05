@@ -137,7 +137,7 @@ Al finalizar la ejecución completa del procesamiento para todas las queries, de
 
 ## 💻 Script comparativo
 
-Para validar el correcto funcionamiento del sistema, se cuenta con el script 'compare_results.py' dentro del directorio 'expected_output'.
+Para validar el correcto funcionamiento del sistema, se cuenta con el script 'compare_results.py' dentro del directorio 'integration-tests'.
 
 Dentro del mismo directorio se encuentran cargadas las salidas esperadas para las queries del usuario, y el script se encarga de comparar dichos valores con los obtenidos en el directorio '.results'.
 
@@ -145,7 +145,7 @@ Para ejecutar el script comparativo se debe utilizar el siguiente comando:
 
 ```bash
 
-python3 ./expected_output/compare_results.py --expected ./expected_output --actual ./.results/query_results
+make integration-tests
 
 ```
 

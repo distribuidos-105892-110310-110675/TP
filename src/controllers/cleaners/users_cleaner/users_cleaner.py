@@ -1,66 +1,44 @@
 import logging
-import signal
 from typing import Any, Callable
 
+from controllers.controller import Controller
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from shared import communication_protocol
 
 
-class UsersCleaner:
+class UsersCleaner(Controller):
 
     # ============================== INITIALIZE ============================== #
 
-    def __init_mom_data_connection(self, host: str, data_queue_prefix: str) -> None:
-        queue_name = f"{data_queue_prefix}-{self._cleaner_id}"
-        self._mom_data_consumer = RabbitMQMessageMiddlewareQueue(
-            host=host, queue_name=queue_name
-        )
-
-    def __init_mom_cleaned_data_connections(
-        self, host: str, cleaned_data_queue_prefix: str, cleaned_data_queues_amount: int
-    ) -> None:
-        self._mom_cleaned_data_producers_amount = cleaned_data_queues_amount
-        self._mom_cleaned_data_producers: list[RabbitMQMessageMiddlewareQueue] = []
-        for id in range(cleaned_data_queues_amount):
-            queue_name = f"{cleaned_data_queue_prefix}-{id}"
-            mom_cleaned_data_producer = RabbitMQMessageMiddlewareQueue(
-                host=host, queue_name=queue_name
-            )
-            self._mom_cleaned_data_producers.append(mom_cleaned_data_producer)
-
-    def __init__(
+    def _init_mom_consumers(
         self,
-        cleaner_id: int,
         rabbitmq_host: str,
-        data_queue_prefix: str,
-        cleaned_data_queue_prefix: str,
-        cleaned_data_queues_amount: int,
+        consumers_config: dict[str, Any],
     ) -> None:
-        self._cleaner_id = cleaner_id
-
-        self._set_controller_as_not_running()
-        signal.signal(signal.SIGTERM, self._sigterm_signal_handler)
-
-        self.__init_mom_data_connection(
-            rabbitmq_host,
-            data_queue_prefix,
+        queue_name_prefix = consumers_config["queue_name_prefix"]
+        queue_name = f"{queue_name_prefix}-{self._controller_id}"
+        self._mom_consumer = RabbitMQMessageMiddlewareQueue(
+            host=rabbitmq_host, queue_name=queue_name
         )
-        self.__init_mom_cleaned_data_connections(
-            rabbitmq_host,
-            cleaned_data_queue_prefix,
-            cleaned_data_queues_amount,
-        )
+
+    def _init_mom_producers(
+        self,
+        rabbitmq_host: str,
+        producers_config: dict[str, Any],
+    ) -> None:
+        self._current_producer_id = 0
+        self._mom_producers: list[RabbitMQMessageMiddlewareQueue] = []
+
+        next_controllers_amount = producers_config["next_controllers_amount"]
+        for id in range(next_controllers_amount):
+            queue_name_prefix = producers_config["queue_name_prefix"]
+            queue_name = f"{queue_name_prefix}-{id}"
+            mom_producer = RabbitMQMessageMiddlewareQueue(
+                host=rabbitmq_host, queue_name=queue_name
+            )
+            self._mom_producers.append(mom_producer)
 
     # ============================== PRIVATE - ACCESSING ============================== #
-
-    def _is_running(self) -> bool:
-        return self._server_running
-
-    def _set_controller_as_not_running(self) -> None:
-        self._server_running = False
-
-    def _set_controller_as_running(self) -> None:
-        self._server_running = True
 
     def _columns_to_keep(self) -> list[str]:
         return [
@@ -68,17 +46,14 @@ class UsersCleaner:
             "birthdate",
         ]
 
+    def _mom_producers_amount(self) -> int:
+        return len(self._mom_producers)
+
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
-    def _sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
-        logging.info("action: sigterm_signal_handler | result: in_progress")
-
-        self._set_controller_as_not_running()
-
-        self._mom_data_consumer.stop_consuming()
+    def _mom_stop_consuming(self) -> None:
+        self._mom_consumer.stop_consuming()
         logging.debug("action: sigterm_mom_stop_consuming | result: success")
-
-        logging.info("action: sigterm_signal_handler | result: success")
 
     # ============================== PRIVATE - FILTER ============================== #
 
@@ -111,6 +86,7 @@ class UsersCleaner:
 
     def _mom_send_message_to_next(self, message: str) -> None:
         user_batchs_by_hash: dict[int, list] = {}
+
         for batch_item in communication_protocol.decode_users_batch_message(message):
             if batch_item["user_id"] == "":
                 logging.warning(
@@ -119,27 +95,28 @@ class UsersCleaner:
                 continue
             user_id = int(float(batch_item["user_id"]))
             batch_item["user_id"] = str(user_id)
-            key = user_id % self._mom_cleaned_data_producers_amount
+
+            key = user_id % self._mom_producers_amount()
             if key not in user_batchs_by_hash:
                 user_batchs_by_hash[key] = []
             user_batchs_by_hash[key].append(batch_item)
 
         for key, user_batch in user_batchs_by_hash.items():
-            mom_cleaned_data_producer = self._mom_cleaned_data_producers[key]
+            mom_producer = self._mom_producers[key]
             message = communication_protocol.encode_users_batch_message(user_batch)
-            mom_cleaned_data_producer.send(message)
+            mom_producer.send(message)
 
     def _handle_data_batch_message(self, message: str) -> None:
         filtered_message = self._filter_message(message)
         self._mom_send_message_to_next(filtered_message)
 
     def _handle_data_batch_eof(self, message: str) -> None:
-        for mom_cleaned_data_producer in self._mom_cleaned_data_producers:
+        for mom_cleaned_data_producer in self._mom_producers:
             mom_cleaned_data_producer.send(message)
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():
-            self._mom_data_consumer.stop_consuming()
+            self._mom_consumer.stop_consuming()
             return
 
         message = message_as_bytes.decode("utf-8")
@@ -157,35 +134,15 @@ class UsersCleaner:
     # ============================== PRIVATE - RUN ============================== #
 
     def _run(self) -> None:
-        self._set_controller_as_running()
-        self._mom_data_consumer.start_consuming(self._handle_received_data)
+        super()._run()
+        self._mom_consumer.start_consuming(self._handle_received_data)
 
-    # @TODO: this is something that can be abstracted to a base cleaner class
     def _close_all_mom_connections(self) -> None:
-        for mom_cleaned_data_producer in self._mom_cleaned_data_producers:
-            mom_cleaned_data_producer.delete()
-            mom_cleaned_data_producer.close()
-            logging.debug("action: mom_cleaned_data_producer_close | result: success")
+        for mom_producer in self._mom_producers:
+            mom_producer.delete()
+            mom_producer.close()
+            logging.debug("action: mom_producer_producer_close | result: success")
 
-        self._mom_data_consumer.delete()
-        self._mom_data_consumer.close()
-        logging.debug("action: mom_data_consumer_close | result: success")
-
-    def _ensure_connections_close_after_doing(self, callback: Callable) -> None:
-        try:
-            callback()
-        except Exception as e:
-            logging.error(f"action: cleaner_run | result: fail | error: {e}")
-            raise e
-        finally:
-            self._close_all_mom_connections()
-            logging.debug("action: all_mom_connections_close | result: success")
-
-    # ============================== PUBLIC ============================== #
-
-    def run(self) -> None:
-        logging.info("action: cleaner_startup | result: success")
-
-        self._ensure_connections_close_after_doing(self._run)
-
-        logging.info("action: cleaner_shutdown | result: success")
+        self._mom_consumer.delete()
+        self._mom_consumer.close()
+        logging.debug("action: mom_consumer_close | result: success")

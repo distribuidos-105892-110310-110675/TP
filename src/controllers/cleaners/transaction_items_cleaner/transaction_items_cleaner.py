@@ -34,10 +34,10 @@ class TransactionItemsCleaner(Controller):
         for id in range(next_controllers_amount):
             queue_name_prefix = producers_config["queue_name_prefix"]
             queue_name = f"{queue_name_prefix}-{id}"
-            mom_cleaned_data_producer = RabbitMQMessageMiddlewareQueue(
+            mom_producer = RabbitMQMessageMiddlewareQueue(
                 host=rabbitmq_host, queue_name=queue_name
             )
-            self._mom_producers.append(mom_cleaned_data_producer)
+            self._mom_producers.append(mom_producer)
 
     # ============================== PRIVATE - ACCESSING ============================== #
 

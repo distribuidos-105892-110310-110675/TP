@@ -3,11 +3,12 @@ from abc import abstractmethod
 from typing import Any, Callable, Optional
 
 from controllers.controller import Controller
+from middleware.middleware import MessageMiddleware
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from shared import communication_protocol
 
 
-class QueryOutputBuilder(Cleaner):
+class Cleaner(Controller):
 
     # ============================== INITIALIZE ============================== #
 
@@ -22,51 +23,40 @@ class QueryOutputBuilder(Cleaner):
             host=rabbitmq_host, queue_name=queue_name
         )
 
+    @abstractmethod
+    def _build_mom_producer_using(
+        self, rabbitmq_host: str, producers_config: dict[str, Any], producer_id: int
+    ) -> MessageMiddleware:
+        raise NotImplementedError("subclass responsibility")
+
     def _init_mom_producers(
         self,
         rabbitmq_host: str,
         producers_config: dict[str, Any],
     ) -> None:
-        queue_name = producers_config["queue_name_prefix"]
-        self._mom_producer = RabbitMQMessageMiddlewareQueue(
-            host=rabbitmq_host, queue_name=queue_name
-        )
+        self._current_producer_id = 0
+        self._mom_producers: list[MessageMiddleware] = []
 
-    def __init__(
-        self,
-        controller_id: int,
-        rabbitmq_host: str,
-        consumers_config: dict[str, Any],
-        producers_config: dict[str, Any],
-        prev_controllers_amount: int,
-    ) -> None:
-        super().__init__(
-            controller_id,
-            rabbitmq_host,
-            consumers_config,
-            producers_config,
-        )
+        next_controllers_amount = producers_config["next_controllers_amount"]
+        for id in range(next_controllers_amount):
+            mom_producer = self._build_mom_producer_using(
+                rabbitmq_host, producers_config, id
+            )
+            self._mom_producers.append(mom_producer)
 
-        self._eof_recv_from_prev_controllers = 0
-        self._prev_controllers_amount = prev_controllers_amount
-
-    # ============================== PRIVATE - INTERFACE ============================== #
+    # ============================== PRIVATE - ACCESSING ============================== #
 
     @abstractmethod
     def _columns_to_keep(self) -> list[str]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def _output_message_type(self) -> str:
-        raise NotImplementedError
+        raise NotImplementedError("subclass responsibility")
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
     def _mom_stop_consuming(self) -> None:
         self._mom_consumer.stop_consuming()
-        logging.info("action: sigterm_mom_stop_consuming | result: success")
+        logging.debug("action: sigterm_mom_stop_consuming | result: success")
 
-    # ============================== PRIVATE - TRANSFORM DATA ============================== #
+    # ============================== PRIVATE - FILTER ============================== #
 
     def _transform_batch_item(self, batch_item: dict[str, str]) -> dict:
         modified_item_batch = {}
@@ -96,26 +86,30 @@ class QueryOutputBuilder(Cleaner):
             message,
             communication_protocol.decode_batch_message,
             communication_protocol.encode_batch_message,
-            self._output_message_type(),
         )
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
+    @abstractmethod
+    def _mom_send_message_to_next(self, message: str) -> None:
+        mom_producer = self._mom_producers[self._current_producer_id]
+        mom_producer.send(message)
+
+        self._current_producer_id += 1
+        if self._current_producer_id >= len(self._mom_producers):
+            self._current_producer_id = 0
+
     def _handle_data_batch_message(self, message: str) -> None:
-        output_message = self._transform_batch_message(message)
-        self._mom_producer.send(output_message)
+        filtered_message = self._transform_batch_message(message)
+        self._mom_send_message_to_next(filtered_message)
 
     def _handle_data_batch_eof(self, message: str) -> None:
-        self._eof_recv_from_prev_controllers += 1
         logging.debug(f"action: eof_received | result: success")
 
-        if self._eof_recv_from_prev_controllers == self._prev_controllers_amount:
-            logging.info("action: all_eofs_received | result: success")
-            message = communication_protocol.encode_eof_message(
-                self._output_message_type()
-            )
-            self._mom_producer.send(message)
-            logging.info("action: eof_sent | result: success")
+        for mom_producer in self._mom_producers:
+            mom_producer.send(message)
+
+        logging.info("action: eof_sent | result: success")
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():
@@ -124,7 +118,6 @@ class QueryOutputBuilder(Cleaner):
 
         message = message_as_bytes.decode("utf-8")
         message_type = communication_protocol.decode_message_type(message)
-
         if message_type != communication_protocol.EOF:
             self._handle_data_batch_message(message)
         else:
@@ -137,9 +130,10 @@ class QueryOutputBuilder(Cleaner):
         self._mom_consumer.start_consuming(self._handle_received_data)
 
     def _close_all_mom_connections(self) -> None:
-        self._mom_producer.delete()
-        self._mom_producer.close()
-        logging.debug("action: mom_producer_close | result: success")
+        for mom_producer in self._mom_producers:
+            mom_producer.delete()
+            mom_producer.close()
+            logging.debug("action: mom_producer_producer_close | result: success")
 
         self._mom_consumer.delete()
         self._mom_consumer.close()

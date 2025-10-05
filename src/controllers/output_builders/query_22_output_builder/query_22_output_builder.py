@@ -6,8 +6,8 @@ class Query22OutputBuilder(QueryOutputBuilder):
 
     # ============================== PRIVATE - INTERFACE ============================== #
 
-    def columns_to_keep(self) -> list[str]:
+    def _columns_to_keep(self) -> list[str]:
         return ["year_month_created_at", "item_name", "profit_sum"]
 
-    def output_message_type(self) -> str:
+    def _output_message_type(self) -> str:
         return communication_protocol.QUERY_RESULT_22_MSG_TYPE

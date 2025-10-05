@@ -135,7 +135,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - FILTERS_AMOUNT=3
+      - NEXT_CONTROLLERS_AMOUNT=3
     networks:
       - custom_net
     depends_on:
@@ -151,7 +151,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - FILTERS_AMOUNT=3
+      - NEXT_CONTROLLERS_AMOUNT=3
     networks:
       - custom_net
     depends_on:
@@ -167,7 +167,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=2
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - FILTERS_AMOUNT=3
+      - NEXT_CONTROLLERS_AMOUNT=3
     networks:
       - custom_net
     depends_on:
@@ -183,7 +183,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=3
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - FILTERS_AMOUNT=3
+      - NEXT_CONTROLLERS_AMOUNT=3
     networks:
       - custom_net
     depends_on:
@@ -199,7 +199,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - FILTERS_AMOUNT=3
+      - NEXT_CONTROLLERS_AMOUNT=3
     networks:
       - custom_net
     depends_on:
@@ -215,7 +215,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - FILTERS_AMOUNT=3
+      - NEXT_CONTROLLERS_AMOUNT=3
     networks:
       - custom_net
     depends_on:
@@ -231,7 +231,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=2
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - FILTERS_AMOUNT=3
+      - NEXT_CONTROLLERS_AMOUNT=3
     networks:
       - custom_net
     depends_on:
@@ -247,7 +247,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=3
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - FILTERS_AMOUNT=3
+      - NEXT_CONTROLLERS_AMOUNT=3
     networks:
       - custom_net
     depends_on:
@@ -263,7 +263,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - JOINS_AMOUNT=2
+      - NEXT_CONTROLLERS_AMOUNT=2
     networks:
       - custom_net
     depends_on:

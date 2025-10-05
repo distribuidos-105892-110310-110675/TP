@@ -1,52 +1,73 @@
 import logging
-import signal
-from typing import Any, Callable
+from abc import abstractmethod
+from typing import Any
 
-from middleware.rabbitmq_message_middleware_exchange import (
-    RabbitMQMessageMiddlewareExchange,
-)
-from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
+from controllers.controller import Controller
+from middleware.middleware import MessageMiddleware
 from shared import communication_protocol
 
 
-class JoinItemSumWithMenu:
+class Joiner(Controller):
 
-    def __init_mom_base_data_consumer(
+    @abstractmethod
+    def _build_mom_base_data_consumer(
         self,
-        host: str,
-        consumer_exchange_prefix: str,
-        consumer_routing_key_prefix: str,
+        rabbitmq_host: str,
+        consumers_config: dict[str, Any],
+    ) -> MessageMiddleware:
+        raise NotImplementedError("subclass responsibility")
+
+    @abstractmethod
+    def _build_mom_stream_data_consumer(
+        self,
+        rabbitmq_host: str,
+        consumers_config: dict[str, Any],
+    ) -> MessageMiddleware:
+        raise NotImplementedError("subclass responsibility")
+
+    def _init_mom_consumers(
+        self,
+        rabbitmq_host: str,
+        consumers_config: dict[str, Any],
     ) -> None:
-        exchange_name = consumer_exchange_prefix
-        routing_keys = [f"{consumer_routing_key_prefix}.*"]
-        self._mom_base_data_consumer = RabbitMQMessageMiddlewareExchange(
-            host=host,
-            exchange_name=exchange_name,
-            route_keys=routing_keys,
+        self._eof_recv_from_base_data_prev_controllers = 0
+        self._base_data_prev_controllers_amount = consumers_config[
+            "base_data_prev_controllers_amount"
+        ]
+
+        self._eof_recv_from_stream_data_prev_controllers = 0
+        self._stream_data_prev_controllers_amount = consumers_config[
+            "stream_data_prev_controllers_amount"
+        ]
+
+        self._mom_base_data_consumer = self._build_mom_base_data_consumer(
+            rabbitmq_host, consumers_config
+        )
+        self._mom_stream_data_consumer = self._build_mom_stream_data_consumer(
+            rabbitmq_host, consumers_config
         )
 
-    def __init_mom_stream_data_consumer(
+    @abstractmethod
+    def _build_mom_producer_using(
         self,
-        host: str,
-        consumer_queue_prefix: str,
-    ) -> None:
-        queue_name = f"{consumer_queue_prefix}-{self._controller_id}"
-        self._mom_stream_data_consumer = RabbitMQMessageMiddlewareQueue(
-            host=host, queue_name=queue_name
-        )
+        rabbitmq_host: str,
+        producers_config: dict[str, Any],
+        producer_id: int,
+    ) -> MessageMiddleware:
+        raise NotImplementedError("subclass responsibility")
 
-    def __init_mom_producers(
+    def _init_mom_producers(
         self,
-        host: str,
-        producer_queue_prefix: str,
-        producer_queue_amount: int,
+        rabbitmq_host: str,
+        producers_config: dict[str, Any],
     ) -> None:
         self._current_producer_id = 0
-        self._mom_producers: list[RabbitMQMessageMiddlewareQueue] = []
-        for id in range(producer_queue_amount):
-            queue_name = f"{producer_queue_prefix}-{id}"
-            mom_producer = RabbitMQMessageMiddlewareQueue(
-                host=host, queue_name=queue_name
+        self._mom_producers: list[MessageMiddleware] = []
+
+        next_controllers_amount = producers_config["next_controllers_amount"]
+        for producer_id in range(next_controllers_amount):
+            mom_producer = self._build_mom_producer_using(
+                rabbitmq_host, producers_config, producer_id
             )
             self._mom_producers.append(mom_producer)
 
@@ -54,82 +75,65 @@ class JoinItemSumWithMenu:
         self,
         controller_id: int,
         rabbitmq_host: str,
-        base_data_consumer_exchange_prefix: str,
-        base_data_consumer_routing_key_prefix: str,
-        stream_consumer_queue_prefix: str,
-        producer_queue_prefix: str,
-        previos_base_data_controllers_amount: int,
-        previos_stream_data_controllers_amount: int,
-        next_controllers_amount: int,
+        consumers_config: dict[str, Any],
+        producers_config: dict[str, Any],
     ) -> None:
-        self._controller_id = controller_id
-
-        self._set_controller_as_not_running()
-        signal.signal(signal.SIGTERM, self._sigterm_signal_handler)
-
-        self.__init_mom_base_data_consumer(
+        super().__init__(
+            controller_id,
             rabbitmq_host,
-            base_data_consumer_exchange_prefix,
-            base_data_consumer_routing_key_prefix,
-        )
-        self.__init_mom_stream_data_consumer(
-            rabbitmq_host,
-            stream_consumer_queue_prefix,
-        )
-        self.__init_mom_producers(
-            rabbitmq_host,
-            producer_queue_prefix,
-            next_controllers_amount,
+            consumers_config,
+            producers_config,
         )
 
-        self._eof_received_from_base_data_controllers = 0
-        self._eof_received_from_stream_data_controllers = 0
-        self._previous_base_data_controllers_amount = (
-            previos_base_data_controllers_amount
-        )
-        self._previous_stream_data_controllers_amount = (
-            previos_stream_data_controllers_amount
-        )
-
-        self._join_key = "item_id"
         self._base_data: list[dict[str, str]] = []
-
-    # ============================== PRIVATE - ACCESSING ============================== #
-
-    def _is_running(self) -> bool:
-        return self._server_running
-
-    def _set_controller_as_not_running(self) -> None:
-        self._server_running = False
-
-    def _set_controller_as_running(self) -> None:
-        self._server_running = True
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
-    def _sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
-        logging.info("action: sigterm_signal_handler | result: in_progress")
-
-        self._set_controller_as_not_running()
-
+    def _mom_stop_consuming(self) -> None:
         self._mom_base_data_consumer.stop_consuming()
         self._mom_stream_data_consumer.stop_consuming()
         logging.debug("action: sigterm_mom_stop_consuming | result: success")
 
-        logging.info("action: sigterm_signal_handler | result: success")
+    # ============================== PRIVATE - ACCESSING ============================== #
+
+    @abstractmethod
+    def _join_key(self) -> str:
+        raise NotImplementedError("subclass responsibility")
+
+    @abstractmethod
+    def _transform_function(self, value: str) -> Any:
+        raise NotImplementedError("subclass responsibility")
 
     # ============================== PRIVATE - JOIN ============================== #
+
+    def _should_be_joined(
+        self, base_item: dict[str, str], stream_item: dict[str, str]
+    ) -> bool:
+        base_optional_value = base_item.get(self._join_key())
+        stream_optional_value = stream_item.get(self._join_key())
+        if base_optional_value is None or stream_optional_value is None:
+            return False
+
+        base_value = self._transform_function(base_optional_value)
+        stream_value = self._transform_function(stream_optional_value)
+        return base_value == stream_value
 
     def _join_with_base_data(self, message: str) -> str:
         message_type = communication_protocol.decode_message_type(message)
         stream_data = communication_protocol.decode_batch_message(message)
         joined_data: list[dict[str, str]] = []
         for stream_item in stream_data:
+            was_joined = False
             for base_item in self._base_data:
-                if base_item[self._join_key] == stream_item[self._join_key]:
+                if self._should_be_joined(base_item, stream_item):
                     joined_item = {**stream_item, **base_item}
                     joined_data.append(joined_item)
+                    was_joined = True
                     break
+            if not was_joined:
+                logging.warning(
+                    f"action: join_with_base_data | result: error | stream_item: {stream_item}"
+                )
         return communication_protocol.encode_batch_message(message_type, joined_data)
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
@@ -148,12 +152,12 @@ class JoinItemSumWithMenu:
             self._base_data.append(item_batch)
 
     def _handle_base_data_batch_eof(self, message: str) -> None:
-        self._eof_received_from_base_data_controllers += 1
+        self._eof_recv_from_base_data_prev_controllers += 1
         logging.debug(f"action: eof_received | result: success")
 
         if (
-            self._eof_received_from_base_data_controllers
-            == self._previous_base_data_controllers_amount
+            self._eof_recv_from_base_data_prev_controllers
+            == self._base_data_prev_controllers_amount
         ):
             logging.info("action: all_eofs_received | result: success")
             self._mom_base_data_consumer.stop_consuming()
@@ -178,17 +182,19 @@ class JoinItemSumWithMenu:
             self._mom_send_message_to_next(joined_message)
 
     def _handle_stream_data_batch_eof(self, message: str) -> None:
-        self._eof_received_from_stream_data_controllers += 1
+        self._eof_recv_from_stream_data_prev_controllers += 1
         logging.debug(f"action: eof_received | result: success")
 
         if (
-            self._eof_received_from_stream_data_controllers
-            == self._previous_stream_data_controllers_amount
+            self._eof_recv_from_stream_data_prev_controllers
+            == self._stream_data_prev_controllers_amount
         ):
             logging.info("action: all_eofs_received | result: success")
             for mom_producer in self._mom_producers:
                 mom_producer.send(message)
             logging.info("action: eof_sent | result: success")
+
+            self._base_data.clear()
 
     def _handle_stream_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():
@@ -221,22 +227,3 @@ class JoinItemSumWithMenu:
         self._mom_stream_data_consumer.delete()
         self._mom_stream_data_consumer.close()
         logging.debug("action: mom_data_consumer_close | result: success")
-
-    def _ensure_connections_close_after_doing(self, callback: Callable) -> None:
-        try:
-            callback()
-        except Exception as e:
-            logging.error(f"action: cleaner_run | result: fail | error: {e}")
-            raise e
-        finally:
-            self._close_all_mom_connections()
-            logging.debug("action: all_mom_connections_close | result: success")
-
-    # ============================== PUBLIC ============================== #
-
-    def run(self) -> None:
-        logging.info("action: cleaner_startup | result: success")
-
-        self._ensure_connections_close_after_doing(self._run)
-
-        logging.info("action: cleaner_shutdown | result: success")

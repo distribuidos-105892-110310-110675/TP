@@ -69,12 +69,8 @@ class Cleaner(Controller):
         message: str,
         decoder: Callable,
         encoder: Callable,
-        output_message_type: Optional[str] = None,
+        message_type: str,
     ) -> str:
-        message_type = output_message_type
-        if output_message_type is None:
-            message_type = communication_protocol.decode_message_type(message)
-
         new_batch = []
         for item in decoder(message):
             modified_item = self._transform_batch_item(item)
@@ -86,18 +82,14 @@ class Cleaner(Controller):
             message,
             communication_protocol.decode_batch_message,
             communication_protocol.encode_batch_message,
+            communication_protocol.decode_message_type(message),
         )
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
     @abstractmethod
     def _mom_send_message_to_next(self, message: str) -> None:
-        mom_producer = self._mom_producers[self._current_producer_id]
-        mom_producer.send(message)
-
-        self._current_producer_id += 1
-        if self._current_producer_id >= len(self._mom_producers):
-            self._current_producer_id = 0
+        raise NotImplementedError("subclass responsibility")
 
     def _handle_data_batch_message(self, message: str) -> None:
         filtered_message = self._transform_batch_message(message)

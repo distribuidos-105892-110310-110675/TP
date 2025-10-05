@@ -7,7 +7,7 @@ from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewa
 from shared import communication_protocol
 
 
-class QueryOutputBuilder(Cleaner):
+class QueryOutputBuilder(Controller):
 
     # ============================== INITIALIZE ============================== #
 
@@ -79,12 +79,8 @@ class QueryOutputBuilder(Cleaner):
         message: str,
         decoder: Callable,
         encoder: Callable,
-        output_message_type: Optional[str] = None,
+        message_type: Optional[str] = None,
     ) -> str:
-        message_type = output_message_type
-        if output_message_type is None:
-            message_type = communication_protocol.decode_message_type(message)
-
         new_batch = []
         for item in decoder(message):
             modified_item = self._transform_batch_item(item)

@@ -42,7 +42,12 @@ class TransactionItemsCleaner(Controller):
     # ============================== PRIVATE - ACCESSING ============================== #
 
     def _columns_to_keep(self) -> list[str]:
-        return ["created_at", "item_id", "subtotal", "quantity"]
+        return [
+            "created_at",
+            "item_id",
+            "subtotal",
+            "quantity",
+        ]
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 

@@ -10,7 +10,7 @@ def main():
     config_params = initializer.init_config(
         [
             "LOGGING_LEVEL",
-            "CLEANER_ID",
+            "CONTROLLER_ID",
             "RABBITMQ_HOST",
             "FILTERS_AMOUNT",
         ]
@@ -19,7 +19,7 @@ def main():
     logging.info(f"action: init_config | result: success | params: {config_params}")
 
     cleaner = TransactionItemsCleaner(
-        cleaner_id=int(config_params["CLEANER_ID"]),
+        cleaner_id=int(config_params["CONTROLLER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
         data_queue_prefix=constants.DIRTY_TIT_QUEUE_PREFIX,
         cleaned_data_queue_prefix=constants.CLEANED_TIT_QUEUE_PREFIX,

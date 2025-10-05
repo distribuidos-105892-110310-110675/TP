@@ -101,9 +101,9 @@ services:
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
-      - CLEANER_ID=0
+      - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - JOINS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=1
     networks:
       - custom_net
     depends_on:
@@ -117,9 +117,9 @@ services:
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
-      - CLEANER_ID=0
+      - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - JOINS_AMOUNT=2
+      - NEXT_CONTROLLERS_AMOUNT=2
     networks:
       - custom_net
     depends_on:
@@ -133,7 +133,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
-      - CLEANER_ID=0
+      - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - FILTERS_AMOUNT=3
     networks:
@@ -149,7 +149,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
-      - CLEANER_ID=1
+      - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - FILTERS_AMOUNT=3
     networks:
@@ -165,7 +165,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
-      - CLEANER_ID=2
+      - CONTROLLER_ID=2
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - FILTERS_AMOUNT=3
     networks:
@@ -181,7 +181,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
-      - CLEANER_ID=3
+      - CONTROLLER_ID=3
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - FILTERS_AMOUNT=3
     networks:
@@ -197,7 +197,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
-      - CLEANER_ID=0
+      - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - FILTERS_AMOUNT=3
     networks:
@@ -213,7 +213,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
-      - CLEANER_ID=1
+      - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - FILTERS_AMOUNT=3
     networks:
@@ -229,7 +229,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
-      - CLEANER_ID=2
+      - CONTROLLER_ID=2
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - FILTERS_AMOUNT=3
     networks:
@@ -245,7 +245,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
-      - CLEANER_ID=3
+      - CONTROLLER_ID=3
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - FILTERS_AMOUNT=3
     networks:
@@ -261,7 +261,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
-      - CLEANER_ID=0
+      - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - JOINS_AMOUNT=2
     networks:

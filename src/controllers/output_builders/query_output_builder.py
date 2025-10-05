@@ -63,17 +63,8 @@ class QueryOutputBuilder(Controller):
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
     def _mom_stop_consuming(self) -> None:
-        logging.debug("action: sigterm_mom_stop_consuming | result: success")
-
-    def _sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
-        logging.info("action: sigterm_signal_handler | result: in_progress")
-
-        self._set_controller_as_not_running()
-
         self._mom_consumer.stop_consuming()
-        logging.debug("action: sigterm_mom_stop_consuming | result: success")
-
-        logging.info("action: sigterm_signal_handler | result: success")
+        logging.info("action: sigterm_mom_stop_consuming | result: success")
 
     # ============================== PRIVATE - TRANSFORM DATA ============================== #
 

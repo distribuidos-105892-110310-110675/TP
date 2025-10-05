@@ -28,9 +28,8 @@ class Controller(ABC):
         self,
         controller_id: int,
         rabbitmq_host: str,
-        consumers_config: dict[str, Any],  # @TODO see if we can specify better the type
-        producers_config: dict[str, Any],  # @TODO see if we can specify better the type
-        **kwargs: Any,
+        consumers_config: dict[str, Any],
+        producers_config: dict[str, Any],
     ) -> None:
         self._controller_id = controller_id
 
@@ -83,7 +82,7 @@ class Controller(ABC):
             raise e
         finally:
             self._close_all_mom_connections()
-            logging.debug("action: all_mom_connections_close | result: success")
+            logging.info("action: all_mom_connections_close | result: success")
 
     # ============================== PUBLIC ============================== #
 

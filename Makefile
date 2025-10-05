@@ -22,7 +22,7 @@ docker-compose-up: docker-build-image
 .PHONY: docker-compose-up
 
 docker-compose-down:
-	docker compose -f $(DOCKER_COMPOSE_FILE) stop -t 10
+	docker compose -f $(DOCKER_COMPOSE_FILE) stop -t 60
 	docker compose -f $(DOCKER_COMPOSE_FILE) down
 .PHONY: docker-compose-down
 

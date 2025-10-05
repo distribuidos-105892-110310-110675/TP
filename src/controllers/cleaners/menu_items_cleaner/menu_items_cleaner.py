@@ -18,8 +18,8 @@ class MenuItemsCleaner(Controller):
         rabbitmq_host: str,
         consumers_config: dict[str, Any],
     ) -> None:
-        queue_prefix_name = consumers_config["queue_name_prefix"]
-        queue_name = f"{queue_prefix_name}-{self._controller_id}"
+        queue_name_prefix = consumers_config["queue_name_prefix"]
+        queue_name = f"{queue_name_prefix}-{self._controller_id}"
         self._mom_consumer = RabbitMQMessageMiddlewareQueue(
             host=rabbitmq_host, queue_name=queue_name
         )
@@ -32,8 +32,8 @@ class MenuItemsCleaner(Controller):
         self._current_producer_id = 0
         self._mom_producers: list[RabbitMQMessageMiddlewareExchange] = []
 
-        routing_keys_amount = producers_config["next_controllers_amount"]
-        for id in range(routing_keys_amount):
+        next_controllers_amount = producers_config["next_controllers_amount"]
+        for id in range(next_controllers_amount):
             exchange_name = producers_config["exchange_name_prefix"]
             routing_keys = [producers_config["routing_key_prefix"] + f".{id}"]
             mom_producer = RabbitMQMessageMiddlewareExchange(

@@ -10,19 +10,26 @@ def main():
             "LOGGING_LEVEL",
             "CONTROLLER_ID",
             "RABBITMQ_HOST",
-            "JOINS_AMOUNT",
+            "NEXT_CONTROLLERS_AMOUNT",
         ]
     )
     initializer.init_log(config_params["LOGGING_LEVEL"])
     logging.info(f"action: init_config | result: success | params: {config_params}")
 
+    consumers_config = {
+        "queue_name_prefix": constants.DIRTY_STR_QUEUE_PREFIX,
+    }
+    producers_config = {
+        "exchange_name_prefix": constants.CLEANED_STR_EXCHANGE_PREFIX,
+        "routing_key_prefix": constants.CLEANED_STR_ROUTING_KEY_PREFIX,
+        "next_controllers_amount": int(config_params["NEXT_CONTROLLERS_AMOUNT"]),
+    }
+
     cleaner = StoresCleaner(
-        cleaner_id=int(config_params["CONTROLLER_ID"]),
+        controller_id=int(config_params["CONTROLLER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
-        data_queue_prefix=constants.DIRTY_STR_QUEUE_PREFIX,
-        cleaned_data_exchange_prefix=constants.CLEANED_STR_EXCHANGE_PREFIX,
-        cleaned_data_routing_key_prefix=constants.CLEANED_STR_ROUTING_KEY_PREFIX,
-        cleaned_data_routing_keys_amount=int(config_params["JOINS_AMOUNT"]),
+        consumers_config=consumers_config,
+        producers_config=producers_config,
     )
     cleaner.run()
 

@@ -1,7 +1,7 @@
 import logging
 
-from controllers.filters.filter_transactions_by_year.filter_transactions_by_year import (
-    FilterTransactionsByYear,
+from controllers.filters.filter_transaction_items_by_year.filter_transaction_items_by_year import (
+    FilterTransactionItemsByYear,
 )
 from shared import constants, initializer
 
@@ -24,16 +24,15 @@ def main():
     years_to_keep = [int(year) for year in year_list]
 
     consumers_config = {
-        "queue_name_prefix": constants.CLEANED_TRN_QUEUE_PREFIX,
+        "queue_name_prefix": constants.CLEANED_TIT_QUEUE_PREFIX,
         "prev_controllers_amount": int(config_params["PREV_CONTROLLERS_AMOUNT"]),
     }
     producers_config = {
-        "exchange_name_prefix": constants.FILTERED_TRN_BY_YEAR_EXCHANGE_PREFIX,
-        "routing_key_prefix": constants.FILTERED_TRN_BY_YEAR_ROUTING_KEY_PREFIX,
+        "queue_name_prefix": constants.FILTERED_TIT_BY_YEAR_QUEUE_PREFIX,
         "next_controllers_amount": int(config_params["NEXT_CONTROLLERS_AMOUNT"]),
     }
 
-    controller = FilterTransactionsByYear(
+    controller = FilterTransactionItemsByYear(
         controller_id=int(config_params["CONTROLLER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
         consumers_config=consumers_config,

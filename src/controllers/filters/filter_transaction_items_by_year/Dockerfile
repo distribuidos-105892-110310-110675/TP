@@ -7,6 +7,6 @@ COPY src/middleware /middleware
 COPY src/controllers/controller.py /controllers/controller.py
 
 COPY src/controllers/filters/filter.py /controllers/filters/filter.py
-COPY src/controllers/filters/filter_transactions_by_hour /controllers/filters/filter_transactions_by_hour
+COPY src/controllers/filters/filter_transaction_items_by_year /controllers/filters/filter_transaction_items_by_year
 
 ENTRYPOINT ["/bin/sh"]

@@ -1,13 +1,13 @@
 import logging
 from abc import abstractmethod
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from controllers.controller import Controller
 from middleware.middleware import MessageMiddleware
 from shared import communication_protocol
 
 
-class Mapper(Controller):
+class Filter(Controller):
 
     # ============================== INITIALIZE ============================== #
 
@@ -63,7 +63,7 @@ class Mapper(Controller):
     # ============================== PRIVATE - TRANSFORM DATA ============================== #
 
     @abstractmethod
-    def _transform_batch_item(self, batch_item: dict[str, str]) -> dict[str, str]:
+    def _should_be_included(self, batch_item: dict[str, str]) -> bool:
         raise NotImplementedError("subclass responsibility")
 
     def _transform_batch_message_using(
@@ -75,8 +75,8 @@ class Mapper(Controller):
     ) -> str:
         new_batch = []
         for item in decoder(message):
-            modified_item = self._transform_batch_item(item)
-            new_batch.append(modified_item)
+            if self._should_be_included(item):
+                new_batch.append(item)
         return str(encoder(message_type, new_batch))
 
     def _transform_batch_message(self, message: str) -> str:

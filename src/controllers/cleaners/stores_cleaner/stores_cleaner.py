@@ -1,9 +1,7 @@
 import logging
-import signal
-import threading
-import time
 from typing import Any, Callable
 
+from controllers.controller import Controller
 from middleware.rabbitmq_message_middleware_exchange import (
     RabbitMQMessageMiddlewareExchange,
 )
@@ -11,70 +9,41 @@ from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewa
 from shared import communication_protocol
 
 
-class StoresCleaner:
+class StoresCleaner(Controller):
 
     # ============================== INITIALIZE ============================== #
 
-    def __init_mom_data_connection(self, host: str, data_queue_prefix: str) -> None:
-        queue_name = f"{data_queue_prefix}-{self._cleaner_id}"
-        self._mom_data_consumer = RabbitMQMessageMiddlewareQueue(
-            host=host, queue_name=queue_name
+    def _init_mom_consumers(
+        self,
+        rabbitmq_host: str,
+        consumers_config: dict[str, Any],
+    ) -> None:
+        queue_prefix_name = consumers_config["queue_name_prefix"]
+        queue_name = f"{queue_prefix_name}-{self._controller_id}"
+        self._mom_consumer = RabbitMQMessageMiddlewareQueue(
+            host=rabbitmq_host, queue_name=queue_name
         )
 
-    def __init_mom_cleaned_data_connections(
+    def _init_mom_producers(
         self,
-        host: str,
-        cleaned_data_exchange_prefix: str,
-        cleaned_data_routing_key_prefix: str,
-        cleaned_data_routing_keys_amount: int,
+        rabbitmq_host: str,
+        producers_config: dict[str, Any],
     ) -> None:
-        self._current_cleaned_data_producer_id = 0
-        self._mom_cleaned_data_producers: list[RabbitMQMessageMiddlewareExchange] = []
-        for id in range(cleaned_data_routing_keys_amount):
-            exchange_name = cleaned_data_exchange_prefix
-            routing_keys = [f"{cleaned_data_routing_key_prefix}.{id}"]
-            mom_cleaned_data_producer = RabbitMQMessageMiddlewareExchange(
-                host=host,
+        self._current_producer_id = 0
+        self._mom_producers: list[RabbitMQMessageMiddlewareExchange] = []
+
+        routing_keys_amount = producers_config["next_controllers_amount"]
+        for id in range(routing_keys_amount):
+            exchange_name = producers_config["exchange_name_prefix"]
+            routing_keys = [producers_config["routing_key_prefix"] + f".{id}"]
+            mom_producer = RabbitMQMessageMiddlewareExchange(
+                host=rabbitmq_host,
                 exchange_name=exchange_name,
                 route_keys=routing_keys,
             )
-            self._mom_cleaned_data_producers.append(mom_cleaned_data_producer)
-
-    def __init__(
-        self,
-        cleaner_id: int,
-        rabbitmq_host: str,
-        data_queue_prefix: str,
-        cleaned_data_exchange_prefix: str,
-        cleaned_data_routing_key_prefix: str,
-        cleaned_data_routing_keys_amount: int,
-    ) -> None:
-        self._cleaner_id = cleaner_id
-
-        self._set_controller_as_not_running()
-        signal.signal(signal.SIGTERM, self._sigterm_signal_handler)
-
-        self.__init_mom_data_connection(
-            rabbitmq_host,
-            data_queue_prefix,
-        )
-        self.__init_mom_cleaned_data_connections(
-            rabbitmq_host,
-            cleaned_data_exchange_prefix,
-            cleaned_data_routing_key_prefix,
-            cleaned_data_routing_keys_amount,
-        )
+            self._mom_producers.append(mom_producer)
 
     # ============================== PRIVATE - ACCESSING ============================== #
-
-    def _is_running(self) -> bool:
-        return self._server_running
-
-    def _set_controller_as_not_running(self) -> None:
-        self._server_running = False
-
-    def _set_controller_as_running(self) -> None:
-        self._server_running = True
 
     def _columns_to_keep(self) -> list[str]:
         return [
@@ -84,15 +53,9 @@ class StoresCleaner:
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
-    def _sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
-        logging.info("action: sigterm_signal_handler | result: in_progress")
-
-        self._set_controller_as_not_running()
-
-        self._mom_data_consumer.stop_consuming()
+    def _mom_stop_consuming(self) -> None:
+        self._mom_consumer.stop_consuming()
         logging.debug("action: sigterm_mom_stop_consuming | result: success")
-
-        logging.info("action: sigterm_signal_handler | result: success")
 
     # ============================== PRIVATE - FILTER ============================== #
 
@@ -124,28 +87,24 @@ class StoresCleaner:
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
     def _mom_send_message_to_next(self, message: str) -> None:
-        mom_cleaned_data_producer = self._mom_cleaned_data_producers[
-            self._current_cleaned_data_producer_id
-        ]
-        mom_cleaned_data_producer.send(message)
+        mom_producer = self._mom_producers[self._current_producer_id]
+        mom_producer.send(message)
 
-        self._current_cleaned_data_producer_id += 1
-        if self._current_cleaned_data_producer_id >= len(
-            self._mom_cleaned_data_producers
-        ):
-            self._current_cleaned_data_producer_id = 0
+        self._current_producer_id += 1
+        if self._current_producer_id >= len(self._mom_producers):
+            self._current_producer_id = 0
 
     def _handle_data_batch_message(self, message: str) -> None:
         filtered_message = self._filter_message(message)
         self._mom_send_message_to_next(filtered_message)
 
     def _handle_data_batch_eof(self, message: str) -> None:
-        for mom_cleaned_data_producer in self._mom_cleaned_data_producers:
-            mom_cleaned_data_producer.send(message)
+        for mom_producer in self._mom_producers:
+            mom_producer.send(message)
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():
-            self._mom_data_consumer.stop_consuming()
+            self._mom_consumer.stop_consuming()
             return
 
         message = message_as_bytes.decode("utf-8")
@@ -163,35 +122,15 @@ class StoresCleaner:
     # ============================== PRIVATE - RUN ============================== #
 
     def _run(self) -> None:
-        self._set_controller_as_running()
-        self._mom_data_consumer.start_consuming(self._handle_received_data)
+        super()._run()
+        self._mom_consumer.start_consuming(self._handle_received_data)
 
-    # @TODO: this is something that can be abstracted to a base cleaner class
     def _close_all_mom_connections(self) -> None:
-        for mom_cleaned_data_producer in self._mom_cleaned_data_producers:
-            mom_cleaned_data_producer.delete()
-            mom_cleaned_data_producer.close()
-            logging.debug("action: mom_cleaned_data_producer_close | result: success")
+        for mom_producer in self._mom_producers:
+            mom_producer.delete()
+            mom_producer.close()
+            logging.debug("action: mom_producer_producer_close | result: success")
 
-        self._mom_data_consumer.delete()
-        self._mom_data_consumer.close()
-        logging.debug("action: mom_data_consumer_close | result: success")
-
-    def _ensure_connections_close_after_doing(self, callback: Callable) -> None:
-        try:
-            callback()
-        except Exception as e:
-            logging.error(f"action: cleaner_run | result: fail | error: {e}")
-            raise e
-        finally:
-            self._close_all_mom_connections()
-            logging.debug("action: all_mom_connections_close | result: success")
-
-    # ============================== PUBLIC ============================== #
-
-    def run(self) -> None:
-        logging.info("action: cleaner_startup | result: success")
-
-        self._ensure_connections_close_after_doing(self._run)
-
-        logging.info("action: cleaner_shutdown | result: success")
+        self._mom_consumer.delete()
+        self._mom_consumer.close()
+        logging.debug("action: mom_consumer_close | result: success")

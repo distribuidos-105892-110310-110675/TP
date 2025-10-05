@@ -20,7 +20,7 @@ class MenuItemsCleaner(Controller):
     ) -> None:
         queue_prefix_name = consumers_config["queue_name_prefix"]
         queue_name = f"{queue_prefix_name}-{self._controller_id}"
-        self._mom_data_consumer = RabbitMQMessageMiddlewareQueue(
+        self._mom_consumer = RabbitMQMessageMiddlewareQueue(
             host=rabbitmq_host, queue_name=queue_name
         )
 
@@ -29,19 +29,19 @@ class MenuItemsCleaner(Controller):
         rabbitmq_host: str,
         producers_config: dict[str, Any],
     ) -> None:
-        self._current_cleaned_data_producer_id = 0
+        self._current_producer_id = 0
         self._mom_producers: list[RabbitMQMessageMiddlewareExchange] = []
 
         routing_keys_amount = producers_config["next_controllers_amount"]
         for id in range(routing_keys_amount):
             exchange_name = producers_config["exchange_name_prefix"]
             routing_keys = [producers_config["routing_key_prefix"] + f".{id}"]
-            mom_cleaned_data_producer = RabbitMQMessageMiddlewareExchange(
+            mom_producer = RabbitMQMessageMiddlewareExchange(
                 host=rabbitmq_host,
                 exchange_name=exchange_name,
                 route_keys=routing_keys,
             )
-            self._mom_producers.append(mom_cleaned_data_producer)
+            self._mom_producers.append(mom_producer)
 
     # ============================== PRIVATE - ACCESSING ============================== #
 
@@ -54,7 +54,7 @@ class MenuItemsCleaner(Controller):
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
     def _mom_stop_consuming(self) -> None:
-        self._mom_data_consumer.stop_consuming()
+        self._mom_consumer.stop_consuming()
         logging.debug("action: sigterm_mom_stop_consuming | result: success")
 
     # ============================== PRIVATE - FILTER ============================== #
@@ -87,26 +87,24 @@ class MenuItemsCleaner(Controller):
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
     def _mom_send_message_to_next(self, message: str) -> None:
-        mom_cleaned_data_producer = self._mom_producers[
-            self._current_cleaned_data_producer_id
-        ]
-        mom_cleaned_data_producer.send(message)
+        mom_producer = self._mom_producers[self._current_producer_id]
+        mom_producer.send(message)
 
-        self._current_cleaned_data_producer_id += 1
-        if self._current_cleaned_data_producer_id >= len(self._mom_producers):
-            self._current_cleaned_data_producer_id = 0
+        self._current_producer_id += 1
+        if self._current_producer_id >= len(self._mom_producers):
+            self._current_producer_id = 0
 
     def _handle_data_batch_message(self, message: str) -> None:
         filtered_message = self._filter_message(message)
         self._mom_send_message_to_next(filtered_message)
 
     def _handle_data_batch_eof(self, message: str) -> None:
-        for mom_cleaned_data_producer in self._mom_producers:
-            mom_cleaned_data_producer.send(message)
+        for mom_producer in self._mom_producers:
+            mom_producer.send(message)
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():
-            self._mom_data_consumer.stop_consuming()
+            self._mom_consumer.stop_consuming()
             return
 
         message = message_as_bytes.decode("utf-8")
@@ -125,7 +123,7 @@ class MenuItemsCleaner(Controller):
 
     def _run(self) -> None:
         super()._run()
-        self._mom_data_consumer.start_consuming(self._handle_received_data)
+        self._mom_consumer.start_consuming(self._handle_received_data)
 
     def _close_all_mom_connections(self) -> None:
         for mom_producer in self._mom_producers:
@@ -133,6 +131,6 @@ class MenuItemsCleaner(Controller):
             mom_producer.close()
             logging.debug("action: mom_producer_producer_close | result: success")
 
-        self._mom_data_consumer.delete()
-        self._mom_data_consumer.close()
+        self._mom_consumer.delete()
+        self._mom_consumer.close()
         logging.debug("action: mom_consumer_close | result: success")

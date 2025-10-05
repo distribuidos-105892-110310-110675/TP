@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from controllers.controller import Controller
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
@@ -79,7 +79,7 @@ class QueryOutputBuilder(Controller):
         message: str,
         decoder: Callable,
         encoder: Callable,
-        message_type: Optional[str] = None,
+        message_type: str,
     ) -> str:
         new_batch = []
         for item in decoder(message):

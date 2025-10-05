@@ -15,7 +15,7 @@ class StoresCleaner(Cleaner):
         self, rabbitmq_host: str, producers_config: dict[str, Any], producer_id: int
     ) -> MessageMiddleware:
         exchange_name = producers_config["exchange_name_prefix"]
-        routing_key = producers_config["routing_key_prefix"] + f".{producer_id}"
+        routing_key = f"{producers_config["routing_key_prefix"]}.{producer_id}"
         return RabbitMQMessageMiddlewareExchange(
             host=rabbitmq_host,
             exchange_name=exchange_name,

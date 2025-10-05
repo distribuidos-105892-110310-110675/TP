@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from controllers.controller import Controller
 from middleware.middleware import MessageMiddleware
@@ -38,9 +38,9 @@ class Cleaner(Controller):
         self._mom_producers: list[MessageMiddleware] = []
 
         next_controllers_amount = producers_config["next_controllers_amount"]
-        for id in range(next_controllers_amount):
+        for producer_id in range(next_controllers_amount):
             mom_producer = self._build_mom_producer_using(
-                rabbitmq_host, producers_config, id
+                rabbitmq_host, producers_config, producer_id
             )
             self._mom_producers.append(mom_producer)
 

@@ -43,7 +43,7 @@ class SortDescByYearMonthCreatedAtAndSellingsQty:
         rabbitmq_host: str,
         consumer_queue_prefix: str,
         producer_queue_prefix: str,
-        previous_controllers_amount: int,
+        prev_controllers_amount: int,
         next_controllers_amount: int,
         batch_max_size: int,
         amount_per_group: int,
@@ -63,7 +63,7 @@ class SortDescByYearMonthCreatedAtAndSellingsQty:
             next_controllers_amount,
         )
         self._eof_received_from_previous_controllers = 0
-        self._previous_controllers_amount = previous_controllers_amount
+        self._prev_controllers_amount = prev_controllers_amount
 
         self._batch_max_size = batch_max_size
         self._amount_per_group = amount_per_group
@@ -174,7 +174,7 @@ class SortDescByYearMonthCreatedAtAndSellingsQty:
 
         if (
             self._eof_received_from_previous_controllers
-            == self._previous_controllers_amount
+            == self._prev_controllers_amount
         ):
             logging.info("action: all_eofs_received | result: success")
             for mom_producer in self._mom_producers:

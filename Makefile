@@ -1,7 +1,6 @@
 SHELL := /bin/bash
 PWD := $(shell pwd)
 
-
 -include .env
 export
 

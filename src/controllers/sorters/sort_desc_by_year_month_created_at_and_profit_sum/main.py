@@ -24,9 +24,9 @@ def main():
     controller = SortDescByYearMonthCreatedAtAndProfitSum(
         controller_id=int(config_params["CONTROLLER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
-        consumer_queue_prefix=constants.PROFIT_SUM_BY_YEAR_MONTH_CREATED_AT__ITEM_ID_QUEUE_PREFIX,
+        consumer_queue_prefix=constants.PROFIT_SUM_BY_YEAR_MONTH__ITEM_ID_CREATED_AT_QUEUE_PREFIX,
         producer_queue_prefix=constants.SORTED_DESC_PROFIT_SUM_BY_YEAR_MONTH__ITEM_ID_QUEUE_PREFIX,
-        previous_controllers_amount=int(config_params["PREV_CONTROLLERS_AMOUNT"]),
+        prev_controllers_amount=int(config_params["PREV_CONTROLLERS_AMOUNT"]),
         next_controllers_amount=int(config_params["NEXT_CONTROLLERS_AMOUNT"]),
         batch_max_size=int(config_params["BATCH_MAX_SIZE"]),
         amount_per_group=int(config_params["AMOUNT_PER_GROUP"]),

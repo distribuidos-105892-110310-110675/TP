@@ -1,7 +1,7 @@
 import logging
 
-from controllers.sorters.sort_desc_by_store_id_and_purchases_qty.sort_desc_by_store_id_and_purchases_qty import (
-    SortDescByStoreIdAndPurchasesQty,
+from controllers.reducers.tpv_by_store_id_and_year_half_created_at_reducer.tpv_by_store_id_and_year_half_created_at_reducer import (
+    TpvByStoreIdAndYearHalfCreatedAtReducer,
 )
 from shared import constants, initializer
 
@@ -15,21 +15,26 @@ def main():
             "PREV_CONTROLLERS_AMOUNT",
             "NEXT_CONTROLLERS_AMOUNT",
             "BATCH_MAX_SIZE",
-            "AMOUNT_PER_GROUP",
         ]
     )
     initializer.init_log(config_params["LOGGING_LEVEL"])
     logging.info(f"action: init_config | result: success | params: {config_params}")
 
-    controller = SortDescByStoreIdAndPurchasesQty(
+    consumers_config = {
+        "queue_name_prefix": constants.MAPPED_TRN_SEMESTER_QUEUE_PREFIX,
+        "prev_controllers_amount": int(config_params["PREV_CONTROLLERS_AMOUNT"]),
+    }
+    producers_config = {
+        "queue_name_prefix": constants.SUM_TRN_TPV_BY_STORE_QUEUE_PREFIX,
+        "next_controllers_amount": int(config_params["NEXT_CONTROLLERS_AMOUNT"]),
+    }
+
+    controller = TpvByStoreIdAndYearHalfCreatedAtReducer(
         controller_id=int(config_params["CONTROLLER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
-        consumer_queue_prefix=constants.PURCHASES_QTY_BY_USR_ID__STORE_ID_QUEUE_PREFIX,
-        producer_queue_prefix=constants.SORTED_DESC_BY_STORE_ID__PURCHASES_QTY_WITH_USER_ID,
-        prev_controllers_amount=int(config_params["PREV_CONTROLLERS_AMOUNT"]),
-        next_controllers_amount=int(config_params["NEXT_CONTROLLERS_AMOUNT"]),
+        consumers_config=consumers_config,
+        producers_config=producers_config,
         batch_max_size=int(config_params["BATCH_MAX_SIZE"]),
-        amount_per_group=int(config_params["AMOUNT_PER_GROUP"]),
     )
     controller.run()
 

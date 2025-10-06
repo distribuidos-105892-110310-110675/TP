@@ -1,8 +1,10 @@
+import logging
 from typing import Any
 
 from controllers.sorters.sorter import Sorter
 from middleware.middleware import MessageMiddleware
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
+from shared import communication_protocol
 
 
 class DescByStoreIdAndPurchasesQtySorter(Sorter):
@@ -38,3 +40,30 @@ class DescByStoreIdAndPurchasesQtySorter(Sorter):
 
     def _secondary_sort_key(self) -> str:
         return "purchases_qty"
+
+    # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
+
+    def _mom_send_message_to_next(self, message: str) -> None:
+        user_batchs_by_hash: dict[int, list] = {}
+
+        message_type = communication_protocol.decode_message_type(message)
+        for batch_item in communication_protocol.decode_batch_message(message):
+            if batch_item["user_id"] == "":
+                logging.warning(
+                    f"action: invalid_user_id | user_id: {batch_item['user_id']} | result: skipped"
+                )
+                continue
+            user_id = int(float(batch_item["user_id"]))
+            batch_item["user_id"] = str(user_id)
+
+            key = user_id % len(self._mom_producers)
+            if key not in user_batchs_by_hash:
+                user_batchs_by_hash[key] = []
+            user_batchs_by_hash[key].append(batch_item)
+
+        for key, user_batch in user_batchs_by_hash.items():
+            mom_producer = self._mom_producers[key]
+            message = communication_protocol.encode_batch_message(
+                message_type, user_batch
+            )
+            mom_producer.send(message)

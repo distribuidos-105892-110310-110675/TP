@@ -147,11 +147,15 @@ class Sorter(Controller):
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
-    def _send_data_using_batchs(self, mom_producer: MessageMiddleware) -> None:
+    @abstractmethod
+    def _mom_send_message_to_next(self, message: str) -> None:
+        raise NotImplementedError("subclass responsibility")
+
+    def _send_all_data_using_batchs(self) -> None:
         batch = self._take_next_batch()
         while len(batch) != 0 and self._is_running():
             message = communication_protocol.encode_transactions_batch_message(batch)
-            mom_producer.send(message)
+            self._mom_send_message_to_next(message)
             batch = self._take_next_batch()
 
     def _handle_data_batch_message(self, message: str) -> None:
@@ -166,8 +170,7 @@ class Sorter(Controller):
         if self._eof_recv_from_prev_controllers == self._prev_controllers_amount:
             logging.info("action: all_eofs_received | result: success")
 
-            for mom_producer in self._mom_producers:
-                self._send_data_using_batchs(mom_producer)
+            self._send_all_data_using_batchs()
             logging.info("action: all_data_sent | result: success")
 
             for mom_producer in self._mom_producers:

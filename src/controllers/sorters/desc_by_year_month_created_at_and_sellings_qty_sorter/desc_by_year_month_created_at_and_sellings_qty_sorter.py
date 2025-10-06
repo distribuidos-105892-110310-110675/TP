@@ -38,3 +38,13 @@ class DescByYearMonthCreatedAtAndSellingsQtySorter(Sorter):
 
     def _secondary_sort_key(self) -> str:
         return "sellings_qty"
+
+    # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
+
+    def _mom_send_message_to_next(self, message: str) -> None:
+        mom_cleaned_data_producer = self._mom_producers[self._current_producer_id]
+        mom_cleaned_data_producer.send(message)
+
+        self._current_producer_id += 1
+        if self._current_producer_id >= len(self._mom_producers):
+            self._current_producer_id = 0

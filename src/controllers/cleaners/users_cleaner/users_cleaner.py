@@ -31,7 +31,8 @@ class UsersCleaner(Cleaner):
     def _mom_send_message_to_next(self, message: str) -> None:
         user_batchs_by_hash: dict[int, list] = {}
 
-        for batch_item in communication_protocol.decode_users_batch_message(message):
+        message_type = communication_protocol.decode_message_type(message)
+        for batch_item in communication_protocol.decode_batch_message(message):
             if batch_item["user_id"] == "":
                 logging.warning(
                     f"action: invalid_user_id | user_id: {batch_item['user_id']} | result: skipped"
@@ -47,5 +48,7 @@ class UsersCleaner(Cleaner):
 
         for key, user_batch in user_batchs_by_hash.items():
             mom_producer = self._mom_producers[key]
-            message = communication_protocol.encode_users_batch_message(user_batch)
+            message = communication_protocol.encode_batch_message(
+                message_type, user_batch
+            )
             mom_producer.send(message)

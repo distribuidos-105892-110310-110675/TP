@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from controllers.controller import Controller
 from middleware.middleware import MessageMiddleware

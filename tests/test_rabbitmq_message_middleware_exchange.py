@@ -23,12 +23,12 @@ class TestRabbitMQMessageMiddlewareExchange:
 
     # ============================== PRIVATE - ACCESSING ============================== #
 
-    def __rabbitmq_host(self) -> str:
+    def _rabbitmq_host(self) -> str:
         return "rabbitmq-dev"
 
     # ============================== PRIVATE - TESTS SUPPORT ============================== #
 
-    def __consumer_handler_with_id(
+    def _consumer_handler_with_id(
         self,
         consumer_id: int,
         exchange_name: str,
@@ -37,7 +37,7 @@ class TestRabbitMQMessageMiddlewareExchange:
         messages_received_lock: threading.Lock,
     ) -> None:
         exchange_consumer = RabbitMQMessageMiddlewareExchange(
-            self.__rabbitmq_host(), exchange_name, routing_keys
+            self._rabbitmq_host(), exchange_name, routing_keys
         )
 
         def on_message_callback(message_as_bytes: bytes) -> None:
@@ -53,7 +53,7 @@ class TestRabbitMQMessageMiddlewareExchange:
 
         exchange_consumer.close()
 
-    def __spawn_exchange_consumers(
+    def _spawn_exchange_consumers(
         self,
         number_of_consumers: int,
         exchange_name: str,
@@ -65,7 +65,7 @@ class TestRabbitMQMessageMiddlewareExchange:
 
         for i in range(number_of_consumers):
             thread = threading.Thread(
-                target=self.__consumer_handler_with_id,
+                target=self._consumer_handler_with_id,
                 args=(
                     i,
                     exchange_name,
@@ -79,7 +79,7 @@ class TestRabbitMQMessageMiddlewareExchange:
 
         return spawned_threads
 
-    def __test_direct_working_exchange_communication_1_to(
+    def _test_direct_working_exchange_communication_1_to(
         self, number_of_consumers: int, exchange_name: str, routing_keys: list
     ) -> None:
         message_published = "Testing message"
@@ -87,7 +87,7 @@ class TestRabbitMQMessageMiddlewareExchange:
         messages_received = {f"consumer_{i}": "" for i in range(number_of_consumers)}
         messages_received_lock = threading.Lock()
 
-        spawned_threads: list[threading.Thread] = self.__spawn_exchange_consumers(
+        spawned_threads: list[threading.Thread] = self._spawn_exchange_consumers(
             number_of_consumers,
             exchange_name,
             routing_keys,
@@ -101,7 +101,7 @@ class TestRabbitMQMessageMiddlewareExchange:
         time.sleep(number_of_consumers)
 
         exchange_publisher = RabbitMQMessageMiddlewareExchange(
-            self.__rabbitmq_host(), exchange_name, routing_keys
+            self._rabbitmq_host(), exchange_name, routing_keys
         )
         exchange_publisher.send(message_published)
 
@@ -117,12 +117,12 @@ class TestRabbitMQMessageMiddlewareExchange:
     # ============================== TESTS - COMMUNICATION ============================== #
 
     def test_direct_working_exchange_communication_1_to_1(self) -> None:
-        self.__test_direct_working_exchange_communication_1_to(
+        self._test_direct_working_exchange_communication_1_to(
             1, "exchange-communication-1-to-many-direct", ["routing-key.1"]
         )
 
     def test_direct_working_exchange_communication_1_to_many(self) -> None:
-        self.__test_direct_working_exchange_communication_1_to(
+        self._test_direct_working_exchange_communication_1_to(
             5, "exchange-communication-1-to-many-direct", ["routing-key.1"]
         )
 
@@ -138,7 +138,7 @@ class TestRabbitMQMessageMiddlewareExchange:
         spawned_threads: list[threading.Thread] = []
 
         thread = threading.Thread(
-            target=self.__consumer_handler_with_id,
+            target=self._consumer_handler_with_id,
             args=(
                 0,
                 exchange_name,
@@ -151,7 +151,7 @@ class TestRabbitMQMessageMiddlewareExchange:
         spawned_threads.append(thread)
 
         thread = threading.Thread(
-            target=self.__consumer_handler_with_id,
+            target=self._consumer_handler_with_id,
             args=(
                 1,
                 exchange_name,
@@ -164,7 +164,7 @@ class TestRabbitMQMessageMiddlewareExchange:
         spawned_threads.append(thread)
 
         thread = threading.Thread(
-            target=self.__consumer_handler_with_id,
+            target=self._consumer_handler_with_id,
             args=(
                 2,
                 exchange_name,
@@ -182,7 +182,7 @@ class TestRabbitMQMessageMiddlewareExchange:
         time.sleep(number_of_consumers)
 
         exchange_publisher = RabbitMQMessageMiddlewareExchange(
-            self.__rabbitmq_host(), exchange_name, ["routing-key.1"]
+            self._rabbitmq_host(), exchange_name, ["routing-key.1"]
         )
         exchange_publisher.send(message_published)
 
@@ -208,7 +208,7 @@ class TestRabbitMQMessageMiddlewareExchange:
         spawned_threads: list[threading.Thread] = []
 
         thread = threading.Thread(
-            target=self.__consumer_handler_with_id,
+            target=self._consumer_handler_with_id,
             args=(
                 0,
                 exchange_name,
@@ -221,7 +221,7 @@ class TestRabbitMQMessageMiddlewareExchange:
         spawned_threads.append(thread)
 
         thread = threading.Thread(
-            target=self.__consumer_handler_with_id,
+            target=self._consumer_handler_with_id,
             args=(
                 1,
                 exchange_name,
@@ -239,12 +239,12 @@ class TestRabbitMQMessageMiddlewareExchange:
         time.sleep(number_of_consumers)
 
         exchange_publisher = RabbitMQMessageMiddlewareExchange(
-            self.__rabbitmq_host(), exchange_name, ["routing-key.1"]
+            self._rabbitmq_host(), exchange_name, ["routing-key.1"]
         )
         exchange_publisher.send(message_published_0)
 
         exchange_publisher = RabbitMQMessageMiddlewareExchange(
-            self.__rabbitmq_host(), exchange_name, ["routing-key.2"]
+            self._rabbitmq_host(), exchange_name, ["routing-key.2"]
         )
         exchange_publisher.send(message_published_1)
 
@@ -261,7 +261,7 @@ class TestRabbitMQMessageMiddlewareExchange:
 
     def test_stop_consuming_multiple_times(self) -> None:
         exchange_consumer = RabbitMQMessageMiddlewareExchange(
-            self.__rabbitmq_host(),
+            self._rabbitmq_host(),
             "exchange-stop-consuming-multiple-times",
             ["routing-key.1"],
         )
@@ -289,7 +289,7 @@ class TestRabbitMQMessageMiddlewareExchange:
 
     def test_error_while_starting_consuming_from_closed_connection(self) -> None:
         middleware = RabbitMQMessageMiddlewareExchange(
-            self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+            self._rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
         )
         middleware.delete()
         middleware.close()
@@ -307,7 +307,7 @@ class TestRabbitMQMessageMiddlewareExchange:
             time.sleep(1)
 
             exchange_publisher = RabbitMQMessageMiddlewareExchange(
-                self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+                self._rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
             )
             exchange_publisher.send("message that will cause failure")
             exchange_publisher.close()
@@ -316,7 +316,7 @@ class TestRabbitMQMessageMiddlewareExchange:
         thread.start()
 
         exchange_consumer = RabbitMQMessageMiddlewareExchange(
-            self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+            self._rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
         )
 
         def failing_callback(message_as_bytes: bytes) -> None:
@@ -337,7 +337,7 @@ class TestRabbitMQMessageMiddlewareExchange:
 
     def test_error_while_stopping_consuming_from_closed_connection(self) -> None:
         middleware = RabbitMQMessageMiddlewareExchange(
-            self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+            self._rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
         )
         middleware.delete()
         middleware.close()
@@ -349,7 +349,7 @@ class TestRabbitMQMessageMiddlewareExchange:
 
     def test_error_while_sending_msg_to_closed_connection(self) -> None:
         middleware = RabbitMQMessageMiddlewareExchange(
-            self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+            self._rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
         )
         middleware.delete()
         middleware.close()
@@ -361,7 +361,7 @@ class TestRabbitMQMessageMiddlewareExchange:
 
     def test_error_while_sending_wrong_msg(self) -> None:
         middleware = RabbitMQMessageMiddlewareExchange(
-            self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+            self._rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
         )
 
         with pytest.raises(MessageMiddlewareMessageError) as exc_info:
@@ -377,7 +377,7 @@ class TestRabbitMQMessageMiddlewareExchange:
 
     def test_error_while_closing_already_closed_connection(self) -> None:
         middleware = RabbitMQMessageMiddlewareExchange(
-            self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+            self._rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
         )
         middleware.delete()
         middleware.close()
@@ -389,7 +389,7 @@ class TestRabbitMQMessageMiddlewareExchange:
 
     def test_error_while_deleting_from_closed_connection(self) -> None:
         middleware = RabbitMQMessageMiddlewareExchange(
-            self.__rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
+            self._rabbitmq_host(), "testing-error-exchange", ["routing-key.1"]
         )
         middleware.delete()
         middleware.close()

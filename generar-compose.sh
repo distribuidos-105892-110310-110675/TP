@@ -140,7 +140,7 @@ function add-menu-cleaner() {
   add-line $compose_filename '    environment:'
   add-line $compose_filename '      - PYTHONUNBUFFERED=1'
   add-line $compose_filename '      - LOGGING_LEVEL=INFO'
-  add-line $compose_filename '      - CLEANER_ID=0'
+  add-line $compose_filename '      - CONTROLLER_ID=0'
   add-line $compose_filename '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_filename '      - JOINS_AMOUNT=1'
   add-line $compose_filename '    networks:'
@@ -160,7 +160,7 @@ function add-stores-cleaner() {
   add-line $compose_filename '    environment:'
   add-line $compose_filename '      - PYTHONUNBUFFERED=1'
   add-line $compose_filename '      - LOGGING_LEVEL=INFO'
-  add-line $compose_filename '      - CLEANER_ID=0'
+  add-line $compose_filename '      - CONTROLLER_ID=0'
   add-line $compose_filename '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_filename '      - JOINS_AMOUNT=1'
   add-line $compose_filename '    networks:'
@@ -180,7 +180,7 @@ function add-transaction-items-cleaner() {
   add-line $compose_filename '    environment:'
   add-line $compose_filename '      - PYTHONUNBUFFERED=1'
   add-line $compose_filename '      - LOGGING_LEVEL=DEBUG'
-  add-line $compose_filename '      - CLEANER_ID=0'
+  add-line $compose_filename '      - CONTROLLER_ID=0'
   add-line $compose_filename '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_filename '      - FILTERS_AMOUNT=1'
   add-line $compose_filename '    networks:'
@@ -200,7 +200,7 @@ function add-transactions-cleaner() {
   add-line $compose_filename '    environment:'
   add-line $compose_filename '      - PYTHONUNBUFFERED=1'
   add-line $compose_filename '      - LOGGING_LEVEL=DEBUG'
-  add-line $compose_filename '      - CLEANER_ID=0'
+  add-line $compose_filename '      - CONTROLLER_ID=0'
   add-line $compose_filename '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_filename '      - FILTERS_AMOUNT=1'
   add-line $compose_filename '    networks:'
@@ -220,7 +220,7 @@ function add-users-cleaner() {
   add-line $compose_filename '    environment:'
   add-line $compose_filename '      - PYTHONUNBUFFERED=1'
   add-line $compose_filename '      - LOGGING_LEVEL=DEBUG'
-  add-line $compose_filename '      - CLEANER_ID=0'
+  add-line $compose_filename '      - CONTROLLER_ID=0'
   add-line $compose_filename '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_filename '      - JOINS_AMOUNT=1'
   add-line $compose_filename '    networks:'
@@ -424,21 +424,18 @@ function build-docker-compose-file() {
 
 # ============================== MAIN ============================== #
 
-if [ $# -ne 2 ]; then
-  echo "Uso: $0 <compose_filename.yaml> [workers_amount]"
-  echo "Ejemplo: $0 docker-compose.yaml 3"
+# take .env variables
+if [ -f .env ]; then
+  export $(cat .env | grep -v '#' | awk '/=/ {print $1}')
+fi
+
+if [ $# -ne 1 ]; then
+  echo "Uso: $0 <compose_filename.yaml>"
   exit 1
 fi
 
 compose_filename_param=$1
-workers_amount_param=${2:-1}
-
-if ! [[ "$workers_amount_param" =~ ^[0-9]+$ ]] || [ "$workers_amount_param" -le 0 ]; then
-  echo "Error: La cantidad de clientes debe ser un entero mayor o igual a cero."
-  exit 1
-fi
 
 echo "Nombre del archivo de salida: $compose_filename_param"
-echo "Cantidad de workers: $workers_amount_param"
 
-build-docker-compose-file $compose_filename_param $workers_amount_param
+build-docker-compose-file $compose_filename_param

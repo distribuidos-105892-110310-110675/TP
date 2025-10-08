@@ -17,13 +17,13 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
 
     # ============================== PRIVATE - RABBIT INFO ============================== #
 
-    def __rabbitmq_port(self) -> int:
+    def _rabbitmq_port(self) -> int:
         return 5672
 
-    def __rabbitmq_user(self) -> str:
+    def _rabbitmq_user(self) -> str:
         return "guest"
 
-    def __rabbitmq_password(self) -> str:
+    def _rabbitmq_password(self) -> str:
         return "guest"
 
     # ============================== PRIVATE - INITIALIZATION ============================== #
@@ -39,9 +39,9 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
             self._connection = pika.BlockingConnection(
                 pika.ConnectionParameters(
                     host=host,
-                    port=self.__rabbitmq_port(),
+                    port=self._rabbitmq_port(),
                     credentials=pika.PlainCredentials(
-                        self.__rabbitmq_user(), self.__rabbitmq_password()
+                        self._rabbitmq_user(), self._rabbitmq_password()
                     ),
                     heartbeat=3600,
                 )
@@ -59,7 +59,7 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
 
     # ============================== PRIVATE - ACCESSING ============================== #
 
-    def __pika_on_message_callback_wrapping(
+    def _pika_on_message_callback_wrapping(
         self, on_message_callback: Callable
     ) -> Callable:
         def pika_on_message_callback(
@@ -80,7 +80,7 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
 
     # ============================== PRIVATE - ASSERTIONS ============================== #
 
-    def __assert_connection_is_open(self) -> None:
+    def _assert_connection_is_open(self) -> None:
         if not self._connection.is_open or not self._channel.is_open:
             raise MessageMiddlewareDisconnectedError(
                 "Error: Connection or channel is closed."
@@ -88,7 +88,7 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
 
     # ============================== PRIVATE - HANDLE EXCEPTIONS ============================== #
 
-    def __handle_amqp_errors_during(
+    def _handle_amqp_errors_during(
         self, callback: Callable, args=(), kwargs={}, exc_prefix: str = ""
     ) -> None:
         try:
@@ -100,7 +100,7 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
 
     # ============================== PRIVATE - SUPPORT ============================== #
 
-    def __bind_queue_to_routing_keys(self, queue_name: str) -> None:
+    def _bind_queue_to_routing_keys(self, queue_name: str) -> None:
         for routing_key in self._routing_keys:
             self._channel.queue_bind(
                 exchange=self._exchange_name,
@@ -108,24 +108,24 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
                 routing_key=routing_key,
             )
 
-    def __start_consuming(self, on_message_callback: Callable) -> None:
+    def _start_consuming(self, on_message_callback: Callable) -> None:
         result = self._channel.queue_declare(
             queue=self._queue_name, exclusive=True, auto_delete=True, durable=True
         )
         queue_name = str(result.method.queue)
-        self.__bind_queue_to_routing_keys(queue_name)
+        self._bind_queue_to_routing_keys(queue_name)
 
         self._channel.basic_consume(
             queue_name,
-            self.__pika_on_message_callback_wrapping(on_message_callback),
+            self._pika_on_message_callback_wrapping(on_message_callback),
             auto_ack=False,
         )
         self._channel.start_consuming()
 
-    def __stop_consuming(self) -> None:
+    def _stop_consuming(self) -> None:
         self._channel.stop_consuming()
 
-    def __send(self, message: str) -> None:
+    def _send(self, message: str) -> None:
         for routing_key in self._routing_keys:
             self._channel.basic_publish(
                 exchange=self._exchange_name,
@@ -137,24 +137,24 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
     # ============================== PUBLIC ============================== #
 
     def start_consuming(self, on_message_callback: Callable) -> None:
-        self.__assert_connection_is_open()
-        self.__handle_amqp_errors_during(
-            self.__start_consuming,
+        self._assert_connection_is_open()
+        self._handle_amqp_errors_during(
+            self._start_consuming,
             args=(on_message_callback,),
             exc_prefix="Error consuming messages:",
         )
 
     def stop_consuming(self) -> None:
-        self.__assert_connection_is_open()
-        self.__handle_amqp_errors_during(
-            self.__stop_consuming,
+        self._assert_connection_is_open()
+        self._handle_amqp_errors_during(
+            self._stop_consuming,
             exc_prefix="Error stopping consuming messages:",
         )
 
     def send(self, message: str) -> None:
-        self.__assert_connection_is_open()
-        self.__handle_amqp_errors_during(
-            self.__send,
+        self._assert_connection_is_open()
+        self._handle_amqp_errors_during(
+            self._send,
             args=(message,),
             exc_prefix="Error sending message:",
         )

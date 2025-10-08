@@ -71,8 +71,8 @@ class Server:
         self._server_socket.bind(("", port))
         self._server_socket.listen(listen_backlog)
 
-        self.__set_server_as_not_running()
-        signal.signal(signal.SIGTERM, self.__sigterm_signal_handler)
+        self._set_server_as_not_running()
+        signal.signal(signal.SIGTERM, self._sigterm_signal_handler)
 
         self.__init_cleaners_data(cleaners_data)
         self.__init_output_builders_data(output_builders_data)
@@ -87,21 +87,21 @@ class Server:
 
     # ============================== PRIVATE - ACCESSING ============================== #
 
-    def __is_running(self) -> bool:
+    def _is_running(self) -> bool:
         return self._server_running
 
-    def __set_server_as_not_running(self) -> None:
+    def _set_server_as_not_running(self) -> None:
         self._server_running = False
 
-    def __set_server_as_running(self) -> None:
+    def _set_server_as_running(self) -> None:
         self._server_running = True
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
-    def __sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
+    def _sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
         logging.info("action: sigterm_signal_handler | result: in_progress")
 
-        self.__set_server_as_not_running()
+        self._set_server_as_not_running()
 
         self._server_socket.close()
         logging.debug("action: sigterm_server_socket_close | result: success")
@@ -113,7 +113,7 @@ class Server:
 
     # ============================== PRIVATE - ACCEPT CONNECTION ============================== #
 
-    def __accept_new_connection(self) -> Optional[socket.socket]:
+    def _accept_new_connection(self) -> Optional[socket.socket]:
         client_connection: Optional[socket.socket] = None
         try:
             logging.info(
@@ -134,14 +134,14 @@ class Server:
 
     # ============================== PRIVATE - SOCKET SEND/RECEIVE MESSAGES ============================== #
 
-    def __socket_send_message(self, socket: socket.socket, message: str) -> None:
+    def _socket_send_message(self, socket: socket.socket, message: str) -> None:
         logging.debug(f"action: send_message | result: in_progress | msg: {message}")
 
         socket.sendall(message.encode("utf-8"))
 
         logging.debug(f"action: send_message | result: success |  msg: {message}")
 
-    def __socket_receive_message(self, socket: socket.socket) -> str:
+    def _socket_receive_message(self, socket: socket.socket) -> str:
         logging.debug(f"action: receive_message | result: in_progress")
 
         buffsize = constants.KiB
@@ -164,9 +164,15 @@ class Server:
                 all_data_received = True
 
             if communication_protocol.MSG_END_DELIMITER.encode("utf-8") in chunk:
-                index = chunk.rindex(communication_protocol.MSG_END_DELIMITER.encode("utf-8"))
-                bytes_received += chunk[: index + len(communication_protocol.MSG_END_DELIMITER)]
-                self._temp_buffer = chunk[index + len(communication_protocol.MSG_END_DELIMITER) :]
+                index = chunk.rindex(
+                    communication_protocol.MSG_END_DELIMITER.encode("utf-8")
+                )
+                bytes_received += chunk[
+                    : index + len(communication_protocol.MSG_END_DELIMITER)
+                ]
+                self._temp_buffer = chunk[
+                    index + len(communication_protocol.MSG_END_DELIMITER) :
+                ]
                 all_data_received = True
             else:
                 bytes_received += chunk
@@ -177,7 +183,7 @@ class Server:
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
-    def __mom_send_message_to_next(self, data_type: str, message: str) -> None:
+    def _mom_send_message_to_next(self, data_type: str, message: str) -> None:
         current_worker_id = self._cleaners_data[data_type]["current_worker_id"]
 
         mom_connections = self._mom_cleaners_connections[data_type]
@@ -195,11 +201,11 @@ class Server:
 
     # ============================== PRIVATE - RECEIVE CLIENT DATA ============================== #
 
-    def __handle_data_batch_message(self, message: str) -> None:
+    def _handle_data_batch_message(self, message: str) -> None:
         data_type = communication_protocol.decode_message_type(message)
-        self.__mom_send_message_to_next(data_type, message)
+        self._mom_send_message_to_next(data_type, message)
 
-    def __handle_data_batch_eof_message(self, message: str) -> None:
+    def _handle_data_batch_eof_message(self, message: str) -> None:
         data_type = communication_protocol.decode_eof_message(message)
         if data_type not in self._client_data_batch_completed:
             raise ValueError(
@@ -211,7 +217,7 @@ class Server:
         for mom_connection in self._mom_cleaners_connections[data_type]:
             mom_connection.send(message)
 
-    def __handle_client_message(self, message: str) -> None:
+    def _handle_client_message(self, message: str) -> None:
         message_type = communication_protocol.decode_message_type(message)
         match message_type:
             case (
@@ -221,15 +227,15 @@ class Server:
                 | communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE
                 | communication_protocol.USERS_BATCH_MSG_TYPE
             ):
-                self.__handle_data_batch_message(message)
+                self._handle_data_batch_message(message)
             case communication_protocol.EOF:
-                self.__handle_data_batch_eof_message(message)
+                self._handle_data_batch_eof_message(message)
             case _:
                 raise ValueError(
                     f'Invalid message type received from client "{message_type}"'
                 )
 
-    def __with_each_message_do(
+    def _with_each_message_do(
         self,
         received_message: str,
         callback: Callable,
@@ -238,29 +244,29 @@ class Server:
     ) -> None:
         messages = received_message.split(communication_protocol.MSG_END_DELIMITER)
         for message in messages:
-            if not self.__is_running():
+            if not self._is_running():
                 break
             if message == "":
                 continue
             message += communication_protocol.MSG_END_DELIMITER
             callback(message, *args, **kwargs)
 
-    def __receive_all_data_from_client(self, client_socket: socket.socket) -> None:
+    def _receive_all_data_from_client(self, client_socket: socket.socket) -> None:
         while not all(self._client_data_batch_completed.values()):
-            if not self.__is_running():
+            if not self._is_running():
                 return
 
-            received_message = self.__socket_receive_message(client_socket)
-            self.__with_each_message_do(
+            received_message = self._socket_receive_message(client_socket)
+            self._with_each_message_do(
                 received_message,
-                self.__handle_client_message,
+                self._handle_client_message,
             )
 
         logging.info("action: all_data_received | result: success")
 
     # ============================== PRIVATE - RECEIVE RESULTS ============================== #
 
-    def __all_eof_received_from_output_builders(self) -> bool:
+    def _all_eof_received_from_output_builders(self) -> bool:
         for data_type, eof_received in self._output_builders_eof_received.items():
             workers_amount = self._output_builders_data[data_type][
                 constants.WORKERS_AMOUNT
@@ -269,12 +275,12 @@ class Server:
                 return False
         return True
 
-    def __handle_query_result_batch_message(
+    def _handle_query_result_batch_message(
         self, client_socket: socket.socket, message: str
     ) -> None:
-        self.__socket_send_message(client_socket, message)
+        self._socket_send_message(client_socket, message)
 
-    def __handle_query_result_eof_message(
+    def _handle_query_result_eof_message(
         self, client_socket: socket.socket, message: str
     ) -> None:
         data_type = communication_protocol.decode_eof_message(message)
@@ -287,13 +293,13 @@ class Server:
 
         workers_amount = self._output_builders_data[data_type][constants.WORKERS_AMOUNT]
         if self._output_builders_eof_received[data_type] == workers_amount:
-            self.__socket_send_message(client_socket, message)
+            self._socket_send_message(client_socket, message)
             logging.info(
                 f"action: eof_{data_type}_results_to_client_sent | result: success"
             )
 
-    def __handle_output_builder_message(self, client_socket: socket.socket) -> Callable:
-        def __on_message_callback(message_as_bytes: bytes) -> None:
+    def _handle_output_builder_message(self, client_socket: socket.socket) -> Callable:
+        def _on_message_callback(message_as_bytes: bytes) -> None:
             message = message_as_bytes.decode("utf-8")
             message_type = communication_protocol.decode_message_type(message)
             match message_type:
@@ -304,54 +310,54 @@ class Server:
                     | communication_protocol.QUERY_RESULT_3X_MSG_TYPE
                     | communication_protocol.QUERY_RESULT_4X_MSG_TYPE
                 ):
-                    self.__handle_query_result_batch_message(client_socket, message)
+                    self._handle_query_result_batch_message(client_socket, message)
                 case communication_protocol.EOF:
-                    self.__handle_query_result_eof_message(client_socket, message)
+                    self._handle_query_result_eof_message(client_socket, message)
                 case _:
                     raise ValueError(
                         f'Invalid message type received from client "{message_type}"'
                     )
 
-            if self.__all_eof_received_from_output_builders():
+            if self._all_eof_received_from_output_builders():
                 self._mom_output_builders_connection.stop_consuming()
                 logging.info("action: all_results_received | result: success")
 
-        return __on_message_callback
+        return _on_message_callback
 
-    def __receive_all_query_results_from_output_builders(
+    def _receive_all_query_results_from_output_builders(
         self, client_socket: socket.socket
     ) -> None:
         self._mom_output_builders_connection.start_consuming(
-            self.__handle_output_builder_message(client_socket)
+            self._handle_output_builder_message(client_socket)
         )
 
     # ============================== PRIVATE - HANDLE CLIENT CONNECTION ============================== #
 
-    def __handle_client_connection(self, client_socket: socket.socket) -> None:
+    def _handle_client_connection(self, client_socket: socket.socket) -> None:
         # @TODO: handle handshake to store client data
         # we can assing an uuid to the client
         # now we are initializating all client data on init
-        self.__receive_all_data_from_client(client_socket)
-        self.__receive_all_query_results_from_output_builders(client_socket)
+        self._receive_all_data_from_client(client_socket)
+        self._receive_all_query_results_from_output_builders(client_socket)
 
     # ============================== PRIVATE - RUN ============================== #
 
-    def __run(self) -> None:
-        self.__set_server_as_running()
+    def _run(self) -> None:
+        self._set_server_as_running()
 
-        while self.__is_running():
-            client_socket = self.__accept_new_connection()
+        while self._is_running():
+            client_socket = self._accept_new_connection()
             if client_socket is None:
                 continue
 
             try:
-                self.__handle_client_connection(client_socket)
+                self._handle_client_connection(client_socket)
             except Exception as e:
                 client_socket.close()
                 logging.debug("action: client_connection_close | result: success")
                 raise e
 
-    def __close_all_mom_connections(self) -> None:
+    def _close_all_mom_connections(self) -> None:
         for mom_cleaner_connections in self._mom_cleaners_connections.values():
             for mom_cleaner_connection in mom_cleaner_connections:
                 mom_cleaner_connection.delete()
@@ -362,7 +368,7 @@ class Server:
         self._mom_output_builders_connection.close()
         logging.debug("action: mom_output_builder_connection_close | result: success")
 
-    def __ensure_connections_close_after_doing(self, callback: Callable) -> None:
+    def _ensure_connections_close_after_doing(self, callback: Callable) -> None:
         try:
             callback()
         except Exception as e:
@@ -372,7 +378,7 @@ class Server:
             self._server_socket.close()
             logging.debug("action: server_socket_close | result: success")
 
-            self.__close_all_mom_connections()
+            self._close_all_mom_connections()
             logging.debug("action: all_mom_connections_close | result: success")
 
     # ============================== PUBLIC ============================== #
@@ -380,6 +386,6 @@ class Server:
     def run(self) -> None:
         logging.info("action: server_startup | result: success")
 
-        self.__ensure_connections_close_after_doing(self.__run)
+        self._ensure_connections_close_after_doing(self._run)
 
         logging.info("action: server_shutdown | result: success")

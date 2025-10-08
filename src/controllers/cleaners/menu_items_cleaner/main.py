@@ -8,21 +8,28 @@ def main():
     config_params = initializer.init_config(
         [
             "LOGGING_LEVEL",
-            "CLEANER_ID",
+            "CONTROLLER_ID",
             "RABBITMQ_HOST",
-            "JOINS_AMOUNT",
+            "NEXT_CONTROLLERS_AMOUNT",
         ]
     )
     initializer.init_log(config_params["LOGGING_LEVEL"])
-    logging.debug(f"action: init_config | result: success | params: {config_params}")
+    logging.info(f"action: init_config | result: success | params: {config_params}")
+
+    consumers_config = {
+        "queue_name_prefix": constants.DIRTY_MIT_QUEUE_PREFIX,
+    }
+    producers_config = {
+        "exchange_name_prefix": constants.CLEANED_MIT_EXCHANGE_PREFIX,
+        "routing_key_prefix": constants.CLEANED_MIT_ROUTING_KEY_PREFIX,
+        "next_controllers_amount": int(config_params["NEXT_CONTROLLERS_AMOUNT"]),
+    }
 
     cleaner = MenuItemsCleaner(
-        cleaner_id=int(config_params["CLEANER_ID"]),
+        controller_id=int(config_params["CONTROLLER_ID"]),
         rabbitmq_host=config_params["RABBITMQ_HOST"],
-        data_queue_prefix=constants.DIRTY_MIT_QUEUE_PREFIX,
-        cleaned_data_exchange_prefix=constants.CLEANED_MIT_EXCHANGE_PREFIX,
-        cleaned_data_routing_key_prefix=constants.CLEANED_MIT_ROUTING_KEY_PREFIX,
-        cleaned_data_routing_keys_amount=int(config_params["JOINS_AMOUNT"]),
+        consumers_config=consumers_config,
+        producers_config=producers_config,
     )
     cleaner.run()
 

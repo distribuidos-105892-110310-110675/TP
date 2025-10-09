@@ -30,12 +30,12 @@ class Joiner(Controller):
         rabbitmq_host: str,
         consumers_config: dict[str, Any],
     ) -> None:
-        self._eof_recv_from_base_data_prev_controllers = 0
+        self._eof_recv_from_base_data_prev_controllers = {}
         self._base_data_prev_controllers_amount = consumers_config[
             "base_data_prev_controllers_amount"
         ]
 
-        self._eof_recv_from_stream_data_prev_controllers = 0
+        self._eof_recv_from_stream_data_prev_controllers = {}
         self._stream_data_prev_controllers_amount = consumers_config[
             "stream_data_prev_controllers_amount"
         ]
@@ -155,14 +155,17 @@ class Joiner(Controller):
             self._base_data.append(item_batch)
 
     def _handle_base_data_batch_eof(self, message: str) -> None:
-        self._eof_recv_from_base_data_prev_controllers += 1
-        logging.debug(f"action: eof_received | result: success")
+        session_id = communication_protocol.get_message_session_id(message)
+        if session_id not in self._eof_recv_from_base_data_prev_controllers:
+            self._eof_recv_from_base_data_prev_controllers[session_id] = 0
+        self._eof_recv_from_base_data_prev_controllers[session_id] += 1
+        logging.debug(f"action: eof_received | session: {session_id} | result: success")
 
         if (
-            self._eof_recv_from_base_data_prev_controllers
+            self._eof_recv_from_base_data_prev_controllers[session_id]
             == self._base_data_prev_controllers_amount
         ):
-            logging.info("action: all_eofs_received | result: success")
+            logging.info(f"action: all_eofs_received | session: {session_id} | result: success")
             self._mom_base_data_consumer.stop_consuming()
             logging.info("action: stop_consuming_base_data | result: success")
 
@@ -185,17 +188,20 @@ class Joiner(Controller):
             self._mom_send_message_to_next(joined_message)
 
     def _handle_stream_data_batch_eof(self, message: str) -> None:
-        self._eof_recv_from_stream_data_prev_controllers += 1
-        logging.debug(f"action: eof_received | result: success")
+        session_id = communication_protocol.get_message_session_id(message)
+        if session_id not in self._eof_recv_from_stream_data_prev_controllers:
+            self._eof_recv_from_stream_data_prev_controllers[session_id] = 0
+        self._eof_recv_from_stream_data_prev_controllers[session_id] += 1
+        logging.debug(f"action: eof_received | session: {session_id} | result: success")
 
         if (
-            self._eof_recv_from_stream_data_prev_controllers
+            self._eof_recv_from_stream_data_prev_controllers[session_id]
             == self._stream_data_prev_controllers_amount
         ):
-            logging.info("action: all_eofs_received | result: success")
+            logging.info(f"action: all_eofs_received | session: {session_id} | result: success")
             for mom_producer in self._mom_producers:
                 mom_producer.send(message)
-            logging.info("action: eof_sent | result: success")
+            logging.info(f"action: eof_sent | session: {session_id} | result: success")
 
             self._base_data.clear()
 

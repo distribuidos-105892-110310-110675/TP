@@ -24,7 +24,7 @@ class Filter(Controller):
         rabbitmq_host: str,
         consumers_config: dict[str, Any],
     ) -> None:
-        self._eof_recv_from_prev_controllers = 0
+        self._eof_recv_from_prev_controllers = {}
         self._prev_controllers_amount = consumers_config["prev_controllers_amount"]
         self._mom_consumer = self._build_mom_consumer_using(
             rabbitmq_host, consumers_config
@@ -105,14 +105,17 @@ class Filter(Controller):
             self._mom_send_message_to_next(output_message)
 
     def _handle_data_batch_eof(self, message: str) -> None:
-        self._eof_recv_from_prev_controllers += 1
+        session_id = communication_protocol.get_message_session_id(message)
+        if session_id not in self._eof_recv_from_prev_controllers:
+            self._eof_recv_from_prev_controllers[session_id] = 0
+        self._eof_recv_from_prev_controllers[session_id] += 1
         logging.debug(f"action: eof_received | result: success")
 
-        if self._eof_recv_from_prev_controllers == self._prev_controllers_amount:
-            logging.info("action: all_eofs_received | result: success")
+        if self._eof_recv_from_prev_controllers[session_id] == self._prev_controllers_amount:
+            logging.info(f"action: all_eofs_received | session: {session_id} | result: success")
             for mom_producer in self._mom_producers:
                 mom_producer.send(message)
-            logging.info("action: eof_sent | result: success")
+            logging.info(f"action: eof_sent | session: {session_id} | result: success")
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():

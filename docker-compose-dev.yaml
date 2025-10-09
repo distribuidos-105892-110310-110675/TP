@@ -413,7 +413,7 @@ services:
       - PREV_CONTROLLERS_AMOUNT=1
       - NEXT_CONTROLLERS_AMOUNT=1
       - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}
-      - AMOUNT_PER_GROUP=1
+      - AMOUNT_PER_GROUP=3
     networks:
       - custom_net
     depends_on:

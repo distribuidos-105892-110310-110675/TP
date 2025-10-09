@@ -42,9 +42,6 @@ class SortedDescData:
             index += 1
 
         sorted_desc_batch_items.insert(index, batch_item)
-        logging.debug(
-            f"action: add_batch_item_keeping_sort_desc | grouping_key_value: {grouping_key_value} | primary_sort_value: {primary_sort_value} | secondary_sort_value: {secondary_sort_value} | index: {index} | current_amount: {len(sorted_desc_batch_items)}"
-        )
         if len(sorted_desc_batch_items) > self._amount_per_group:
             sorted_desc_batch_items.pop()
 

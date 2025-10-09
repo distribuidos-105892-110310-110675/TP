@@ -22,6 +22,7 @@ class Client:
         batch_max_size: int,
     ):
         self._client_id = client_id
+        self._session_id = ""
 
         self._server_host = server_host
         self._server_port = server_port
@@ -87,7 +88,7 @@ class Client:
                 logging.error(
                     f"action: receive_message | result: fail | error: unexpected disconnection",
                 )
-                raise OSError("Unexpected disconnection of the client")
+                raise OSError("Unexpected disconnection of the server")
 
             logging.debug(
                 f"action: receive_chunk | result: success | chunk size: {len(chunk)}"
@@ -163,6 +164,29 @@ class Client:
         self._assert_is_dir(folder_path)
         return folder_path
 
+    # ============================== PRIVATE - SEND/RECV HANDSHAKE ============================== #
+
+    def _send_handshake_message(self) -> None:
+        handshake_message = communication_protocol.encode_handshake_message(
+            str(self._client_id), communication_protocol.ALL_QUERIES
+        )
+        self._socket_send_message(self._client_socket, handshake_message)
+        logging.info("action: send_handshake | result: success")
+
+    def _receive_handshake_ack_message(self) -> None:
+        received_message = self._socket_receive_message(self._client_socket)
+        self._session_id, client_id = communication_protocol.decode_handshake_message(
+            received_message
+        )
+        if client_id != str(self._client_id):
+            raise ValueError(
+                f"Handshake ACK message error: expected client_id {self._client_id}, received {client_id}"
+            )
+
+        logging.info(
+            f"action: receive_handshake_ack | result: success | session_id: {self._session_id}"
+        )
+
     # ============================== PRIVATE - SEND DATA ============================== #
 
     def _send_data_from_file_using_batchs(
@@ -177,7 +201,7 @@ class Client:
         batch = self._read_next_batch_from_file(file, column_names)
         while len(batch) != 0 and self._is_running():
             logging.debug(f"action: {folder_name}_batch | result: in_progress")
-            message = encoding_callback(batch)
+            message = encoding_callback(self._session_id, batch)
             self._socket_send_message(self._client_socket, message)
             logging.debug(f"action: {folder_name}_batch | result: success")
 
@@ -209,7 +233,9 @@ class Client:
                     f"action: {folder_name}_file_close | result: success | file: {file_path}"
                 )
 
-        eof_message = communication_protocol.encode_eof_message(message_type)
+        eof_message = communication_protocol.encode_eof_message(
+            self._session_id, message_type
+        )
         self._socket_send_message(self._client_socket, eof_message)
 
     def _send_all_menu_items(self) -> None:
@@ -280,7 +306,7 @@ class Client:
             )
 
     def _handle_server_message(self, message: str, all_eof_received: dict) -> None:
-        message_type = communication_protocol.decode_message_type(message)
+        message_type = communication_protocol.get_message_type(message)
         match message_type:
             case (
                 communication_protocol.QUERY_RESULT_1X_MSG_TYPE
@@ -338,11 +364,12 @@ class Client:
     # ============================== PRIVATE - HANDLE SERVER CONNECTION ============================== #
 
     def _handle_server_connection(self) -> None:
-        # @TODO:
-        # send a message to identify the client
-        # receive an ack message from the server
+        self._send_handshake_message()
+        self._receive_handshake_ack_message()
 
         self._send_all_data()
+
+        # TODO: we should check that each message has the session id
         self._receive_all_query_results_from_server()
 
     # ============================== PUBLIC ============================== #

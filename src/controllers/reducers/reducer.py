@@ -5,6 +5,7 @@ from typing import Any
 from controllers.controller import Controller
 from middleware.middleware import MessageMiddleware
 from shared import communication_protocol
+from shared.reduced_data import ReducedData
 
 
 class Reducer(Controller):
@@ -71,7 +72,7 @@ class Reducer(Controller):
 
         self._batch_max_size = batch_max_size
 
-        self._reduced_data: dict[tuple, float] = {}
+        self._reduced_data_by_session_id: dict[str, ReducedData] = {}
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
@@ -89,6 +90,10 @@ class Reducer(Controller):
     def _accumulator_name(self) -> str:
         raise NotImplementedError("subclass responsibility")
 
+    @abstractmethod
+    def _message_type(self) -> str:
+        raise NotImplementedError("subclass responsibility")
+
     # ============================== PRIVATE - HANDLE DATA ============================== #
 
     @abstractmethod
@@ -97,38 +102,31 @@ class Reducer(Controller):
     ) -> float:
         raise NotImplementedError("subclass responsibility")
 
-    def _reduce_by_keys(self, batch_item: dict[str, str]) -> None:
-        for k in self._keys():
-            if batch_item[k] == "":
-                logging.warning(f"action: empty_{k} | result: skipped")
-                return
+    def _reduce_by_keys(self, session_id: str, batch_item: dict[str, str]) -> None:
+        self._reduced_data_by_session_id.setdefault(
+            session_id,
+            ReducedData(self._keys(), self._accumulator_name()),
+        ).reduce_using(batch_item, self._reduce_function)
 
-        key = tuple(batch_item[k] for k in self._keys())
-        if key not in self._reduced_data:
-            self._reduced_data[key] = 0
+    def _pop_next_batch_item(self, session_id: str) -> dict[str, str]:
+        return self._reduced_data_by_session_id[session_id].pop_next_batch_item()
 
-        self._reduced_data[key] = self._reduce_function(
-            self._reduced_data[key], batch_item
-        )
-
-    def _pop_next_batch_item(self) -> dict[str, str]:
-        key, value = self._reduced_data.popitem()
-        batch_item: dict[str, str] = {}
-        for i, k in enumerate(self._keys()):
-            batch_item[k] = key[i]
-        batch_item[self._accumulator_name()] = str(value)
-        return batch_item
-
-    def _take_next_batch(self) -> list[dict[str, str]]:
+    def _take_next_batch(self, session_id: str) -> list[dict[str, str]]:
         batch: list[dict[str, str]] = []
+        reduced_data = self._reduced_data_by_session_id.get(session_id)
+        if reduced_data is None:
+            logging.warning(
+                f"action: no_reduced_data_for_session_id | result: warning | session_id: {session_id}"
+            )
+            return batch
 
         all_batchs_taken = False
         while not all_batchs_taken and len(batch) < self._batch_max_size:
-            if not self._reduced_data:
+            if reduced_data.is_empty():
                 all_batchs_taken = True
                 break
 
-            batch_item = self._pop_next_batch_item()
+            batch_item = self._pop_next_batch_item(session_id)
             batch.append(batch_item)
 
         return batch
@@ -143,31 +141,52 @@ class Reducer(Controller):
         if self._current_producer_id >= len(self._mom_producers):
             self._current_producer_id = 0
 
-    def _send_all_data_using_batchs(self) -> None:
-        batch = self._take_next_batch()
+    def _send_all_data_using_batchs(self, session_id: str) -> None:
+        logging.debug(
+            f"action: all_data_sent | result: in_progress | session_id: {session_id}"
+        )
+
+        batch = self._take_next_batch(session_id)
         while len(batch) != 0 and self._is_running():
-            message = communication_protocol.encode_transactions_batch_message(batch)
+            message_type = self._message_type()
+            message = communication_protocol.encode_batch_message(
+                message_type, session_id, batch
+            )
             self._mom_send_message_to_next(message)
-            batch = self._take_next_batch()
+            logging.debug(
+                f"action: batch_sent | result: success | session_id: {session_id} | batch_size: {len(batch)}"
+            )
+            batch = self._take_next_batch(session_id)
+
+        del self._reduced_data_by_session_id[session_id]
+        logging.info(
+            f"action: all_data_sent | result: success | session_id: {session_id}"
+        )
 
     def _handle_data_batch_message(self, message: str) -> None:
+        session_id = communication_protocol.get_message_session_id(message)
         batch = communication_protocol.decode_batch_message(message)
         for batch_item in batch:
-            self._reduce_by_keys(batch_item)
+            self._reduce_by_keys(session_id, batch_item)
 
     def _handle_data_batch_eof(self, message: str) -> None:
+        session_id = communication_protocol.get_message_session_id(message)
         self._eof_recv_from_prev_controllers += 1
-        logging.debug(f"action: eof_received | result: success")
+        logging.info(
+            f"action: eof_received | result: success | session_id: {session_id}"
+        )
 
         if self._eof_recv_from_prev_controllers == self._prev_controllers_amount:
-            logging.info("action: all_eofs_received | result: success")
-
-            self._send_all_data_using_batchs()
-            logging.info("action: all_data_sent | result: success")
+            logging.info(
+                f"action: all_eofs_received | result: success | session_id: {session_id}"
+            )
+            self._send_all_data_using_batchs(session_id)
 
             for mom_producer in self._mom_producers:
                 mom_producer.send(message)
-            logging.info("action: eof_sent | result: success")
+            logging.info(
+                f"action: eof_sent | result: success | session_id: {session_id}"
+            )
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():
@@ -175,7 +194,7 @@ class Reducer(Controller):
             return
 
         message = message_as_bytes.decode("utf-8")
-        message_type = communication_protocol.decode_message_type(message)
+        message_type = communication_protocol.get_message_type(message)
         if message_type != communication_protocol.EOF:
             self._handle_data_batch_message(message)
         else:

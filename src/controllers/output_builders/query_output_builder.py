@@ -65,12 +65,13 @@ class QueryOutputBuilder(Controller):
         decoder: Callable,
         encoder: Callable,
         message_type: str,
+        session_id: str,
     ) -> str:
         new_batch = []
         for item in decoder(message):
             modified_item = self._transform_batch_item(item)
             new_batch.append(modified_item)
-        return str(encoder(message_type, new_batch))
+        return str(encoder(message_type, session_id, new_batch))
 
     def _transform_batch_message(self, message: str) -> str:
         return self._transform_batch_message_using(
@@ -78,6 +79,7 @@ class QueryOutputBuilder(Controller):
             communication_protocol.decode_batch_message,
             communication_protocol.encode_batch_message,
             self._output_message_type(),
+            communication_protocol.get_message_session_id(message),
         )
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
@@ -92,8 +94,9 @@ class QueryOutputBuilder(Controller):
 
         if self._eof_recv_from_prev_controllers == self._prev_controllers_amount:
             logging.info("action: all_eofs_received | result: success")
+            session_id = communication_protocol.get_message_session_id(message)
             message = communication_protocol.encode_eof_message(
-                self._output_message_type()
+                session_id, self._output_message_type()
             )
             self._mom_producer.send(message)
             logging.info("action: eof_sent | result: success")
@@ -104,7 +107,7 @@ class QueryOutputBuilder(Controller):
             return
 
         message = message_as_bytes.decode("utf-8")
-        message_type = communication_protocol.decode_message_type(message)
+        message_type = communication_protocol.get_message_type(message)
 
         if message_type != communication_protocol.EOF:
             self._handle_data_batch_message(message)

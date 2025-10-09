@@ -6,6 +6,7 @@ from middleware.rabbitmq_message_middleware_exchange import (
     RabbitMQMessageMiddlewareExchange,
 )
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
+from shared import communication_protocol
 
 
 class SellingsQtyByItemIdAndYearMonthCreatedAtReducer(Reducer):
@@ -42,6 +43,9 @@ class SellingsQtyByItemIdAndYearMonthCreatedAtReducer(Reducer):
 
     def _accumulator_name(self) -> str:
         return "sellings_qty"
+
+    def _message_type(self) -> str:
+        return communication_protocol.TRANSACTION_ITEMS_BATCH_MSG_TYPE
 
     # ============================== PRIVATE - HANDLE DATA ============================== #
 

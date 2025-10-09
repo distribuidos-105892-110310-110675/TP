@@ -119,7 +119,8 @@ class Joiner(Controller):
         return base_value == stream_value
 
     def _join_with_base_data(self, message: str) -> str:
-        message_type = communication_protocol.decode_message_type(message)
+        message_type = communication_protocol.get_message_type(message)
+        session_id = communication_protocol.get_message_session_id(message)
         stream_data = communication_protocol.decode_batch_message(message)
         joined_data: list[dict[str, str]] = []
         for stream_item in stream_data:
@@ -134,7 +135,9 @@ class Joiner(Controller):
                 logging.warning(
                     f"action: join_with_base_data | result: error | stream_item: {stream_item}"
                 )
-        return communication_protocol.encode_batch_message(message_type, joined_data)
+        return communication_protocol.encode_batch_message(
+            message_type, session_id, joined_data
+        )
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
@@ -169,7 +172,7 @@ class Joiner(Controller):
             return
 
         message = message_as_bytes.decode("utf-8")
-        message_type = communication_protocol.decode_message_type(message)
+        message_type = communication_protocol.get_message_type(message)
 
         if message_type != communication_protocol.EOF:
             self._handle_base_data_batch_message(message)
@@ -178,7 +181,7 @@ class Joiner(Controller):
 
     def _handle_stream_data_batch_message(self, message: str) -> None:
         joined_message = self._join_with_base_data(message)
-        if not communication_protocol.decode_is_empty_message(joined_message):
+        if not communication_protocol.message_without_payload(joined_message):
             self._mom_send_message_to_next(joined_message)
 
     def _handle_stream_data_batch_eof(self, message: str) -> None:
@@ -202,7 +205,7 @@ class Joiner(Controller):
             return
 
         message = message_as_bytes.decode("utf-8")
-        message_type = communication_protocol.decode_message_type(message)
+        message_type = communication_protocol.get_message_type(message)
 
         if message_type != communication_protocol.EOF:
             self._handle_stream_data_batch_message(message)

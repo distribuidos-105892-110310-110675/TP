@@ -72,19 +72,21 @@ class Mapper(Controller):
         decoder: Callable,
         encoder: Callable,
         message_type: str,
+        session_id: str,
     ) -> str:
         new_batch = []
         for item in decoder(message):
             modified_item = self._transform_batch_item(item)
             new_batch.append(modified_item)
-        return str(encoder(message_type, new_batch))
+        return str(encoder(message_type, session_id, new_batch))
 
     def _transform_batch_message(self, message: str) -> str:
         return self._transform_batch_message_using(
             message,
             communication_protocol.decode_batch_message,
             communication_protocol.encode_batch_message,
-            communication_protocol.decode_message_type(message),
+            communication_protocol.get_message_type(message),
+            communication_protocol.get_message_session_id(message),
         )
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
@@ -99,7 +101,7 @@ class Mapper(Controller):
 
     def _handle_data_batch_message(self, message: str) -> None:
         output_message = self._transform_batch_message(message)
-        if not communication_protocol.decode_is_empty_message(output_message):
+        if not communication_protocol.message_without_payload(output_message):
             self._mom_send_message_to_next(output_message)
 
     def _handle_data_batch_eof(self, message: str) -> None:
@@ -118,7 +120,7 @@ class Mapper(Controller):
             return
 
         message = message_as_bytes.decode("utf-8")
-        message_type = communication_protocol.decode_message_type(message)
+        message_type = communication_protocol.get_message_type(message)
         if message_type != communication_protocol.EOF:
             self._handle_data_batch_message(message)
         else:

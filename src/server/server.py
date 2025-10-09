@@ -1,6 +1,7 @@
 import logging
 import signal
 import socket
+import uuid
 from collections.abc import Callable
 from typing import Any, Optional
 
@@ -46,7 +47,7 @@ class Server:
         for data_type, cleaner_data in self._cleaners_data.items():
             workers_amount = cleaner_data[constants.WORKERS_AMOUNT]
             for id in range(workers_amount):
-                queue_name = cleaner_data[constants.QUEUE_PREFIX] + f"-{id}"
+                queue_name = f"{cleaner_data[constants.QUEUE_PREFIX]}-{id}"
                 queue_producer = RabbitMQMessageMiddlewareQueue(host, queue_name)
 
                 if self._mom_cleaners_connections.get(data_type) is None:
@@ -186,11 +187,9 @@ class Server:
     def _mom_send_message_to_next(self, data_type: str, message: str) -> None:
         current_worker_id = self._cleaners_data[data_type]["current_worker_id"]
 
-        mom_connections = self._mom_cleaners_connections[data_type]
-        mom_connection: RabbitMQMessageMiddlewareQueue = mom_connections[
-            current_worker_id
-        ]
-        mom_connection.send(message)
+        mom_producers = self._mom_cleaners_connections[data_type]
+        mom_producer: RabbitMQMessageMiddlewareQueue = mom_producers[current_worker_id]
+        mom_producer.send(message)
 
         current_worker_id += 1
 
@@ -199,10 +198,39 @@ class Server:
             current_worker_id = 0
         self._cleaners_data[data_type]["current_worker_id"] = current_worker_id
 
+    # ============================== PRIVATE - RECEIVE CLIENT HANDSHAKE ============================== #
+
+    def _send_client_handshake_message(
+        self, client_socket: socket.socket, client_id: str
+    ) -> None:
+        session_id = uuid.uuid4().hex
+        handshake_response_message = communication_protocol.encode_handshake_message(
+            session_id, client_id
+        )
+        self._socket_send_message(client_socket, handshake_response_message)
+        logging.info(
+            f"action: handshake_response_sent | result: success | client_id: {client_id} | session_id: {session_id}"
+        )
+
+    def _accept_client_handshake_message(self, client_socket: socket.socket) -> None:
+        received_message = self._socket_receive_message(client_socket)
+        (client_id, payload) = communication_protocol.decode_handshake_message(
+            received_message
+        )
+        if payload != communication_protocol.ALL_QUERIES:
+            raise ValueError(
+                f"Invalid handshake payload received from client: {payload}"
+            )
+        logging.info(
+            f"action: handshake_received | result: success | client_id: {client_id}"
+        )
+
+        self._send_client_handshake_message(client_socket, client_id)
+
     # ============================== PRIVATE - RECEIVE CLIENT DATA ============================== #
 
     def _handle_data_batch_message(self, message: str) -> None:
-        data_type = communication_protocol.decode_message_type(message)
+        data_type = communication_protocol.get_message_type(message)
         self._mom_send_message_to_next(data_type, message)
 
     def _handle_data_batch_eof_message(self, message: str) -> None:
@@ -214,11 +242,11 @@ class Server:
         self._client_data_batch_completed[data_type] = True
         logging.info(f"action: {data_type}_batch_received | result: EOF_reached")
 
-        for mom_connection in self._mom_cleaners_connections[data_type]:
-            mom_connection.send(message)
+        for mom_producer in self._mom_cleaners_connections[data_type]:
+            mom_producer.send(message)
 
     def _handle_client_message(self, message: str) -> None:
-        message_type = communication_protocol.decode_message_type(message)
+        message_type = communication_protocol.get_message_type(message)
         match message_type:
             case (
                 communication_protocol.MENU_ITEMS_BATCH_MSG_TYPE
@@ -301,7 +329,7 @@ class Server:
     def _handle_output_builder_message(self, client_socket: socket.socket) -> Callable:
         def _on_message_callback(message_as_bytes: bytes) -> None:
             message = message_as_bytes.decode("utf-8")
-            message_type = communication_protocol.decode_message_type(message)
+            message_type = communication_protocol.get_message_type(message)
             match message_type:
                 case (
                     communication_protocol.QUERY_RESULT_1X_MSG_TYPE
@@ -334,9 +362,7 @@ class Server:
     # ============================== PRIVATE - HANDLE CLIENT CONNECTION ============================== #
 
     def _handle_client_connection(self, client_socket: socket.socket) -> None:
-        # @TODO: handle handshake to store client data
-        # we can assing an uuid to the client
-        # now we are initializating all client data on init
+        self._accept_client_handshake_message(client_socket)
         self._receive_all_data_from_client(client_socket)
         self._receive_all_query_results_from_output_builders(client_socket)
 

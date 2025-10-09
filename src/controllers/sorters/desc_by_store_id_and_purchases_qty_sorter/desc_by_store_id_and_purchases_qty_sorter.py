@@ -41,12 +41,16 @@ class DescByStoreIdAndPurchasesQtySorter(Sorter):
     def _secondary_sort_key(self) -> str:
         return "purchases_qty"
 
+    def _message_type(self) -> str:
+        return communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE
+
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
     def _mom_send_message_to_next(self, message: str) -> None:
         user_batchs_by_hash: dict[int, list] = {}
 
-        message_type = communication_protocol.decode_message_type(message)
+        message_type = communication_protocol.get_message_type(message)
+        session_id = communication_protocol.get_message_session_id(message)
         for batch_item in communication_protocol.decode_batch_message(message):
             if batch_item["user_id"] == "":
                 logging.warning(
@@ -64,6 +68,6 @@ class DescByStoreIdAndPurchasesQtySorter(Sorter):
         for key, user_batch in user_batchs_by_hash.items():
             mom_producer = self._mom_producers[key]
             message = communication_protocol.encode_batch_message(
-                message_type, user_batch
+                message_type, session_id, user_batch
             )
             mom_producer.send(message)

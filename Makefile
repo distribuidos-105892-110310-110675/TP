@@ -26,7 +26,7 @@ docker-compose-down:
 .PHONY: docker-compose-down
 
 docker-compose-logs:
-	docker compose -f $(DOCKER_COMPOSE_FILE) logs -f -n 500
+	docker compose -f $(DOCKER_COMPOSE_FILE) logs -f
 .PHONY: docker-compose-logs
 
 # ============================== TESTING ============================== #

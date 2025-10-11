@@ -2,40 +2,30 @@ import logging
 from abc import abstractmethod
 from typing import Any, Callable
 
-from controllers.controller import Controller
+from controllers.shared.controller import Controller
 from middleware.middleware import MessageMiddleware
+from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from shared import communication_protocol
 
 
-class Mapper(Controller):
+class Cleaner(Controller):
 
     # ============================== INITIALIZE ============================== #
-
-    @abstractmethod
-    def _build_mom_consumer_using(
-        self,
-        rabbitmq_host: str,
-        consumers_config: dict[str, Any],
-    ) -> MessageMiddleware:
-        raise NotImplementedError("subclass responsibility")
 
     def _init_mom_consumers(
         self,
         rabbitmq_host: str,
         consumers_config: dict[str, Any],
     ) -> None:
-        self._eof_recv_from_prev_controllers = {}
-        self._prev_controllers_amount = consumers_config["prev_controllers_amount"]
-        self._mom_consumer = self._build_mom_consumer_using(
-            rabbitmq_host, consumers_config
+        queue_name_prefix = consumers_config["queue_name_prefix"]
+        queue_name = f"{queue_name_prefix}-{self._controller_id}"
+        self._mom_consumer = RabbitMQMessageMiddlewareQueue(
+            host=rabbitmq_host, queue_name=queue_name
         )
 
     @abstractmethod
     def _build_mom_producer_using(
-        self,
-        rabbitmq_host: str,
-        producers_config: dict[str, Any],
-        producer_id: int,
+        self, rabbitmq_host: str, producers_config: dict[str, Any], producer_id: int
     ) -> MessageMiddleware:
         raise NotImplementedError("subclass responsibility")
 
@@ -54,17 +44,25 @@ class Mapper(Controller):
             )
             self._mom_producers.append(mom_producer)
 
+    # ============================== PRIVATE - ACCESSING ============================== #
+
+    @abstractmethod
+    def _columns_to_keep(self) -> list[str]:
+        raise NotImplementedError("subclass responsibility")
+
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
     def _mom_stop_consuming(self) -> None:
         self._mom_consumer.stop_consuming()
         logging.debug("action: sigterm_mom_stop_consuming | result: success")
 
-    # ============================== PRIVATE - TRANSFORM DATA ============================== #
+    # ============================== PRIVATE - FILTER ============================== #
 
-    @abstractmethod
-    def _transform_batch_item(self, batch_item: dict[str, str]) -> dict[str, str]:
-        raise NotImplementedError("subclass responsibility")
+    def _transform_batch_item(self, batch_item: dict[str, str]) -> dict:
+        modified_item_batch = {}
+        for column in self._columns_to_keep():
+            modified_item_batch[column] = batch_item[column]
+        return modified_item_batch
 
     def _transform_batch_message_using(
         self,
@@ -91,31 +89,21 @@ class Mapper(Controller):
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
+    @abstractmethod
     def _mom_send_message_to_next(self, message: str) -> None:
-        mom_producer = self._mom_producers[self._current_producer_id]
-        mom_producer.send(message)
-
-        self._current_producer_id += 1
-        if self._current_producer_id >= len(self._mom_producers):
-            self._current_producer_id = 0
+        raise NotImplementedError("subclass responsibility")
 
     def _handle_data_batch_message(self, message: str) -> None:
-        output_message = self._transform_batch_message(message)
-        if not communication_protocol.message_without_payload(output_message):
-            self._mom_send_message_to_next(output_message)
+        filtered_message = self._transform_batch_message(message)
+        self._mom_send_message_to_next(filtered_message)
 
     def _handle_data_batch_eof(self, message: str) -> None:
-        session_id = communication_protocol.get_message_session_id(message)
-        if session_id not in self._eof_recv_from_prev_controllers:
-            self._eof_recv_from_prev_controllers[session_id] = 0
-        self._eof_recv_from_prev_controllers[session_id] += 1
-        logging.debug(f"action: eof_received | session: {session_id} | result: success")
+        logging.debug(f"action: eof_received | result: success")
 
-        if self._eof_recv_from_prev_controllers[session_id] == self._prev_controllers_amount:
-            logging.info(f"action: all_eofs_received | session: {session_id} | result: success")
-            for mom_producer in self._mom_producers:
-                mom_producer.send(message)
-            logging.info(f"action: eof_sent | session: {session_id} | result: success")
+        for mom_producer in self._mom_producers:
+            mom_producer.send(message)
+
+        logging.info("action: eof_sent | result: success")
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():

@@ -2,7 +2,7 @@ import logging
 from abc import abstractmethod
 from typing import Any
 
-from controllers.controller import Controller
+from controllers.shared.controller import Controller
 from middleware.middleware import MessageMiddleware
 from shared import communication_protocol
 

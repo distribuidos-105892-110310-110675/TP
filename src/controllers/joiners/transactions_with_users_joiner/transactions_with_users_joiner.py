@@ -1,6 +1,6 @@
 from typing import Any
 
-from controllers.joiners.joiner import Joiner
+from controllers.joiners.shared.joiner import Joiner
 from middleware.middleware import MessageMiddleware
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 

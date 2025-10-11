@@ -2,12 +2,12 @@ import logging
 from abc import abstractmethod
 from typing import Any, Callable
 
-from controllers.controller import Controller
+from controllers.shared.controller import Controller
 from middleware.middleware import MessageMiddleware
 from shared import communication_protocol
 
 
-class Filter(Controller):
+class Mapper(Controller):
 
     # ============================== INITIALIZE ============================== #
 
@@ -63,7 +63,7 @@ class Filter(Controller):
     # ============================== PRIVATE - TRANSFORM DATA ============================== #
 
     @abstractmethod
-    def _should_be_included(self, batch_item: dict[str, str]) -> bool:
+    def _transform_batch_item(self, batch_item: dict[str, str]) -> dict[str, str]:
         raise NotImplementedError("subclass responsibility")
 
     def _transform_batch_message_using(
@@ -76,8 +76,8 @@ class Filter(Controller):
     ) -> str:
         new_batch = []
         for item in decoder(message):
-            if self._should_be_included(item):
-                new_batch.append(item)
+            modified_item = self._transform_batch_item(item)
+            new_batch.append(modified_item)
         return str(encoder(message_type, session_id, new_batch))
 
     def _transform_batch_message(self, message: str) -> str:
@@ -109,7 +109,7 @@ class Filter(Controller):
         if session_id not in self._eof_recv_from_prev_controllers:
             self._eof_recv_from_prev_controllers[session_id] = 0
         self._eof_recv_from_prev_controllers[session_id] += 1
-        logging.debug(f"action: eof_received | result: success")
+        logging.debug(f"action: eof_received | session: {session_id} | result: success")
 
         if self._eof_recv_from_prev_controllers[session_id] == self._prev_controllers_amount:
             logging.info(f"action: all_eofs_received | session: {session_id} | result: success")

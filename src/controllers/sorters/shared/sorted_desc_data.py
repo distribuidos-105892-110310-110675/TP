@@ -1,6 +1,3 @@
-import logging
-
-
 class SortedDescData:
 
     def __init__(

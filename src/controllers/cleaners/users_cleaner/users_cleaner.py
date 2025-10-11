@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from controllers.cleaners.cleaner import Cleaner
+from controllers.cleaners.shared.cleaner import Cleaner
 from middleware.middleware import MessageMiddleware
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from shared import communication_protocol

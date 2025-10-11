@@ -1,6 +1,6 @@
 from typing import Any
 
-from controllers.reducers.reducer import Reducer
+from controllers.reducers.shared.reducer import Reducer
 from middleware.middleware import MessageMiddleware
 from middleware.rabbitmq_message_middleware_exchange import (
     RabbitMQMessageMiddlewareExchange,

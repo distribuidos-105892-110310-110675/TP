@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from controllers.sorters.sorter import Sorter
+from controllers.sorters.shared.sorter import Sorter
 from middleware.middleware import MessageMiddleware
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from shared import communication_protocol

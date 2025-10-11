@@ -2,13 +2,13 @@ import logging
 from abc import abstractmethod
 from typing import Any
 
-from controllers.controller import Controller
+from controllers.shared.controller import Controller
 from middleware.middleware import MessageMiddleware
 from shared import communication_protocol
-from shared.sorted_desc_data import SortedDescData
+from controllers.reducers.shared.reduced_data import ReducedData
 
 
-class Sorter(Controller):
+class Reducer(Controller):
 
     # ============================== INITIALIZE ============================== #
 
@@ -25,7 +25,7 @@ class Sorter(Controller):
         rabbitmq_host: str,
         consumers_config: dict[str, Any],
     ) -> None:
-        self._eof_recv_from_prev_controllers = 0
+        self._eof_recv_from_prev_controllers = {}
         self._prev_controllers_amount = consumers_config["prev_controllers_amount"]
         self._mom_consumer = self._build_mom_consumer_using(
             rabbitmq_host, consumers_config
@@ -62,7 +62,6 @@ class Sorter(Controller):
         consumers_config: dict[str, Any],
         producers_config: dict[str, Any],
         batch_max_size: int,
-        amount_per_group: int,
     ) -> None:
         super().__init__(
             controller_id,
@@ -72,8 +71,8 @@ class Sorter(Controller):
         )
 
         self._batch_max_size = batch_max_size
-        self._amount_per_group = amount_per_group
-        self._sorted_desc_data_by_session_id: dict[str, SortedDescData] = {}
+
+        self._reduced_data_by_session_id: dict[str, ReducedData] = {}
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
@@ -84,15 +83,11 @@ class Sorter(Controller):
     # ============================== PRIVATE - ACCESSING ============================== #
 
     @abstractmethod
-    def _grouping_key(self) -> str:
+    def _keys(self) -> list[str]:
         raise NotImplementedError("subclass responsibility")
 
     @abstractmethod
-    def _primary_sort_key(self) -> str:
-        raise NotImplementedError("subclass responsibility")
-
-    @abstractmethod
-    def _secondary_sort_key(self) -> str:
+    def _accumulator_name(self) -> str:
         raise NotImplementedError("subclass responsibility")
 
     @abstractmethod
@@ -101,36 +96,33 @@ class Sorter(Controller):
 
     # ============================== PRIVATE - HANDLE DATA ============================== #
 
-    def _add_batch_item_keeping_sort_desc(
-        self, session_id: str, batch_item: dict[str, str]
-    ) -> None:
-        self._sorted_desc_data_by_session_id.setdefault(
+    @abstractmethod
+    def _reduce_function(
+        self, current_value: float, batch_item: dict[str, str]
+    ) -> float:
+        raise NotImplementedError("subclass responsibility")
+
+    def _reduce_by_keys(self, session_id: str, batch_item: dict[str, str]) -> None:
+        self._reduced_data_by_session_id.setdefault(
             session_id,
-            SortedDescData(
-                self._grouping_key(),
-                self._primary_sort_key(),
-                self._secondary_sort_key(),
-                self._amount_per_group,
-            ),
-        ).add_batch_item_keeping_sort_desc(batch_item)
+            ReducedData(self._keys(), self._accumulator_name()),
+        ).reduce_using(batch_item, self._reduce_function)
 
     def _pop_next_batch_item(self, session_id: str) -> dict[str, str]:
-        return self._sorted_desc_data_by_session_id[session_id].pop_next_batch_item()
+        return self._reduced_data_by_session_id[session_id].pop_next_batch_item()
 
     def _take_next_batch(self, session_id: str) -> list[dict[str, str]]:
         batch: list[dict[str, str]] = []
-        sorted_desc_by_grouping_key = self._sorted_desc_data_by_session_id.get(
-            session_id
-        )
-        if sorted_desc_by_grouping_key is None:
+        reduced_data = self._reduced_data_by_session_id.get(session_id)
+        if reduced_data is None:
             logging.warning(
-                f"action: no_sorted_data_for_session_id | result: warning | session_id: {session_id}"
+                f"action: no_reduced_data_for_session_id | result: warning | session_id: {session_id}"
             )
             return batch
 
         all_batchs_taken = False
         while not all_batchs_taken and len(batch) < self._batch_max_size:
-            if sorted_desc_by_grouping_key.is_empty():
+            if reduced_data.is_empty():
                 all_batchs_taken = True
                 break
 
@@ -141,9 +133,13 @@ class Sorter(Controller):
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
-    @abstractmethod
     def _mom_send_message_to_next(self, message: str) -> None:
-        raise NotImplementedError("subclass responsibility")
+        mom_cleaned_data_producer = self._mom_producers[self._current_producer_id]
+        mom_cleaned_data_producer.send(message)
+
+        self._current_producer_id += 1
+        if self._current_producer_id >= len(self._mom_producers):
+            self._current_producer_id = 0
 
     def _send_all_data_using_batchs(self, session_id: str) -> None:
         logging.debug(
@@ -162,7 +158,7 @@ class Sorter(Controller):
             )
             batch = self._take_next_batch(session_id)
 
-        del self._sorted_desc_data_by_session_id[session_id]
+        del self._reduced_data_by_session_id[session_id]
         logging.info(
             f"action: all_data_sent | result: success | session_id: {session_id}"
         )
@@ -171,23 +167,29 @@ class Sorter(Controller):
         session_id = communication_protocol.get_message_session_id(message)
         batch = communication_protocol.decode_batch_message(message)
         for batch_item in batch:
-            self._add_batch_item_keeping_sort_desc(session_id, batch_item)
+            self._reduce_by_keys(session_id, batch_item)
 
     def _handle_data_batch_eof(self, message: str) -> None:
         session_id = communication_protocol.get_message_session_id(message)
-        self._eof_recv_from_prev_controllers += 1
+        self._eof_recv_from_prev_controllers.setdefault(session_id, 0)
+        self._eof_recv_from_prev_controllers[session_id] += 1
         logging.info(
             f"action: eof_received | result: success | session_id: {session_id}"
         )
 
-        if self._eof_recv_from_prev_controllers == self._prev_controllers_amount:
+        if (
+            self._eof_recv_from_prev_controllers[session_id]
+            == self._prev_controllers_amount
+        ):
             logging.info(
                 f"action: all_eofs_received | result: success | session_id: {session_id}"
             )
+
             self._send_all_data_using_batchs(session_id)
 
             for mom_producer in self._mom_producers:
                 mom_producer.send(message)
+            del self._eof_recv_from_prev_controllers[session_id]
             logging.info(
                 f"action: eof_sent | result: success | session_id: {session_id}"
             )

@@ -130,6 +130,29 @@ make unit-tests
 
 Estos tests suelen enfocarse en el middleware u otras partes específicas del sistema.
 
+##### 🧩 Consideración
+
+Los **tests unitarios** se ejecutan siempre dentro del entorno de desarrollo basado en **Dev Containers**.  
+
+Este enfoque garantiza un ambiente de ejecución **aislado, reproducible y controlado**, evitando inconsistencias entre configuraciones locales.  
+
+Podés consultar más información sobre Dev Containers en la documentación oficial de Visual Studio Code:  
+
+🔗 [https://code.visualstudio.com/docs/devcontainers/containers](https://code.visualstudio.com/docs/devcontainers/containers)
+
+Para ejecutar correctamente estos tests, es necesario realizar una pequeña modificación previa:
+
+1. Accedé al archivo `docker-compose-dev.yaml` ubicado dentro del directorio `.devcontainer/`.
+2. **Descomentá las líneas correspondientes al servicio de RabbitMQ** destinado al entorno de pruebas.
+3. Al hacerlo, se levantará **una instancia independiente de RabbitMQ** utilizada exclusivamente para la ejecución de los tests unitarios dentro del contenedor de desarrollo.
+
+Estas líneas permanecen **comentadas por defecto** para evitar conflictos o sobrecargas con el **RabbitMQ principal** que se utiliza durante la ejecución normal del sistema distribuido.
+
+De este modo, se evita que las pruebas interfieran con los procesos del sistema en funcionamiento o afecten el rendimiento general.
+
+Esta configuración permite que los tests unitarios del middleware se ejecuten en un entorno completamente controlado,  
+logrando un **nivel óptimo de aislamiento y fiabilidad**, y asegurando que los resultados de las pruebas reflejen con precisión el comportamiento del middleware sin depender del estado del sistema completo.
+
 #### 🔗 Tests de integración
 
 ```bash

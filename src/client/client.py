@@ -284,16 +284,6 @@ class Client:
 
     # ============================== PRIVATE - SEND DATA ============================== #
 
-    def _handle_query_result_eof_message(
-        self, message: str, all_eof_received: dict
-    ) -> None:
-        data_type = communication_protocol.decode_eof_message(message)
-        if data_type not in all_eof_received:
-            raise ValueError(f"Unknown EOF message type {data_type}")
-
-        all_eof_received[data_type] = True
-        logging.info(f"action: eof_{data_type}_receive_query_result | result: success")
-
     def _handle_query_result_message(self, message: str, message_type: str) -> None:
         logging.debug(f"action: {message_type}_receive_query_result | result: success")
         file_name = f"client_{self._client_id}_{message_type}_result.txt"
@@ -305,8 +295,26 @@ class Client:
                 f"action: {message_type}_save_query_result | result: success | file: {file_name}",
             )
 
+    def _handle_query_result_eof_message(
+        self, message: str, all_eof_received: dict
+    ) -> None:
+        data_type = communication_protocol.decode_eof_message(message)
+        if data_type not in all_eof_received:
+            raise ValueError(f"Unknown EOF message type {data_type}")
+
+        all_eof_received[data_type] = True
+        logging.info(
+            f"action: eof_{data_type}_receive_query_result | result: success | session_id: {self._session_id}"
+        )
+
     def _handle_server_message(self, message: str, all_eof_received: dict) -> None:
         message_type = communication_protocol.get_message_type(message)
+        session_id = communication_protocol.get_message_session_id(message)
+        if session_id != self._session_id:
+            raise ValueError(
+                f"Session ID mismatch: expected {self._session_id}, received {session_id}"
+            )
+
         match message_type:
             case (
                 communication_protocol.QUERY_RESULT_1X_MSG_TYPE
@@ -369,7 +377,6 @@ class Client:
 
         self._send_all_data()
 
-        # TODO: we should check that each message has the session id
         self._receive_all_query_results_from_server()
 
     # ============================== PUBLIC ============================== #

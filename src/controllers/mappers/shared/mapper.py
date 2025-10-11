@@ -106,16 +106,26 @@ class Mapper(Controller):
 
     def _handle_data_batch_eof(self, message: str) -> None:
         session_id = communication_protocol.get_message_session_id(message)
-        if session_id not in self._eof_recv_from_prev_controllers:
-            self._eof_recv_from_prev_controllers[session_id] = 0
+        self._eof_recv_from_prev_controllers.setdefault(session_id, 0)
         self._eof_recv_from_prev_controllers[session_id] += 1
-        logging.debug(f"action: eof_received | session: {session_id} | result: success")
+        logging.debug(
+            f"action: eof_received | result: success | session_id: {session_id}"
+        )
 
-        if self._eof_recv_from_prev_controllers[session_id] == self._prev_controllers_amount:
-            logging.info(f"action: all_eofs_received | session: {session_id} | result: success")
+        if (
+            self._eof_recv_from_prev_controllers[session_id]
+            == self._prev_controllers_amount
+        ):
+            logging.info(
+                f"action: all_eofs_received | result: success | session_id: {session_id}"
+            )
+
             for mom_producer in self._mom_producers:
                 mom_producer.send(message)
-            logging.info(f"action: eof_sent | session: {session_id} | result: success")
+            del self._eof_recv_from_prev_controllers[session_id]
+            logging.info(
+                f"action: eof_sent | result: success | session_id: {session_id}"
+            )
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():

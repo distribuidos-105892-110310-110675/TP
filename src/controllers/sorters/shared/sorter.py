@@ -3,9 +3,9 @@ from abc import abstractmethod
 from typing import Any
 
 from controllers.shared.controller import Controller
+from controllers.sorters.shared.sorted_desc_data import SortedDescData
 from middleware.middleware import MessageMiddleware
 from shared import communication_protocol
-from controllers.sorters.shared.sorted_desc_data import SortedDescData
 
 
 class Sorter(Controller):

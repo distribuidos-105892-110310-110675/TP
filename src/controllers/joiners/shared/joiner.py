@@ -156,18 +156,24 @@ class Joiner(Controller):
 
     def _handle_base_data_batch_eof(self, message: str) -> None:
         session_id = communication_protocol.get_message_session_id(message)
-        if session_id not in self._eof_recv_from_base_data_prev_controllers:
-            self._eof_recv_from_base_data_prev_controllers[session_id] = 0
+        self._eof_recv_from_base_data_prev_controllers.setdefault(session_id, 0)
         self._eof_recv_from_base_data_prev_controllers[session_id] += 1
-        logging.debug(f"action: eof_received | session: {session_id} | result: success")
+        logging.debug(
+            f"action: base_data_eof_received | result: success | session_id: {session_id}"
+        )
 
         if (
             self._eof_recv_from_base_data_prev_controllers[session_id]
             == self._base_data_prev_controllers_amount
         ):
-            logging.info(f"action: all_eofs_received | session: {session_id} | result: success")
+            logging.info(
+                f"action: all_base_data_eofs_received | result: success | session_id: {session_id} "
+            )
+
+            # @TODO: we should not stop consuming, just set up a flag to
+            # to start consuming stream data of that session id
             self._mom_base_data_consumer.stop_consuming()
-            logging.info("action: stop_consuming_base_data | result: success")
+            # logging.info("action: stop_consuming_base_data | result: success")
 
     def _handle_base_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():
@@ -176,7 +182,6 @@ class Joiner(Controller):
 
         message = message_as_bytes.decode("utf-8")
         message_type = communication_protocol.get_message_type(message)
-
         if message_type != communication_protocol.EOF:
             self._handle_base_data_batch_message(message)
         else:
@@ -189,19 +194,24 @@ class Joiner(Controller):
 
     def _handle_stream_data_batch_eof(self, message: str) -> None:
         session_id = communication_protocol.get_message_session_id(message)
-        if session_id not in self._eof_recv_from_stream_data_prev_controllers:
-            self._eof_recv_from_stream_data_prev_controllers[session_id] = 0
+        self._eof_recv_from_stream_data_prev_controllers.setdefault(session_id, 0)
         self._eof_recv_from_stream_data_prev_controllers[session_id] += 1
-        logging.debug(f"action: eof_received | session: {session_id} | result: success")
+        logging.debug(
+            f"action: stream_data_eof_received | result: success | session_id: {session_id}"
+        )
 
         if (
             self._eof_recv_from_stream_data_prev_controllers[session_id]
             == self._stream_data_prev_controllers_amount
         ):
-            logging.info(f"action: all_eofs_received | session: {session_id} | result: success")
+            logging.info(
+                f"action: all_stream_data_eofs_received | result: success | session_id: {session_id}"
+            )
             for mom_producer in self._mom_producers:
                 mom_producer.send(message)
-            logging.info(f"action: eof_sent | session: {session_id} | result: success")
+            logging.info(
+                f"action: eof_sent | result: success | session_id: {session_id}"
+            )
 
             self._base_data.clear()
 
@@ -212,7 +222,6 @@ class Joiner(Controller):
 
         message = message_as_bytes.decode("utf-8")
         message_type = communication_protocol.get_message_type(message)
-
         if message_type != communication_protocol.EOF:
             self._handle_stream_data_batch_message(message)
         else:

@@ -219,6 +219,8 @@ Por motivos de tamaño excesivo no se pueden cargas los datasets directamente en
 
 Estos mismos pueden ser encontrados en el siguiente: [🔗 Link al dataset completo](https://www.kaggle.com/datasets/geraldooizx/g-coffee-shop-transaction-202307-to-202506/data)
 
+También generamos nuestro propio dataset reducido: [🔗 Link al dataset reducido](https://drive.google.com/drive/folders/1Zx6vl8iXw10OIUKS5Iz3qadV2ro_gW3f?usp=sharing)
+
 ### Archivos de salida
 
 Las respuestas a las queries se generarán en archivos separados por cada una, que se crearán dentro del directorio '.results/query_results'.

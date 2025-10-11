@@ -52,7 +52,7 @@ integration-tests:
 	@for result in $(QUERY_RESULTS); do \
 		sort .results/query_results/$$result.txt > integration-tests/data/query_results/$$result.txt; \
 	done
-	python3 ./integration-tests/compare_results.py --expected ./integration-tests/data/expected_output --actual ./integration-tests/data/query_results
+	python3 ./integration-tests/compare_results.py --expected ./integration-tests/data/expected_output/full_data --actual ./integration-tests/data/query_results
 .PHONY: integration-tests
 
 # End-of-file propagation tests.

@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
 # -- coding: utf-8 --
 """
-Compara archivos "esperados" vs "actuales" para Q1X, Q3X, Q4X, Q21 y Q22.
+Comparador de resultados para Q1X, Q21, Q22, Q3X y Q4X.
 
-- Para Q1X y Q22: Solo verifica que la CANTIDAD de filas coincida.
-- Para Q3X, Q4X, Q21: verifica que el CONTENIDO sea el mismo
-  independientemente del orden de las filas (multiconjunto de líneas).
+Reglas:
+- Q1X: solo verifica que la CANTIDAD de filas coincida (conteo).
+- Q21, Q22, Q3X: verifica que el CONTENIDO sea el mismo ignorando el orden (multiconjunto de líneas).
+- Q4X: validación especial por cafetería:
+    * Igual cantidad TOTAL de líneas.
+    * Igual conjunto de cafeterías.
+    * Para cada cafetería: igual cantidad de líneas.
+    * Para cada cafetería: iguales cantidades de compras (tercer campo) en sus como máximo 3 filas,
+      ignorando el orden y sin importar quiénes sean los clientes (desempates aceptados).
+      El contenido (fechas/personas) no importa; sólo importan los contadores por top-k.
 
 Imprime un resultado por cada archivo y un resumen final.
 Devuelve exit code 0 si todo está OK; 1 si hubo al menos un error.
@@ -23,14 +30,16 @@ Opciones útiles:
 import argparse
 import os
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
+from typing import List, Tuple, Dict, Optional
 
+# Mapeo de modos por etiqueta detectada en el nombre del archivo
 DEFAULT_TAGS = {
-    "Q1X": "count_only",   # <-- cuenta filas
-    "Q3X": "multiset",     # <-- contenido (orden ignorado)
-    "Q4X": "multiset",
+    "Q1X": "count_only",     # Cuenta filas
+    "Q3X": "multiset",       # Contenido, orden ignorado
+    "Q4X": "q4x_special",    # Validación especial por cafetería
     "Q21": "multiset",
-    "Q22": "count_only",   # <-- cuenta filas (antes era multiset)
+    "Q22": "multiset",       # <-- ahora multiset (antes era count_only)
 }
 
 def norm_line(s: str, case_sensitive: bool) -> str:
@@ -39,7 +48,7 @@ def norm_line(s: str, case_sensitive: bool) -> str:
         return s.strip().lower()
     return s.strip()
 
-def read_lines(path: str, encoding: str, include_empty: bool, case_sensitive: bool):
+def read_lines(path: str, encoding: str, include_empty: bool, case_sensitive: bool) -> Optional[List[str]]:
     try:
         with open(path, "r", encoding=encoding, errors="replace") as f:
             lines = [norm_line(l, case_sensitive) for l in f]
@@ -49,13 +58,13 @@ def read_lines(path: str, encoding: str, include_empty: bool, case_sensitive: bo
     except FileNotFoundError:
         return None
 
-def detect_tag(filename: str):
+def detect_tag(filename: str) -> Optional[str]:
     for tag in DEFAULT_TAGS.keys():
         if tag in filename:
             return tag
     return None
 
-def compare_count_only(exp_path, act_path, encoding, include_empty, case_sensitive):
+def compare_count_only(exp_path, act_path, encoding, include_empty, case_sensitive) -> Tuple[bool, str]:
     exp = read_lines(exp_path, encoding, include_empty, case_sensitive)
     act = read_lines(act_path, encoding, include_empty, case_sensitive)
     if exp is None:
@@ -65,7 +74,7 @@ def compare_count_only(exp_path, act_path, encoding, include_empty, case_sensiti
     return (len(exp) == len(act),
             f"filas esperadas={len(exp)}, actuales={len(act)}")
 
-def compare_multiset(exp_path, act_path, encoding, include_empty, case_sensitive, max_diff_examples=5):
+def compare_multiset(exp_path, act_path, encoding, include_empty, case_sensitive, max_diff_examples=5) -> Tuple[bool, str]:
     exp = read_lines(exp_path, encoding, include_empty, case_sensitive)
     act = read_lines(act_path, encoding, include_empty, case_sensitive)
     if exp is None:
@@ -78,7 +87,6 @@ def compare_multiset(exp_path, act_path, encoding, include_empty, case_sensitive
     if c_exp == c_act:
         return True, f"{len(exp)} filas (mismo contenido, orden ignorado)"
     else:
-        # Construir un pequeño diff legible
         missing = list((c_exp - c_act).elements())
         extra = list((c_act - c_exp).elements())
         msg_parts = []
@@ -92,9 +100,120 @@ def compare_multiset(exp_path, act_path, encoding, include_empty, case_sensitive
             )
         return False, "; ".join(msg_parts) if msg_parts else "Los multisets difieren."
 
-def main():
-    # TODO: see if we can improve this
+# --------------------------
+# Comparación especial Q4X
+# --------------------------
 
+def _parse_q4x_line(line: str) -> Optional[Tuple[str, str, int]]:
+    """
+    Formato esperado (campos separados por coma):
+      cafe,fecha,conteo
+    Se usa rsplit con max 2 separaciones por si el nombre de la cafetería tuviera comas.
+    """
+    parts = line.rsplit(",", 2)
+    if len(parts) != 3:
+        return None
+    cafe = parts[0].strip()
+    fecha = parts[1].strip()  # no se usa para comparar
+    try:
+        count = int(parts[2].strip())
+    except ValueError:
+        return None
+    return cafe, fecha, count
+
+def _group_counts_by_cafe(lines: List[str]) -> Tuple[Dict[str, List[int]], List[str]]:
+    """
+    Devuelve:
+      - dict cafe -> lista de contadores (int)
+      - lista de líneas malformadas (para diagnóstico)
+    """
+    groups: Dict[str, List[int]] = defaultdict(list)
+    bad: List[str] = []
+    for ln in lines:
+        parsed = _parse_q4x_line(ln)
+        if parsed is None:
+            bad.append(ln)
+            continue
+        cafe, _fecha, cnt = parsed
+        groups[cafe].append(cnt)
+    return groups, bad
+
+def compare_q4x(exp_path, act_path, encoding, include_empty, case_sensitive, max_examples=5) -> Tuple[bool, str]:
+    """
+    Reglas Q4X:
+      - Igual cantidad total de líneas.
+      - Igual conjunto de cafeterías.
+      - Para cada cafetería:
+          * Igual cantidad de líneas (como máximo 3).
+          * Igual multiset de conteos (tercer campo), ignorando orden y sin importar identidad/fecha.
+    """
+    exp = read_lines(exp_path, encoding, include_empty, case_sensitive)
+    act = read_lines(act_path, encoding, include_empty, case_sensitive)
+    if exp is None:
+        return False, f"No se encontró el archivo esperado: {exp_path}"
+    if act is None:
+        return False, f"No se encontró el archivo actual: {act_path}"
+
+    # 1) Cantidad total de líneas
+    if len(exp) != len(act):
+        return False, f"Cantidad total de filas difiere: esperadas={len(exp)}, actuales={len(act)}"
+
+    # 2) Parseo y agrupación por cafetería
+    exp_groups, exp_bad = _group_counts_by_cafe(exp)
+    act_groups, act_bad = _group_counts_by_cafe(act)
+
+    if exp_bad:
+        return False, f"Archivos 'esperados' con líneas mal formadas (p.ej.: {', '.join(repr(x) for x in exp_bad[:max_examples])}{'...' if len(exp_bad)>max_examples else ''})"
+    if act_bad:
+        return False, f"Archivos 'actuales' con líneas mal formadas (p.ej.: {', '.join(repr(x) for x in act_bad[:max_examples])}{'...' if len(act_bad)>max_examples else ''})"
+
+    # 3) Mismo conjunto de cafeterías
+    cafes_exp = set(exp_groups.keys())
+    cafes_act = set(act_groups.keys())
+    if cafes_exp != cafes_act:
+        faltan = cafes_exp - cafes_act
+        sobran = cafes_act - cafes_exp
+        partes = []
+        if faltan:
+            partes.append(f"faltan cafeterías en 'actual': {', '.join(sorted(faltan))}")
+        if sobran:
+            partes.append(f"sobran cafeterías en 'actual': {', '.join(sorted(sobran))}")
+        return False, "; ".join(partes) if partes else "Diferencia en el conjunto de cafeterías."
+
+    # 4) Por cafetería: misma cantidad de líneas y mismo multiset de conteos
+    difs = []
+    for cafe in sorted(cafes_exp):
+        exp_counts = exp_groups[cafe]
+        act_counts = act_groups[cafe]
+
+        if len(exp_counts) != len(act_counts):
+            difs.append(f"[{cafe}] cantidad de filas difiere (esperadas={len(exp_counts)}, actuales={len(act_counts)})")
+            continue
+
+        if Counter(exp_counts) != Counter(act_counts):
+            # Mostrar ejemplo de diferencias
+            missing = list((Counter(exp_counts) - Counter(act_counts)).elements())
+            extra = list((Counter(act_counts) - Counter(exp_counts)).elements())
+            msg = f"[{cafe}] difieren los conteos: "
+            parts = []
+            if missing:
+                parts.append(f"faltan en 'actual': {missing[:max_examples]}{'...' if len(missing)>max_examples else ''}")
+            if extra:
+                parts.append(f"sobra(n) en 'actual': {extra[:max_examples]}{'...' if len(extra)>max_examples else ''}")
+            difs.append(msg + "; ".join(parts))
+
+    if difs:
+        return False, " | ".join(difs)
+
+    # OK
+    total_cafes = len(cafes_exp)
+    return True, f"{len(exp)} filas, {total_cafes} cafeterías (misma distribución de top-k por conteo)"
+
+# --------------------------
+# Programa principal
+# --------------------------
+
+def main():
     ap = argparse.ArgumentParser(description="Comparador de resultados por archivo (Q1X/Q3X/Q4X/Q21/Q22).")
     ap.add_argument("--expected", required=True, help="Carpeta con archivos esperados (los que me enviaste).")
     ap.add_argument("--actual", required=True, help="Carpeta con archivos actuales (salidas a validar).")
@@ -130,12 +249,19 @@ def main():
             continue
 
         mode = DEFAULT_TAGS[tag]
-        print(f"[INFO] {fname} ({tag}) -> modo: {'conteo' if mode=='count_only' else 'multiconjunto'}")
+        modo_str = {"count_only": "conteo",
+                    "multiset": "multiconjunto (orden ignorado)",
+                    "q4x_special": "validación especial por cafetería (top-k por conteo)"}[mode]
+        print(f"[INFO] {fname} ({tag}) -> modo: {modo_str}")
 
         if mode == "count_only":
             ok, detail = compare_count_only(expected_path, actual_path, args.encoding, args.include_empty_lines, args.case_sensitive)
-        else:
+        elif mode == "multiset":
             ok, detail = compare_multiset(expected_path, actual_path, args.encoding, args.include_empty_lines, args.case_sensitive)
+        elif mode == "q4x_special":
+            ok, detail = compare_q4x(expected_path, actual_path, args.encoding, args.include_empty_lines, args.case_sensitive)
+        else:
+            ok, detail = False, "Modo de comparación desconocido."
 
         status = "OK" if ok else "ERROR"
         print(f"[{status}] {fname}: {detail}\n")

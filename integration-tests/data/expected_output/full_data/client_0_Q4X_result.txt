@@ -23,8 +23,8 @@ G Coffee @ Kondominium Putra,1988-09-13,8
 G Coffee @ Kondominium Putra,1999-08-03,7
 G Coffee @ Bandar Seri Mulia,1991-05-16,8
 G Coffee @ Alam Tun Hussein Onn,1973-10-31,8
-G Coffee @ Alam Tun Hussein Onn,1997-08-10,8
 G Coffee @ Alam Tun Hussein Onn,2006-01-28,8
 G Coffee @ Kondominium Putra,2007-06-14,7
 G Coffee @ Bandar Seri Mulia,2000-06-30,8
 G Coffee @ Bandar Seri Mulia,1983-08-25,8
+G Coffee @ Alam Tun Hussein Onn,1997-08-10,8

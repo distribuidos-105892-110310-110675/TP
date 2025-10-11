@@ -212,4 +212,4 @@ __marimo__/
 # Data
 .data/
 .results/
-integration-tests/data/
+integration-tests/data/query_results

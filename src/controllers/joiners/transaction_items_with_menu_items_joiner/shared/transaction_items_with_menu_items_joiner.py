@@ -1,6 +1,6 @@
 from typing import Any
 
-from controllers.joiners.joiner import Joiner
+from controllers.joiners.shared.joiner import Joiner
 from middleware.middleware import MessageMiddleware
 from middleware.rabbitmq_message_middleware_exchange import (
     RabbitMQMessageMiddlewareExchange,
@@ -8,7 +8,7 @@ from middleware.rabbitmq_message_middleware_exchange import (
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 
 
-class TransactionsWithStoresJoiner(Joiner):
+class TransactionItemsWithMenuItemsJoiner(Joiner):
 
     def _build_mom_base_data_consumer(
         self,
@@ -45,7 +45,7 @@ class TransactionsWithStoresJoiner(Joiner):
     # ============================== PRIVATE - ACCESSING ============================== #
 
     def _join_key(self) -> str:
-        return "store_id"
+        return "item_id"
 
     def _transform_function(self, value: str) -> Any:
         return int(float(value))

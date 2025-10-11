@@ -1,6 +1,6 @@
 import logging
 
-from controllers.joiners.transaction_items_with_menu_items_joiner.transaction_items_with_menu_items_joiner import (
+from controllers.joiners.transaction_items_with_menu_items_joiner.shared.transaction_items_with_menu_items_joiner import (
     TransactionItemsWithMenuItemsJoiner,
 )
 from shared import constants, initializer

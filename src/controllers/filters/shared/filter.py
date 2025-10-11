@@ -2,30 +2,40 @@ import logging
 from abc import abstractmethod
 from typing import Any, Callable
 
-from controllers.controller import Controller
+from controllers.shared.controller import Controller
 from middleware.middleware import MessageMiddleware
-from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from shared import communication_protocol
 
 
-class Cleaner(Controller):
+class Filter(Controller):
 
     # ============================== INITIALIZE ============================== #
+
+    @abstractmethod
+    def _build_mom_consumer_using(
+        self,
+        rabbitmq_host: str,
+        consumers_config: dict[str, Any],
+    ) -> MessageMiddleware:
+        raise NotImplementedError("subclass responsibility")
 
     def _init_mom_consumers(
         self,
         rabbitmq_host: str,
         consumers_config: dict[str, Any],
     ) -> None:
-        queue_name_prefix = consumers_config["queue_name_prefix"]
-        queue_name = f"{queue_name_prefix}-{self._controller_id}"
-        self._mom_consumer = RabbitMQMessageMiddlewareQueue(
-            host=rabbitmq_host, queue_name=queue_name
+        self._eof_recv_from_prev_controllers = {}
+        self._prev_controllers_amount = consumers_config["prev_controllers_amount"]
+        self._mom_consumer = self._build_mom_consumer_using(
+            rabbitmq_host, consumers_config
         )
 
     @abstractmethod
     def _build_mom_producer_using(
-        self, rabbitmq_host: str, producers_config: dict[str, Any], producer_id: int
+        self,
+        rabbitmq_host: str,
+        producers_config: dict[str, Any],
+        producer_id: int,
     ) -> MessageMiddleware:
         raise NotImplementedError("subclass responsibility")
 
@@ -44,25 +54,17 @@ class Cleaner(Controller):
             )
             self._mom_producers.append(mom_producer)
 
-    # ============================== PRIVATE - ACCESSING ============================== #
-
-    @abstractmethod
-    def _columns_to_keep(self) -> list[str]:
-        raise NotImplementedError("subclass responsibility")
-
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
     def _mom_stop_consuming(self) -> None:
         self._mom_consumer.stop_consuming()
         logging.debug("action: sigterm_mom_stop_consuming | result: success")
 
-    # ============================== PRIVATE - FILTER ============================== #
+    # ============================== PRIVATE - TRANSFORM DATA ============================== #
 
-    def _transform_batch_item(self, batch_item: dict[str, str]) -> dict:
-        modified_item_batch = {}
-        for column in self._columns_to_keep():
-            modified_item_batch[column] = batch_item[column]
-        return modified_item_batch
+    @abstractmethod
+    def _should_be_included(self, batch_item: dict[str, str]) -> bool:
+        raise NotImplementedError("subclass responsibility")
 
     def _transform_batch_message_using(
         self,
@@ -70,38 +72,50 @@ class Cleaner(Controller):
         decoder: Callable,
         encoder: Callable,
         message_type: str,
+        session_id: str,
     ) -> str:
         new_batch = []
         for item in decoder(message):
-            modified_item = self._transform_batch_item(item)
-            new_batch.append(modified_item)
-        return str(encoder(message_type, new_batch))
+            if self._should_be_included(item):
+                new_batch.append(item)
+        return str(encoder(message_type, session_id, new_batch))
 
     def _transform_batch_message(self, message: str) -> str:
         return self._transform_batch_message_using(
             message,
             communication_protocol.decode_batch_message,
             communication_protocol.encode_batch_message,
-            communication_protocol.decode_message_type(message),
+            communication_protocol.get_message_type(message),
+            communication_protocol.get_message_session_id(message),
         )
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
-    @abstractmethod
     def _mom_send_message_to_next(self, message: str) -> None:
-        raise NotImplementedError("subclass responsibility")
+        mom_producer = self._mom_producers[self._current_producer_id]
+        mom_producer.send(message)
+
+        self._current_producer_id += 1
+        if self._current_producer_id >= len(self._mom_producers):
+            self._current_producer_id = 0
 
     def _handle_data_batch_message(self, message: str) -> None:
-        filtered_message = self._transform_batch_message(message)
-        self._mom_send_message_to_next(filtered_message)
+        output_message = self._transform_batch_message(message)
+        if not communication_protocol.message_without_payload(output_message):
+            self._mom_send_message_to_next(output_message)
 
     def _handle_data_batch_eof(self, message: str) -> None:
+        session_id = communication_protocol.get_message_session_id(message)
+        if session_id not in self._eof_recv_from_prev_controllers:
+            self._eof_recv_from_prev_controllers[session_id] = 0
+        self._eof_recv_from_prev_controllers[session_id] += 1
         logging.debug(f"action: eof_received | result: success")
 
-        for mom_producer in self._mom_producers:
-            mom_producer.send(message)
-
-        logging.info("action: eof_sent | result: success")
+        if self._eof_recv_from_prev_controllers[session_id] == self._prev_controllers_amount:
+            logging.info(f"action: all_eofs_received | session: {session_id} | result: success")
+            for mom_producer in self._mom_producers:
+                mom_producer.send(message)
+            logging.info(f"action: eof_sent | session: {session_id} | result: success")
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():
@@ -109,7 +123,7 @@ class Cleaner(Controller):
             return
 
         message = message_as_bytes.decode("utf-8")
-        message_type = communication_protocol.decode_message_type(message)
+        message_type = communication_protocol.get_message_type(message)
         if message_type != communication_protocol.EOF:
             self._handle_data_batch_message(message)
         else:

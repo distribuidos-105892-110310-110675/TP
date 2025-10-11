@@ -2,7 +2,7 @@ import logging
 from abc import abstractmethod
 from typing import Any, Callable
 
-from controllers.controller import Controller
+from controllers.shared.controller import Controller
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from shared import communication_protocol
 
@@ -16,7 +16,7 @@ class QueryOutputBuilder(Controller):
         rabbitmq_host: str,
         consumers_config: dict[str, Any],
     ) -> None:
-        self._eof_recv_from_prev_controllers = 0
+        self._eof_recv_from_prev_controllers = {}
         self._prev_controllers_amount = consumers_config["prev_controllers_amount"]
 
         queue_name_prefix = consumers_config["queue_name_prefix"]
@@ -65,12 +65,13 @@ class QueryOutputBuilder(Controller):
         decoder: Callable,
         encoder: Callable,
         message_type: str,
+        session_id: str,
     ) -> str:
         new_batch = []
         for item in decoder(message):
             modified_item = self._transform_batch_item(item)
             new_batch.append(modified_item)
-        return str(encoder(message_type, new_batch))
+        return str(encoder(message_type, session_id, new_batch))
 
     def _transform_batch_message(self, message: str) -> str:
         return self._transform_batch_message_using(
@@ -78,6 +79,7 @@ class QueryOutputBuilder(Controller):
             communication_protocol.decode_batch_message,
             communication_protocol.encode_batch_message,
             self._output_message_type(),
+            communication_protocol.get_message_session_id(message),
         )
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
@@ -87,16 +89,20 @@ class QueryOutputBuilder(Controller):
         self._mom_producer.send(output_message)
 
     def _handle_data_batch_eof(self, message: str) -> None:
-        self._eof_recv_from_prev_controllers += 1
-        logging.debug(f"action: eof_received | result: success")
+        session_id = communication_protocol.get_message_session_id(message)
+        if session_id not in self._eof_recv_from_prev_controllers:
+            self._eof_recv_from_prev_controllers[session_id] = 0
+        self._eof_recv_from_prev_controllers[session_id] += 1
+        logging.debug(f"action: eof_received | session: {session_id} | result: success")
 
         if self._eof_recv_from_prev_controllers == self._prev_controllers_amount:
-            logging.info("action: all_eofs_received | result: success")
+            logging.info(f"action: all_eofs_received | session: {session_id} | result: success")
+            session_id = communication_protocol.get_message_session_id(message)
             message = communication_protocol.encode_eof_message(
-                self._output_message_type()
+                session_id, self._output_message_type()
             )
             self._mom_producer.send(message)
-            logging.info("action: eof_sent | result: success")
+            logging.info(f"action: eof_sent | session: {session_id} | result: success")
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():
@@ -104,7 +110,7 @@ class QueryOutputBuilder(Controller):
             return
 
         message = message_as_bytes.decode("utf-8")
-        message_type = communication_protocol.decode_message_type(message)
+        message_type = communication_protocol.get_message_type(message)
 
         if message_type != communication_protocol.EOF:
             self._handle_data_batch_message(message)

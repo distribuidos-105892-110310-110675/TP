@@ -1,6 +1,6 @@
 import logging
 
-from controllers.joiners.transactions_with_stores_joiner.transactions_with_stores_joiner import (
+from controllers.joiners.transactions_with_stores_joiner.shared.transactions_with_stores_joiner import (
     TransactionsWithStoresJoiner,
 )
 from shared import constants, initializer

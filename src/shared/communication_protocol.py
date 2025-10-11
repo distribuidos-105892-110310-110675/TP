@@ -2,8 +2,7 @@
 MESSAGE_TYPE_LENGTH = 3
 
 # messages types
-QUERY_MSG_TYPE = "QRY"
-ACK_MSG_TYPE = "ACK"
+HANDSHAKE_MSG_TYPE = "HSK"
 
 MENU_ITEMS_BATCH_MSG_TYPE = "MIT"
 STORES_BATCH_MSG_TYPE = "STR"
@@ -18,6 +17,8 @@ QUERY_RESULT_3X_MSG_TYPE = "Q3X"
 QUERY_RESULT_4X_MSG_TYPE = "Q4X"
 
 # delimiters & separators
+SESSION_ID_DELIMITER = "|"
+
 MSG_START_DELIMITER = "["
 MSG_END_DELIMITER = "]"
 
@@ -27,23 +28,18 @@ BATCH_ROW_SEPARATOR = ";"
 ROW_FIELD_SEPARATOR = ","
 
 # payload
+ALL_QUERIES = "Q1X;Q21;Q22;Q3X;Q4X"
 EOF = "EOF"
 
 # ============================= PRIVATE - DECODE ============================== #
 
 
-def _assert_message_format(message: str, expected_message_type: str) -> None:
-    received_message_type = decode_message_type(message)
+def _assert_message_format(expected_message_type: str, message: str) -> None:
+    received_message_type = get_message_type(message)
     if received_message_type != expected_message_type:
         raise ValueError(
             f"Unexpected message type. Expected: {expected_message_type}, Received: {received_message_type}",
         )
-
-    if not (
-        message.startswith(expected_message_type + MSG_START_DELIMITER)
-        and message.endswith(MSG_END_DELIMITER)
-    ):
-        raise ValueError("Unexpected message format")
 
 
 def _decode_field(key_value_pair: str) -> tuple[str, str]:
@@ -68,34 +64,49 @@ def _decode_row(encoded_row: str) -> dict[str, str]:
 
 
 def _decode_batch_message_with_type(
-    message: str, message_type: str
+    message_type: str, message: str
 ) -> list[dict[str, str]]:
-    _assert_message_format(message, message_type)
+    _assert_message_format(message_type, message)
     return decode_batch_message(message)
 
 
 # ============================= DECODE ============================== #
 
 
-def get_message_payload(message: str) -> str:
-    payload = message[MESSAGE_TYPE_LENGTH:]
+def get_message_session_id(message: str) -> str:
+    session_id_start = message.index(SESSION_ID_DELIMITER)
+    session_id_end = message.index(MSG_START_DELIMITER, session_id_start)
 
-    payload = payload[len(MSG_START_DELIMITER) : -len(MSG_END_DELIMITER)]
+    session_id = message[session_id_start + 1 : session_id_end]
+
+    return session_id
+
+
+def get_message_payload(message: str) -> str:
+    payload_start = message.index(MSG_START_DELIMITER)
+    payload_end = message.index(MSG_END_DELIMITER, payload_start)
+
+    payload = message[payload_start + 1 : payload_end]
 
     return payload
 
 
-def decode_is_empty_message(message: str) -> bool:
+def message_without_payload(message: str) -> bool:
     payload = get_message_payload(message)
     return len(payload) == 0
 
 
-def decode_message_type(message: str) -> str:
+def get_message_type(message: str) -> str:
     if len(message) < MESSAGE_TYPE_LENGTH:
         raise ValueError(
             f"Message too short to contain a valid message type: {message}"
         )
     return message[:MESSAGE_TYPE_LENGTH]
+
+
+def decode_handshake_message(message: str) -> tuple[str, str]:
+    _assert_message_format(HANDSHAKE_MSG_TYPE, message)
+    return get_message_session_id(message), get_message_payload(message)
 
 
 def decode_batch_message(message: str) -> list[dict[str, str]]:
@@ -111,42 +122,41 @@ def decode_batch_message(message: str) -> list[dict[str, str]]:
 
 
 def decode_menu_items_batch_message(message: str) -> list[dict[str, str]]:
-    return _decode_batch_message_with_type(message, MENU_ITEMS_BATCH_MSG_TYPE)
+    return _decode_batch_message_with_type(MENU_ITEMS_BATCH_MSG_TYPE, message)
 
 
 def decode_stores_batch_message(message: str) -> list[dict[str, str]]:
-    return _decode_batch_message_with_type(message, STORES_BATCH_MSG_TYPE)
+    return _decode_batch_message_with_type(STORES_BATCH_MSG_TYPE, message)
 
 
 def decode_transaction_items_batch_message(message: str) -> list[dict[str, str]]:
-    return _decode_batch_message_with_type(message, TRANSACTION_ITEMS_BATCH_MSG_TYPE)
+    return _decode_batch_message_with_type(TRANSACTION_ITEMS_BATCH_MSG_TYPE, message)
 
 
 def decode_transactions_batch_message(message: str) -> list[dict[str, str]]:
-    return _decode_batch_message_with_type(message, TRANSACTIONS_BATCH_MSG_TYPE)
+    return _decode_batch_message_with_type(TRANSACTIONS_BATCH_MSG_TYPE, message)
 
 
 def decode_users_batch_message(message: str) -> list[dict[str, str]]:
-    return _decode_batch_message_with_type(message, USERS_BATCH_MSG_TYPE)
+    return _decode_batch_message_with_type(USERS_BATCH_MSG_TYPE, message)
 
 
 def decode_eof_message(message: str) -> str:
-    _assert_message_format(message, EOF)
+    _assert_message_format(EOF, message)
     return get_message_payload(message)
 
 
 # ============================= PRIVATE - ENCODE ============================== #
 
 
-def _encode_message(message_type: str, payload: str) -> str:
+def _encode_message(message_type: str, user_id: str, payload: str) -> str:
     encoded_payload = message_type
+    encoded_payload += SESSION_ID_DELIMITER
+    encoded_payload += user_id
     encoded_payload += MSG_START_DELIMITER
     encoded_payload += payload
     encoded_payload += MSG_END_DELIMITER
     return encoded_payload
-
-
-# ============================= PRIVATE - ENCODE BATCH ============================== #
 
 
 def _encode_field(key: str, value: str) -> str:
@@ -159,68 +169,82 @@ def _encode_row(row: dict[str, str]) -> str:
     return BATCH_START_DELIMITER + ecoded_row + BATCH_END_DELIMITER
 
 
-# ============================= PUBLIC ============================== #
+# ============================= ENCODE ============================== #
 
 
-def encode_ack_message(message: str) -> str:
-    return _encode_message(ACK_MSG_TYPE, message)
+def encode_handshake_message(id: str, payload: str) -> str:
+    return _encode_message(HANDSHAKE_MSG_TYPE, id, payload)
 
 
-def encode_batch_message(batch_msg_type: str, batch: list[dict[str, str]]) -> str:
+def encode_batch_message(
+    batch_msg_type: str,
+    session_id: str,
+    batch: list[dict[str, str]],
+) -> str:
     encoded_rows = []
 
-    for item in batch:
-        encoded_row = _encode_row(item)
+    for item_batch in batch:
+        encoded_row = _encode_row(item_batch)
         encoded_rows.append(encoded_row)
 
     encoded_payload = BATCH_ROW_SEPARATOR.join(encoded_rows)
-    return _encode_message(batch_msg_type, encoded_payload)
+    return _encode_message(batch_msg_type, session_id, encoded_payload)
 
 
 def encode_menu_items_batch_message(
+    session_id: str,
     menu_items_batch: list[dict[str, str]],
 ) -> str:
     return encode_batch_message(
         MENU_ITEMS_BATCH_MSG_TYPE,
+        session_id,
         menu_items_batch,
     )
 
 
 def encode_stores_batch_message(
+    session_id: str,
     stores_batch: list[dict[str, str]],
 ) -> str:
     return encode_batch_message(
         STORES_BATCH_MSG_TYPE,
+        session_id,
         stores_batch,
     )
 
 
 def encode_transaction_items_batch_message(
+    session_id: str,
     transaction_items_batch: list[dict[str, str]],
 ) -> str:
     return encode_batch_message(
         TRANSACTION_ITEMS_BATCH_MSG_TYPE,
+        session_id,
         transaction_items_batch,
     )
 
 
 def encode_transactions_batch_message(
+    session_id: str,
     transactions_batch: list[dict[str, str]],
 ) -> str:
     return encode_batch_message(
         TRANSACTIONS_BATCH_MSG_TYPE,
+        session_id,
         transactions_batch,
     )
 
 
 def encode_users_batch_message(
+    session_id: str,
     users_batch: list[dict[str, str]],
 ) -> str:
     return encode_batch_message(
         USERS_BATCH_MSG_TYPE,
+        session_id,
         users_batch,
     )
 
 
-def encode_eof_message(message_type: str) -> str:
-    return _encode_message(EOF, message_type)
+def encode_eof_message(session_id: str, message_type: str) -> str:
+    return _encode_message(EOF, session_id, message_type)

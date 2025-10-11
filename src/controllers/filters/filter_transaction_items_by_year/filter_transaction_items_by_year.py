@@ -1,6 +1,6 @@
 from typing import Any
 
-from controllers.filters.filter import Filter
+from controllers.filters.shared.filter import Filter
 from middleware.middleware import MessageMiddleware
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 

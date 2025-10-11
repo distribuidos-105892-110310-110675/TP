@@ -4,9 +4,9 @@ RUN pip install --upgrade pip && pip3 install pika
 
 COPY src/shared /shared
 COPY src/middleware /middleware
-COPY src/controllers/controller.py /controllers/controller.py
 
-COPY src/controllers/output_builders/query_output_builder.py /controllers/output_builders/query_output_builder.py
+COPY src/controllers/shared /controllers/shared
+COPY src/controllers/output_builders/shared /controllers/output_builders/shared
 COPY src/controllers/output_builders/query_22_output_builder /controllers/output_builders/query_22_output_builder
 
 ENTRYPOINT ["/bin/sh"]

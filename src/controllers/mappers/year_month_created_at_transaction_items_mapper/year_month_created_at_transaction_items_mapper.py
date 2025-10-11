@@ -1,6 +1,6 @@
 from typing import Any
 
-from controllers.mappers.mapper import Mapper
+from controllers.mappers.shared.mapper import Mapper
 from middleware.middleware import MessageMiddleware
 from middleware.rabbitmq_message_middleware_exchange import (
     RabbitMQMessageMiddlewareExchange,

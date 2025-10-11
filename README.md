@@ -25,10 +25,6 @@
 
 Este repositorio contiene el material del TP del sistema distribuido "Coffee Shop Analysis", correspondiente al segundo cuatrimestre del año 2025 en la materia Sistemas Distribuidos 1 (Roca).
 
-## 📂 Enunciado
-
-Para acceder al enunciado del TP, haga click 👉 [aquí](./docs/).
-
 ## 🛠️ Informe de Diseño
 
 El informe técnico incluye:
@@ -40,15 +36,31 @@ El informe técnico incluye:
 
 [📑 Acceso al informe](./docs/Informe-G9-Diseño.pdf).
 
-## 🚀 Ejecución del Sistema con Docker Compose
+## 🧰 Guía rápida de uso con `Makefile`
 
-En este TP se utiliza Docker Compose para levantar todos los componentes:
-- El cliente que realiza las queries.
-- El servidor que las recibe.
-- Todos los nodos del sistema distribuido.
-- El middleware.
+### 🚀 Ejecución del Sistema con Docker Compose
 
-### ▶️ Levantar todo el sistema
+En este TP se utiliza **Docker Compose** para levantar todos los componentes del sistema distribuido:
+- El **cliente** que realiza las queries.
+- El **servidor** que las recibe.
+- Todos los **nodos** del sistema distribuido.
+- El **middleware**.
+
+#### ⚙️ Construir las imágenes Docker
+
+Antes de levantar el sistema, es posible (aunque no obligatorio) construir manualmente todas las imágenes Docker definidas dentro del proyecto.
+
+```bash
+
+make docker-build-image
+
+```
+
+🔧 Este comando busca automáticamente todos los Dockerfile dentro de src/, los construye y los etiqueta con el nombre del directorio correspondiente.
+
+💡 No es necesario ejecutarlo manualmente, ya que make docker-compose-up lo ejecuta automáticamente antes de levantar los contenedores.
+
+#### ▶️ Levantar todo el sistema
 
 ```bash
 
@@ -56,9 +68,11 @@ make docker-compose-up
 
 ```
 
-✅ Con este comando se ponen en marcha todos los servicios del sistema distribuido (cliente, server, nodos y middleware).
+✅ Este comando pone en marcha todos los servicios del sistema distribuido (cliente, servidor, nodos y middleware).
 
-### ⏹️ Apagar todo el sistema
+Además, se asegura de reconstruir imágenes si detecta cambios y elimina contenedores huérfanos de ejecuciones anteriores.
+
+#### ⏹️ Apagar todo el sistema
 
 ```bash
 
@@ -66,10 +80,11 @@ make docker-compose-down
 
 ```
 
-❌ Detiene y elimina todos los contenedores que levantó el sistema.
+❌ Detiene todos los servicios activos y elimina los contenedores, liberando los recursos utilizados.
 
+El sistema quedará completamente detenido y en un estado limpio.
 
-### 📜 Ver los logs del sistema
+#### 📜 Ver los logs del sistema
 
 ```bash
 
@@ -77,9 +92,11 @@ make docker-compose-logs
 
 ```
 
-👀 Muestra en consola todos los logs de cada componente.
+👀 Muestra en consola los últimos 500 registros de cada contenedor y mantiene el seguimiento en tiempo real (-f).
 
-### 🔎 Filtrar logs de un contenedor específico
+Ideal para monitorear el comportamiento de los componentes durante la ejecución.
+
+#### 🔎 Filtrar logs de un contenedor específico
 
 ```bash
 
@@ -87,15 +104,53 @@ make docker-compose-logs | grep '<nombre_del_contenedor>'
 
 ```
 
-👉 Esto mostrará solo los logs de los filters, lo cual es práctico para debuggear sin ruido de otros componentes.
+👉 Permite filtrar los logs para enfocarse en un componente en particular, por ejemplo los filters del sistema.
 
-#### Ejemplo:
+##### Ejemplo
 
 ```bash
 
 make docker-compose-logs | grep 'filter'
 
 ```
+
+### 🧪 Testing
+
+El Makefile también incluye herramientas de testing para verificar el correcto funcionamiento del sistema distribuido.
+
+#### 🧱 Tests unitarios de funcionamiento del Middleware
+
+```bash
+
+make unit-tests
+
+```
+
+🔍 Ejecuta los tests unitarios definidos con pytest en modo detallado (--verbose).
+
+Estos tests suelen enfocarse en el middleware u otras partes específicas del sistema.
+
+#### 🔗 Tests de integración
+
+```bash
+
+make integration-tests
+
+```
+
+🧩 Compara las salidas generadas por el sistema '.results/query_results/' contra las salidas esperadas definidas en 'integration-tests/data/expected_output/'.
+
+#### 🧪 Tests de propagación EOF
+
+```bash
+
+make eof-propagation-tests
+
+```
+
+Estos tests se encargan de validar la correcta propagación de los EOF a lo largo del funcionamiento del sistema distribuido.
+
+De este modo se puede corroborar la implementación adecuada del mecanismo de finalización de procesamientos, asegurando que el modelo de concurrencia y comunicación elegido resulta óptimo para el esquema multi-cliente implementado.
 
 ## 📡 Monitorear RabbitMQ
 
@@ -131,23 +186,9 @@ Estos mismos pueden ser encontrados en el siguiente: [🔗 Link al dataset compl
 
 ### Archivos de salida
 
-Las respuestas a las queries se generarán en archivos separados por cada una, que se crearán dentro del directorio '.results'.
+Las respuestas a las queries se generarán en archivos separados por cada una, que se crearán dentro del directorio '.results/query_results'.
 
 Al finalizar la ejecución completa del procesamiento para todas las queries, dentro de ese directorio encontraremos el reporte final con los resultados para cada consulta realizada por el cliente.
-
-## 💻 Script comparativo
-
-Para validar el correcto funcionamiento del sistema, se cuenta con el script 'compare_results.py' dentro del directorio 'integration-tests'.
-
-Dentro del mismo directorio se encuentran cargadas las salidas esperadas para las queries del usuario, y el script se encarga de comparar dichos valores con los obtenidos en el directorio '.results'.
-
-Para ejecutar el script comparativo se debe utilizar el siguiente comando:
-
-```bash
-
-make integration-tests
-
-```
 
 ## 🎥 Desmotración de funcionamiento
 

@@ -134,11 +134,21 @@ Estos tests suelen enfocarse en el middleware u otras partes específicas del si
 
 ```bash
 
-make integration-tests
+make integration-tests EXPECTED_VARIANT=<output_a_validar>
 
 ```
 
 🧩 Compara las salidas generadas por el sistema '.results/query_results/' contra las salidas esperadas definidas en 'integration-tests/data/expected_output/'.
+
+Se debe asignar el valor de la variable 'EXPECTED_VARIANT' segun el directorio dentro de 'integratión-tests/data/expected_output/' de donde se deben obtener los outputs esperados.
+
+##### Ejemplo
+
+```bash
+
+make integration-tests EXPECTED_VARIANT=full_data
+
+```
 
 #### 🧪 Tests de propagación EOF
 
@@ -176,6 +186,8 @@ Esta interfaz nos permite:
 
 El sistema funciona con archivos de entrada y salida, se pasa a detallar el funcionamiento y ubicación de cada uno.
 
+A continuación se pasa a detallar el funcionamiento al trabajar con el dataset completo.
+
 ### Archivos de entrada
 
 Residen en el directorio ".data/full_data", estos son los que envía el cliente junto con las queries, y le brindan al sistema los datos para realizar el procesamiento pedido.
@@ -189,6 +201,17 @@ Estos mismos pueden ser encontrados en el siguiente: [🔗 Link al dataset compl
 Las respuestas a las queries se generarán en archivos separados por cada una, que se crearán dentro del directorio '.results/query_results'.
 
 Al finalizar la ejecución completa del procesamiento para todas las queries, dentro de ese directorio encontraremos el reporte final con los resultados para cada consulta realizada por el cliente.
+
+## ♻️ Configuraciones del ambiente ('.env')
+
+A fin de optimizar y modularizar el funcionamiento del sistema, se utiliza la herramienta del archivo '.env' para definir variables como:
+- Rutas de donde los clientes obtienen los archivos de entrada.
+- Cantidad de nodos instanciados por cada controlador.
+- Tamaño de los 'Batchs' a enviar por cada mensaje.
+- Credenciales de 'RabbitMQ'.
+- LOGGING LEVEL.
+
+Con esto se consiguió desacoplar el sistema lo máximo posible, y conseguir una óptima abstracción y separación de responsabilidades en la implementación.
 
 ## 🎥 Desmotración de funcionamiento
 

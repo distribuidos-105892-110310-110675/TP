@@ -41,18 +41,35 @@ unit-tests:
 .PHONY: unit-tests
 
 # Run integration tests by comparing sorted query results with expected output.
+ifndef EXPECTED_VARIANT
+$(error Debes especificar EXPECTED_VARIANT. Ejemplo: make integration-tests EXPECTED_VARIANT=full_data)
+endif
+EXPECTED_BASE := ./integration-tests/data/expected_output
+EXPECTED_PATH := $(EXPECTED_BASE)/$(EXPECTED_VARIANT)
+ACTUAL_DIR ?= ./integration-tests/data/query_results
 QUERY_RESULTS := \
     client_0_Q1X_result \
     client_0_Q21_result \
     client_0_Q22_result \
     client_0_Q3X_result \
     client_0_Q4X_result
+RESULT_SUFFIX := _result.txt
 integration-tests:
-	@mkdir -p integration-tests/data/query_results
+	@echo "==> Ejecutando tests de integración con variante: $(EXPECTED_VARIANT)"
+	@echo "==> Usando expected outputs desde: $(EXPECTED_PATH)"
+	@echo "==> Copiando resultados actuales a: $(ACTUAL_DIR)"
+	@mkdir -p $(ACTUAL_DIR)
 	@for result in $(QUERY_RESULTS); do \
-		sort .results/query_results/$$result.txt > integration-tests/data/query_results/$$result.txt; \
+		if [ ! -f .results/query_results/$$result.txt ]; then \
+			echo "[ADVERTENCIA] No existe .results/query_results/$$result.txt"; \
+		else \
+			sort .results/query_results/$$result.txt > $(ACTUAL_DIR)/$$result.txt; \
+		fi \
 	done
-	python3 ./integration-tests/compare_results.py --expected ./integration-tests/data/expected_output/full_data --actual ./integration-tests/data/query_results
+	python3 ./integration-tests/compare_results.py \
+		--expected $(EXPECTED_PATH) \
+		--actual   $(ACTUAL_DIR) \
+		--suffix   "$(RESULT_SUFFIX)"
 .PHONY: integration-tests
 
 # End-of-file propagation tests.

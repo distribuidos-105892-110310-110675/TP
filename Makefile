@@ -33,6 +33,14 @@ docker-compose-logs:
 	docker compose -f $(DOCKER_COMPOSE_FILE) logs -f -n 500
 .PHONY: docker-compose-logs
 
+# Stops and removes certain services defined in the docker-compose file, and recreates them
+docker-compose-restart:
+	docker compose -f $(DOCKER_COMPOSE_FILE) stop $(if $(SERVICES),$(SERVICES))
+	docker compose -f $(DOCKER_COMPOSE_FILE) rm -f $(if $(SERVICES),$(SERVICES))
+	docker compose -f $(DOCKER_COMPOSE_FILE) up -d $(if $(SERVICES),$(SERVICES))
+.PHONY: docker-compose-restart
+
+
 # ============================== TESTING ============================== #
 
 # Run unit tests using pytest with verbose output (Middleware tests).
@@ -41,9 +49,9 @@ unit-tests:
 .PHONY: unit-tests
 
 # Run integration tests by comparing sorted query results with expected output.
-ifndef EXPECTED_VARIANT
-$(error Debes especificar EXPECTED_VARIANT. Ejemplo: make integration-tests EXPECTED_VARIANT=full_data)
-endif
+# ifndef EXPECTED_VARIANT
+# $(error Debes especificar EXPECTED_VARIANT. Ejemplo: make integration-tests EXPECTED_VARIANT=full_data)
+# endif
 EXPECTED_BASE := ./integration-tests/data/expected_output
 EXPECTED_PATH := $(EXPECTED_BASE)/$(EXPECTED_VARIANT)
 ACTUAL_DIR ?= ./integration-tests/data/query_results

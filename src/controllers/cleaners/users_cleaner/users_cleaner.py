@@ -43,8 +43,7 @@ class UsersCleaner(Cleaner):
             batch_item["user_id"] = str(user_id)
 
             key = user_id % len(self._mom_producers)
-            if key not in user_batchs_by_hash:
-                user_batchs_by_hash[key] = []
+            user_batchs_by_hash.setdefault(key, [])
             user_batchs_by_hash[key].append(batch_item)
 
         for key, user_batch in user_batchs_by_hash.items():

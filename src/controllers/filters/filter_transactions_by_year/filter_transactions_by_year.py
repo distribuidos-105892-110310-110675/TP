@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from controllers.filters.shared.filter import Filter
@@ -6,6 +7,7 @@ from middleware.rabbitmq_message_middleware_exchange import (
     RabbitMQMessageMiddlewareExchange,
 )
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
+from shared import communication_protocol
 
 
 class FilterTransactionsByYear(Filter):
@@ -60,3 +62,32 @@ class FilterTransactionsByYear(Filter):
         year = int(date.split("-")[0])
 
         return year in self._years_to_keep
+
+    # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
+
+    def _mom_send_message_to_next(self, message: str) -> None:
+        user_batchs_by_hash: dict[int, list] = {}
+
+        message_type = communication_protocol.get_message_type(message)
+        session_id = communication_protocol.get_message_session_id(message)
+        for batch_item in communication_protocol.decode_batch_message(message):
+            if batch_item["user_id"] == "":
+                # [IMPORTANT] If user_id is empty, the hash will fail
+                # but we are going to assign it to the first reducer anyway
+                key = 0
+                user_batchs_by_hash.setdefault(key, [])
+                user_batchs_by_hash[key].append(batch_item)
+                continue
+            user_id = int(float(batch_item["user_id"]))
+            batch_item["user_id"] = str(user_id)
+
+            key = user_id % len(self._mom_producers)
+            user_batchs_by_hash.setdefault(key, [])
+            user_batchs_by_hash[key].append(batch_item)
+
+        for key, user_batch in user_batchs_by_hash.items():
+            mom_producer = self._mom_producers[key]
+            message = communication_protocol.encode_batch_message(
+                message_type, session_id, user_batch
+            )
+            mom_producer.send(message)

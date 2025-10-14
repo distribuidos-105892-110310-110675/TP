@@ -356,7 +356,6 @@ class ClientSessionHandler:
         self._accept_client_handshake_message(client_socket)
         self._receive_all_data_from_client(client_socket)
         self._receive_all_query_results_from_output_builders(client_socket)
-        raise Exception("Client session handler should stop running")
 
     # ============================== PRIVATE - RUN ============================== #
 

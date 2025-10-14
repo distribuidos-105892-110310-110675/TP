@@ -47,7 +47,7 @@ class QueryOutputBuilder(Controller):
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
-    def _mom_stop_consuming(self) -> None:
+    def _stop(self) -> None:
         self._mom_consumer.stop_consuming()
         logging.info("action: sigterm_mom_stop_consuming | result: success")
 
@@ -122,6 +122,7 @@ class QueryOutputBuilder(Controller):
             )
             self._mom_producers[session_id].send(message)
             del self._eof_recv_from_prev_controllers[session_id]
+            # @TODO: should we also delete the producer here
             logging.info(
                 f"action: eof_sent | result: success | session_id: {session_id}"
             )
@@ -147,9 +148,8 @@ class QueryOutputBuilder(Controller):
         super()._run()
         self._mom_consumer.start_consuming(self._handle_received_data)
 
-    def _close_all_mom_connections(self) -> None:
+    def _close_all(self) -> None:
         for mom_producer in self._mom_producers.values():
-            mom_producer.delete()
             mom_producer.close()
             logging.debug("action: mom_producer_close | result: success")
 

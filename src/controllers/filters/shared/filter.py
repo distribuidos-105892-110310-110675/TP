@@ -56,9 +56,9 @@ class Filter(Controller):
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
-    def _mom_stop_consuming(self) -> None:
+    def _stop(self) -> None:
         self._mom_consumer.stop_consuming()
-        logging.debug("action: sigterm_mom_stop_consuming | result: success")
+        logging.info("action: sigterm_mom_stop_consuming | result: success")
 
     # ============================== PRIVATE - TRANSFORM DATA ============================== #
 
@@ -145,9 +145,8 @@ class Filter(Controller):
         super()._run()
         self._mom_consumer.start_consuming(self._handle_received_data)
 
-    def _close_all_mom_connections(self) -> None:
+    def _close_all(self) -> None:
         for mom_producer in self._mom_producers:
-            mom_producer.delete()
             mom_producer.close()
             logging.debug("action: mom_producer_producer_close | result: success")
 

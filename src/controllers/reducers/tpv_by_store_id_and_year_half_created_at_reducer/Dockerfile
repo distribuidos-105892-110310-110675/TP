@@ -6,7 +6,7 @@ COPY src/shared /shared
 COPY src/middleware /middleware
 
 COPY src/controllers/shared /controllers/shared
-COPY src/controllers/reducers/reducer.py /controllers/reducers/reducer.py
+COPY src/controllers/reducers/shared /controllers/reducers/shared
 COPY src/controllers/reducers/tpv_by_store_id_and_year_half_created_at_reducer /controllers/reducers/tpv_by_store_id_and_year_half_created_at_reducer
 
 ENTRYPOINT ["/bin/sh"]

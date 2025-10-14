@@ -1,5 +1,6 @@
 import logging
 import signal
+import threading
 from abc import ABC, abstractmethod
 from typing import Any, Callable
 
@@ -33,7 +34,8 @@ class Controller(ABC):
     ) -> None:
         self._controller_id = controller_id
 
-        self._set_controller_as_not_running()
+        self.is_stopped = threading.Event()
+        self._set_controller_as_stopped()
         signal.signal(signal.SIGTERM, self._sigterm_signal_handler)
 
         self._init_mom_consumers(rabbitmq_host, consumers_config)
@@ -42,25 +44,25 @@ class Controller(ABC):
     # ============================== PRIVATE - ACCESSING ============================== #
 
     def _is_running(self) -> bool:
-        return self._controller_running
+        return not self.is_stopped.is_set()
 
-    def _set_controller_as_not_running(self) -> None:
-        self._controller_running = False
+    def _set_controller_as_stopped(self) -> None:
+        self.is_stopped.set()
 
     def _set_controller_as_running(self) -> None:
-        self._controller_running = True
+        self.is_stopped.clear()
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
     @abstractmethod
-    def _mom_stop_consuming(self) -> None:
+    def _stop(self) -> None:
         raise NotImplementedError("subclass resposability")
 
     def _sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
         logging.info("action: sigterm_signal_handler | result: in_progress")
 
-        self._set_controller_as_not_running()
-        self._mom_stop_consuming()
+        self._set_controller_as_stopped()
+        self._stop()
 
         logging.info("action: sigterm_signal_handler | result: success")
 
@@ -71,7 +73,7 @@ class Controller(ABC):
         logging.info("action: controller_running | result: success")
 
     @abstractmethod
-    def _close_all_mom_connections(self) -> None:
+    def _close_all(self) -> None:
         raise NotImplementedError("subclass resposability")
 
     def _ensure_connections_close_after_doing(self, callback: Callable) -> None:
@@ -81,8 +83,8 @@ class Controller(ABC):
             logging.error(f"action: controller_run | result: fail | error: {e}")
             raise e
         finally:
-            self._close_all_mom_connections()
-            logging.info("action: all_mom_connections_close | result: success")
+            self._close_all()
+            logging.info("action: close_all | result: success")
 
     # ============================== PUBLIC ============================== #
 

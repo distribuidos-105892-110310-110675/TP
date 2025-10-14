@@ -134,7 +134,7 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
                 properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent),  # type: ignore
             )
 
-    # ============================== PUBLIC ============================== #
+    # ============================== PUBLIC - INTERFACE ============================== #
 
     def start_consuming(self, on_message_callback: Callable) -> None:
         self._assert_connection_is_open()
@@ -171,3 +171,13 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
             self._channel.exchange_delete(exchange=self._exchange_name, if_unused=False)
         except Exception as e:
             raise MessageMiddlewareDeleteError(f"Error deleting queue: {e}")
+
+    # ============================== PUBLIC - EXTRA ============================== #
+
+    def schedule_stop_sonsuming(self) -> None:
+        self._assert_connection_is_open()
+        self._handle_amqp_errors_during(
+            self._connection.add_callback_threadsafe,
+            args=(self.stop_consuming,),
+            exc_prefix="Error scheduling stop consuming:",
+        )

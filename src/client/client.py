@@ -22,7 +22,7 @@ class Client:
         batch_max_size: int,
     ):
         self._client_id = client_id
-        self._session_id = ""
+        self._session_id = "<not_set>"
 
         self._server_host = server_host
         self._server_port = server_port
@@ -42,6 +42,17 @@ class Client:
 
         self._temp_buffer = b""
 
+    # ============================== PRIVATE - LOGGING ============================== #
+
+    def _log_debug(self, text: str) -> None:
+        logging.debug(f"{text} | session_id: {self._session_id}")
+
+    def _log_info(self, text: str) -> None:
+        logging.info(f"{text} | session_id: {self._session_id}")
+
+    def _log_error(self, text: str) -> None:
+        logging.error(f"{text} | session_id: {self._session_id}")
+
     # ============================== PRIVATE - RUNNING ============================== #
 
     def _is_running(self) -> bool:
@@ -56,26 +67,26 @@ class Client:
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
     def _sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
-        logging.info("action: sigterm_signal_handler | result: in_progress")
+        self._log_info(f"action: sigterm_signal_handler | result: in_progress")
 
         self._set_client_as_not_running()
 
         self._client_socket.close()
-        logging.debug("action: sigterm_client_socket_close | result: success")
+        self._log_debug(f"action: sigterm_client_socket_close | result: success")
 
-        logging.info("action: sigterm_signal_handler | result: success")
+        self._log_info(f"action: sigterm_signal_handler | result: success")
 
     # ============================== PRIVATE - SEND/RECEIVE MESSAGES ============================== #
 
     def _socket_send_message(self, socket: socket.socket, message: str) -> None:
-        logging.debug(f"action: send_message | result: in_progress | msg: {message}")
+        self._log_debug(f"action: send_message | result: in_progress | msg: {message}")
 
         socket.sendall(message.encode("utf-8"))
 
-        logging.debug(f"action: send_message | result: success |  msg: {message}")
+        self._log_debug(f"action: send_message | result: success |  msg: {message}")
 
     def _socket_receive_message(self, socket: socket.socket) -> str:
-        logging.debug(f"action: receive_message | result: in_progress")
+        self._log_debug(f"action: receive_message | result: in_progress")
 
         buffsize = constants.KiB
         bytes_received = self._temp_buffer
@@ -90,7 +101,7 @@ class Client:
                 )
                 raise OSError("Unexpected disconnection of the server")
 
-            logging.debug(
+            self._log_debug(
                 f"action: receive_chunk | result: success | chunk size: {len(chunk)}"
             )
             if chunk.endswith(communication_protocol.MSG_END_DELIMITER.encode("utf-8")):
@@ -111,7 +122,7 @@ class Client:
                 bytes_received += chunk
 
         message = bytes_received.decode("utf-8")
-        logging.debug(f"action: receive_message | result: success | msg: {message}")
+        self._log_debug(f"action: receive_message | result: success | msg: {message}")
         return message
 
     # ============================== PRIVATE - READ CSV ============================== #
@@ -171,7 +182,7 @@ class Client:
             str(self._client_id), communication_protocol.ALL_QUERIES
         )
         self._socket_send_message(self._client_socket, handshake_message)
-        logging.info("action: send_handshake | result: success")
+        self._log_info(f"action: send_handshake | result: success")
 
     def _receive_handshake_ack_message(self) -> None:
         received_message = self._socket_receive_message(self._client_socket)
@@ -183,9 +194,7 @@ class Client:
                 f"Handshake ACK message error: expected client_id {self._client_id}, received {client_id}"
             )
 
-        logging.info(
-            f"action: receive_handshake_ack | result: success | session_id: {self._session_id}"
-        )
+        self._log_info(f"action: receive_handshake_ack | result: success")
 
     # ============================== PRIVATE - SEND DATA ============================== #
 
@@ -200,10 +209,10 @@ class Client:
 
         batch = self._read_next_batch_from_file(file, column_names)
         while len(batch) != 0 and self._is_running():
-            logging.debug(f"action: {folder_name}_batch | result: in_progress")
+            self._log_debug(f"action: {folder_name}_batch | result: in_progress")
             message = encoding_callback(self._session_id, batch)
             self._socket_send_message(self._client_socket, message)
-            logging.debug(f"action: {folder_name}_batch | result: success")
+            self._log_debug(f"action: {folder_name}_batch | result: success")
 
             batch = self._read_next_batch_from_file(file, column_names)
 
@@ -229,7 +238,7 @@ class Client:
                 )
             finally:
                 csv_file.close()
-                logging.debug(
+                self._log_debug(
                     f"action: {folder_name}_file_close | result: success | file: {file_path}"
                 )
 
@@ -280,18 +289,20 @@ class Client:
         self._send_all_transactions()
         self._send_all_transaction_items()
         self._send_all_users()
-        logging.info("action: all_data_sent | result: success")
+        self._log_info(f"action: all_data_sent | result: success")
 
     # ============================== PRIVATE - SEND DATA ============================== #
 
     def _handle_query_result_message(self, message: str, message_type: str) -> None:
-        logging.debug(f"action: {message_type}_receive_query_result | result: success")
+        self._log_debug(
+            f"action: {message_type}_receive_query_result | result: success"
+        )
         file_name = f"client_{self._client_id}_{message_type}_result.txt"
         for item_batch in communication_protocol.decode_batch_message(message):
             shell_cmd.shell_silent(
                 f"echo '{",".join(item_batch.values())}' >> {self._output_path / file_name}"
             )
-            logging.debug(
+            self._log_debug(
                 f"action: {message_type}_save_query_result | result: success | file: {file_name}",
             )
 
@@ -303,8 +314,8 @@ class Client:
             raise ValueError(f"Unknown EOF message type {data_type}")
 
         all_eof_received[data_type] = True
-        logging.info(
-            f"action: eof_{data_type}_receive_query_result | result: success | session_id: {self._session_id}"
+        self._log_info(
+            f"action: eof_{data_type}_receive_query_result | result: success"
         )
 
     def _handle_server_message(self, message: str, all_eof_received: dict) -> None:
@@ -367,7 +378,7 @@ class Client:
                 all_eof_received,
             )
 
-        logging.info("action: all_query_results_received | result: success")
+        self._log_info(f"action: all_query_results_received | result: success")
 
     # ============================== PRIVATE - HANDLE SERVER CONNECTION ============================== #
 
@@ -382,7 +393,7 @@ class Client:
     # ============================== PUBLIC ============================== #
 
     def run(self) -> None:
-        logging.info("action: client_startup | result: success")
+        self._log_info(f"action: client_startup | result: success")
 
         self._set_client_as_running()
 
@@ -395,6 +406,6 @@ class Client:
             raise e
         finally:
             server_socket.close()
-            logging.debug("action: server_socket_close | result: success")
+            self._log_debug("action: server_socket_close | result: success")
 
-        logging.info("action: client_shutdown | result: success")
+        self._log_info(f"action: client_shutdown | result: success")

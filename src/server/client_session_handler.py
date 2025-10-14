@@ -1,5 +1,5 @@
 import logging
-import multiprocessing
+import os
 import signal
 import socket
 import uuid
@@ -22,7 +22,7 @@ class ClientSessionHandler:
         self._output_builders_data = output_builders_data
 
     def _init_client_data_batch_stats(self) -> None:
-        self._client_data_batch_completed = {
+        self._client_eof_received = {
             communication_protocol.MENU_ITEMS_BATCH_MSG_TYPE: False,
             communication_protocol.STORES_BATCH_MSG_TYPE: False,
             communication_protocol.TRANSACTION_ITEMS_BATCH_MSG_TYPE: False,
@@ -69,7 +69,6 @@ class ClientSessionHandler:
         cleaners_data: dict,
         output_builders_data: dict,
     ) -> None:
-        self._pid = multiprocessing.current_process().pid
         self._client_socket = client_socket
         self._session_id = uuid.uuid4().hex
 
@@ -89,6 +88,17 @@ class ClientSessionHandler:
 
         self._temp_buffer = b""
 
+    # ============================== PRIVATE - LOGGING ============================== #
+
+    def _log_debug(self, text: str) -> None:
+        logging.debug(f"{text} | pid: {os.getpid()} | session_id: {self._session_id}")
+
+    def _log_info(self, text: str) -> None:
+        logging.info(f"{text} | pid: {os.getpid()} | session_id: {self._session_id}")
+
+    def _log_error(self, text: str) -> None:
+        logging.error(f"{text} | pid: {os.getpid()} | session_id: {self._session_id}")
+
     # ============================== PRIVATE - ACCESSING ============================== #
 
     def _is_running(self) -> bool:
@@ -103,43 +113,29 @@ class ClientSessionHandler:
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
     def _sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
-        logging.info(
-            f"action: sigterm_signal_handler | result: in_progress | session_id: {self._session_id}"
-        )
+        self._log_info(f"action: sigterm_signal_handler | result: in_progress")
 
         self._set_as_not_running()
 
         self._client_socket.close()
-        logging.debug(
-            f"action: sigterm_client_socket_close | result: success | session_id: {self._session_id}"
-        )
+        self._log_debug(f"action: sigterm_client_socket_close | result: success")
 
         self._mom_output_builders_connection.stop_consuming()
-        logging.debug(
-            f"action: sigterm_mom_stop_consuming | result: success | session_id: {self._session_id}"
-        )
+        self._log_debug(f"action: sigterm_mom_stop_consuming | result: success")
 
-        logging.info(
-            f"action: sigterm_signal_handler | result: success | session_id: {self._session_id}"
-        )
+        self._log_info(f"action: sigterm_signal_handler | result: success")
 
     # ============================== PRIVATE - SOCKET SEND/RECEIVE MESSAGES ============================== #
 
     def _socket_send_message(self, socket: socket.socket, message: str) -> None:
-        logging.debug(
-            f"action: send_message | result: in_progress | msg: {message} | session_id: {self._session_id}"
-        )
+        self._log_debug(f"action: send_message | result: in_progress | msg: {message}")
 
         socket.sendall(message.encode("utf-8"))
 
-        logging.debug(
-            f"action: send_message | result: success |  msg: {message} | session_id: {self._session_id}"
-        )
+        self._log_debug(f"action: send_message | result: success |  msg: {message}")
 
     def _socket_receive_message(self, socket: socket.socket) -> str:
-        logging.debug(
-            f"action: receive_message | result: in_progress | session_id: {self._session_id}"
-        )
+        self._log_debug(f"action: receive_message | result: in_progress")
 
         buffsize = constants.KiB
         bytes_received = self._temp_buffer
@@ -149,15 +145,13 @@ class ClientSessionHandler:
         while not all_data_received:
             chunk = socket.recv(buffsize)
             if len(chunk) == 0:
-                logging.error(
-                    f"action: receive_message | result: fail | error: unexpected disconnection | session_id: {self._session_id}",
+                self._log_error(
+                    f"action: receive_message | result: fail | error: unexpected disconnection",
                 )
-                raise OSError(
-                    f"Unexpected disconnection of the client | session_id: {self._session_id}"
-                )
+                raise OSError(f"Unexpected disconnection of the client")
 
-            logging.debug(
-                f"action: receive_chunk | result: success | chunk size: {len(chunk)} | session_id: {self._session_id}"
+            self._log_debug(
+                f"action: receive_chunk | result: success | chunk size: {len(chunk)}"
             )
             if chunk.endswith(communication_protocol.MSG_END_DELIMITER.encode("utf-8")):
                 all_data_received = True
@@ -177,9 +171,7 @@ class ClientSessionHandler:
                 bytes_received += chunk
 
         message = bytes_received.decode("utf-8")
-        logging.debug(
-            f"action: receive_message | result: success | msg: {message} | session_id: {self._session_id}"
-        )
+        self._log_debug(f"action: receive_message | result: success | msg: {message}")
         return message
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
@@ -207,8 +199,8 @@ class ClientSessionHandler:
             self._session_id, client_id
         )
         self._socket_send_message(client_socket, handshake_response_message)
-        logging.info(
-            f"action: handshake_response_sent | result: success | client_id: {client_id} | session_id: {self._session_id}"
+        self._log_info(
+            f"action: handshake_response_sent | result: success | client_id: {client_id}"
         )
 
     def _accept_client_handshake_message(self, client_socket: socket.socket) -> None:
@@ -218,10 +210,10 @@ class ClientSessionHandler:
         )
         if payload != communication_protocol.ALL_QUERIES:
             raise ValueError(
-                f"Invalid handshake payload received from client: {payload} | session_id: {self._session_id}"
+                f"Invalid handshake payload received from client: {payload}"
             )
-        logging.info(
-            f"action: handshake_received | result: success | client_id: {client_id} | session_id: {self._session_id}"
+        self._log_info(
+            f"action: handshake_received | result: success | client_id: {client_id}"
         )
 
         self._send_client_handshake_message(client_socket, client_id)
@@ -234,14 +226,12 @@ class ClientSessionHandler:
 
     def _handle_data_batch_eof_message(self, message: str) -> None:
         data_type = communication_protocol.decode_eof_message(message)
-        if data_type not in self._client_data_batch_completed:
+        if data_type not in self._client_eof_received:
             raise ValueError(
                 f'Invalid EOF message type received from client "{data_type}"'
             )
-        self._client_data_batch_completed[data_type] = True
-        logging.info(
-            f"action: {data_type}_eof_received | result: success | session_id: {self._session_id}"
-        )
+        self._client_eof_received[data_type] = True
+        self._log_info(f"action: {data_type}_eof_received | result: success")
 
         for mom_producer in self._mom_cleaners_connections[data_type]:
             mom_producer.send(message)
@@ -261,7 +251,7 @@ class ClientSessionHandler:
                 self._handle_data_batch_eof_message(message)
             case _:
                 raise ValueError(
-                    f'Invalid message type received from client "{message_type}" | session_id: {self._session_id}'
+                    f'Invalid message type received from client "{message_type}"'
                 )
 
     def _with_each_message_do(
@@ -281,7 +271,7 @@ class ClientSessionHandler:
             callback(message, *args, **kwargs)
 
     def _receive_all_data_from_client(self, client_socket: socket.socket) -> None:
-        while not all(self._client_data_batch_completed.values()):
+        while not all(self._client_eof_received.values()):
             if not self._is_running():
                 return
 
@@ -291,9 +281,7 @@ class ClientSessionHandler:
                 self._handle_client_message,
             )
 
-        logging.info(
-            f"action: all_data_received | result: success | session_id: {self._session_id}"
-        )
+        self._log_info(f"action: all_data_received | result: success")
 
     # ============================== PRIVATE - RECEIVE RESULTS ============================== #
 
@@ -317,18 +305,16 @@ class ClientSessionHandler:
         data_type = communication_protocol.decode_eof_message(message)
         if data_type not in self._output_builders_eof_received:
             raise ValueError(
-                f'Invalid EOF message type received from output builder "{data_type}" | session_id: {self._session_id}'
+                f'Invalid EOF message type received from output builder "{data_type}"'
             )
         self._output_builders_eof_received[data_type] += 1
-        logging.info(
-            f"action: eof_{data_type}_result_received | result: success | session_id: {self._session_id}"
-        )
+        self._log_info(f"action: eof_{data_type}_result_received | result: success")
 
         workers_amount = self._output_builders_data[data_type][constants.WORKERS_AMOUNT]
         if self._output_builders_eof_received[data_type] == workers_amount:
             self._socket_send_message(client_socket, message)
-            logging.info(
-                f"action: eof_{data_type}_results_to_client_sent | result: success | session_id: {self._session_id}"
+            self._log_info(
+                f"action: eof_{data_type}_results_to_client_sent | result: success"
             )
 
     def _handle_output_builder_message(self, client_socket: socket.socket) -> Callable:
@@ -348,14 +334,12 @@ class ClientSessionHandler:
                     self._handle_query_result_eof_message(client_socket, message)
                 case _:
                     raise ValueError(
-                        f'Invalid message type received from client "{message_type}" | session_id: {self._session_id}'
+                        f'Invalid message type received from client "{message_type}"'
                     )
 
             if self._all_eof_received_from_output_builders():
                 self._mom_output_builders_connection.stop_consuming()
-                logging.info(
-                    "action: all_results_received | result: success | session_id: {self._session_id}"
-                )
+                self._log_info(f"action: all_results_received | result: success")
 
         return _on_message_callback
 
@@ -372,60 +356,50 @@ class ClientSessionHandler:
         self._accept_client_handshake_message(client_socket)
         self._receive_all_data_from_client(client_socket)
         self._receive_all_query_results_from_output_builders(client_socket)
+        raise Exception("Client session handler should stop running")
 
     # ============================== PRIVATE - RUN ============================== #
 
     def _run(self) -> None:
         self._set_as_running()
-        logging.info(
-            "action: client_session_handler_running | result: success | session_id: {self._session_id}"
-        )
+        self._log_info(f"action: client_session_handler_running | result: success")
 
         self._handle_client_connection(self._client_socket)
 
-    def _close_all_mom_connections(self) -> None:
+    def _close_all(self) -> None:
         for mom_cleaner_connections in self._mom_cleaners_connections.values():
             for mom_cleaner_connection in mom_cleaner_connections:
-                mom_cleaner_connection.delete()
                 mom_cleaner_connection.close()
-                logging.debug(
-                    f"action: mom_cleaner_connection_close | result: success | session_id: {self._session_id}"
+                self._log_debug(
+                    f"action: mom_cleaner_connection_close | result: success"
                 )
 
         self._mom_output_builders_connection.delete()
         self._mom_output_builders_connection.close()
-        logging.debug(
-            f"action: mom_output_builder_connection_close | result: success | session_id: {self._session_id}"
+        self._log_debug(
+            f"action: mom_output_builder_connection_close | result: success"
         )
 
     def _ensure_connections_close_after_doing(self, callback: Callable) -> None:
         try:
             callback()
         except Exception as e:
-            logging.error(
+            self._log_error(
                 f"action: client_session_handler_run | result: fail | error: {e}"
             )
             raise e
         finally:
             self._client_socket.close()
-            logging.debug(
-                f"action: client_socket_close | result: success | session_id: {self._session_id}"
-            )
+            self._log_debug(f"action: client_socket_close | result: success")
 
-            self._close_all_mom_connections()
-            logging.info(
-                f"action: all_mom_connections_close | result: success | session_id: {self._session_id}"
-            )
+            self._close_all()
+            self._log_info(f"action: all_mom_connections_close | result: success")
 
     # ============================== PUBLIC ============================== #
 
     def run(self) -> None:
-        logging.info(
-            f"action: client_session_handler_startup | result: success | session_id: {self._session_id}"
-        )
+        self._log_info(f"action: client_session_handler_startup | result: success")
 
         self._ensure_connections_close_after_doing(self._run)
 
-        logging.info(
-            f"action: client_session_handler_shutdown | result: success | session_id: {self._session_id}"
-        )
+        self._log_info(f"action: client_session_handler_shutdown | result: success")

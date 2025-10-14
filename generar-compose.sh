@@ -36,6 +36,7 @@ function add-name() {
 function add-rabbitmq-service() {
   local compose_file=$1
   add-line $compose_file '  rabbitmq-message-middleware:'
+  add-line $compose_file '  container_name: rabbitmq-message-middleware'
   add-line $compose_file '    image: "rabbitmq:4-management"'
   add-line $compose_file '    ports:'
   add-line $compose_file '      - "5672:5672"'
@@ -116,14 +117,17 @@ function add-server-service() {
   add-line $compose_file '      - Q4X_OB_AMOUNT=' $Q4X_OB_AMOUNT
   add-line  $compose_file '    networks:'
   add-line  $compose_file '      - custom_net'
-  add-line  $compose_file '    deploy:'
-  add-line  $compose_file '      restart_policy:'
-  add-line  $compose_file '        condition: on-failure'
-  add-line  $compose_file '        delay: 5s'
-  add-line  $compose_file '        max_attempts: 1'
   add-line  $compose_file '    depends_on:'
   add-line  $compose_file '      rabbitmq-message-middleware:'
   add-line  $compose_file '        condition: service_healthy'
+  add-line  $compose_file '      transaction_items_with_menu_items_query_21_joiner_0:'
+  add-line  $compose_file '        condition: service_started'
+  add-line  $compose_file '      transaction_items_with_menu_items_query_22_joiner_0:'
+  add-line  $compose_file '        condition: service_started'
+  add-line  $compose_file '      transactions_with_stores_query_3x_joiner_0:'
+  add-line  $compose_file '        condition: service_started'
+  add-line  $compose_file '      transactions_with_stores_query_4x_joiner_0:'
+  add-line  $compose_file '        condition: service_started'
 }
 
 # ============================== PRIVATE - CLEANERS ============================== #
@@ -139,7 +143,7 @@ function add-menu-cleaner() {
   add-line $compose_file '      - LOGGING_LEVEL=INFO'
   add-line $compose_file '      - CONTROLLER_ID=0'
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - JOINS_AMOUNT=' $Q2_JOINERS_AMOUNT
+  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q2_JOINERS_AMOUNT
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -164,7 +168,7 @@ function add-stores-cleaner() {
   else 
     greater_join_amount=$Q4_TRANSACTIONS_WITH_STORES_JOINERS_AMOUNT
   fi
-  add-line $compose_file '      - JOINS_AMOUNT=' $greater_join_amount
+  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $greater_join_amount
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -184,7 +188,7 @@ function add-transaction-items-cleaner() {
   add-line $compose_file '      - LOGGING_LEVEL=' $LOGGING_LEVEL
   add-line $compose_file '      - CONTROLLER_ID=' $current_id
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - FILTERS_AMOUNT=' $FILTER_TRANSACTION_ITEMS_BY_YEAR_AMOUNT
+  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $FILTER_TRANSACTION_ITEMS_BY_YEAR_AMOUNT
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -204,7 +208,7 @@ function add-transactions-cleaner() {
   add-line $compose_file '      - LOGGING_LEVEL=' $LOGGING_LEVEL
   add-line $compose_file '      - CONTROLLER_ID=' $current_id
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - FILTERS_AMOUNT=' $FILTER_TRANSACTIONS_BY_YEAR_AMOUNT
+  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $FILTER_TRANSACTIONS_BY_YEAR_AMOUNT
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -224,7 +228,7 @@ function add-users-cleaner() {
   add-line $compose_file '      - LOGGING_LEVEL=' $LOGGING_LEVEL
   add-line $compose_file '      - CONTROLLER_ID=' $current_id
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - JOINS_AMOUNT=' $Q4_TRANSACTIONS_WITH_USERS_JOINERS_AMOUNT
+  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q4_TRANSACTIONS_WITH_USERS_JOINERS_AMOUNT
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -757,7 +761,7 @@ function add-menu-with-items-q21-joiner(){
   add-line $compose_file '      - CONTROLLER_ID=' $current_id
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_file '      - OUTPUT_BUILDERS_AMOUNT=' $Q21_OB_AMOUNT
-  add-line $compose_file '      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=' $MENU_ITEMS_CLN_AMOUNT
+  add-line $compose_file '      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1'
   add-line $compose_file '      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=' $Q2_REDUCERS_AMOUNT
   add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q21_OB_AMOUNT
   add-line $compose_file '    networks:'
@@ -779,7 +783,7 @@ function add-menu-with-items-q22-joiner(){
   add-line $compose_file '      - CONTROLLER_ID=' $current_id
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_file '      - OUTPUT_BUILDERS_AMOUNT=' $Q22_OB_AMOUNT
-  add-line $compose_file '      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=' $MENU_ITEMS_CLN_AMOUNT
+  add-line $compose_file '      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1'
   add-line $compose_file '      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=' $Q2_REDUCERS_AMOUNT
   add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q22_OB_AMOUNT
   add-line $compose_file '    networks:'
@@ -801,7 +805,7 @@ function add-transactions-with-stores-q3x-joiner(){
   add-line $compose_file '      - CONTROLLER_ID=' $current_id
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_file '      - OUTPUT_BUILDERS_AMOUNT=' $Q3X_OB_AMOUNT
-  add-line $compose_file '      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=' $STORES_CLN_AMOUNT
+  add-line $compose_file '      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1' 
   add-line $compose_file '      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=' $Q3_REDUCERS_AMOUNT
   add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q3X_OB_AMOUNT
   add-line $compose_file '    networks:'
@@ -823,7 +827,7 @@ function add-transactions-with-stores-q4x-joiner(){
   add-line $compose_file '      - CONTROLLER_ID=' $current_id
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_file '      - OUTPUT_BUILDERS_AMOUNT=' $Q4X_OB_AMOUNT
-  add-line $compose_file '      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=' $STORES_CLN_AMOUNT
+  add-line $compose_file '      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1' 
   add-line $compose_file '      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=' $Q4_TRANSACTIONS_WITH_USERS_JOINERS_AMOUNT
   add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q4X_OB_AMOUNT
   add-line $compose_file '    networks:'

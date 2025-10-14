@@ -529,7 +529,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=1
+      - PREV_CONTROLLERS_AMOUNT=2
       - NEXT_CONTROLLERS_AMOUNT=1
     networks:
       - custom_net
@@ -603,7 +603,7 @@ services:
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
-      - NEXT_CONTROLLERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=2
       - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}
     networks:
       - custom_net
@@ -621,7 +621,7 @@ services:
       - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
-      - NEXT_CONTROLLERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=2
       - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}
     networks:
       - custom_net
@@ -677,6 +677,25 @@ services:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=2
+      - NEXT_CONTROLLERS_AMOUNT=2
+      - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}
+      - AMOUNT_PER_GROUP=3
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  desc_by_store_id_and_purchases_qty_sorter_1:
+    container_name: desc_by_store_id_and_purchases_qty_sorter_1
+    image: desc_by_store_id_and_purchases_qty_sorter:latest
+    entrypoint: python3 -m controllers.sorters.desc_by_store_id_and_purchases_qty_sorter.main
+    environment:
+      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
+      - LOGGING_LEVEL=${LOGGING_LEVEL}
+      - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=2
       - NEXT_CONTROLLERS_AMOUNT=2
@@ -793,7 +812,7 @@ services:
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1
-      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=1
+      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=2
       - NEXT_CONTROLLERS_AMOUNT=2
     networks:
       - custom_net
@@ -811,7 +830,7 @@ services:
       - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1
-      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=1
+      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=2
       - NEXT_CONTROLLERS_AMOUNT=2
     networks:
       - custom_net

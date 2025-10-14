@@ -168,9 +168,7 @@ class Server:
         )
         process.start()
         self._spawned_processes.append(process)
-        self._log_info(
-            f"action: spawn_client_connection_process | result: success | pid: {process.pid}"
-        )
+        self._log_info(f"action: spawn_client_connection_process | result: success")
 
     # ============================== PRIVATE - RUN ============================== #
 

@@ -62,17 +62,17 @@ class Server:
         for process in self._spawned_processes:
             if process.is_alive():
                 process.terminate()
-                logging.debug(
+                self._log_debug(
                     f"action: terminate_process | result: success | pid: {process.pid}"
                 )
-        logging.info("action: all_processes_terminate | result: success")
+        self._log_info("action: all_processes_terminate | result: success")
 
     def _join_all_processes(self) -> None:
         for process in self._spawned_processes:
             process.join()
             pid = process.pid
             exitcode = process.exitcode
-            logging.info(
+            self._log_info(
                 f"action: join_process | result: success | pid: {pid} | exitcode: {exitcode}"
             )
 
@@ -85,7 +85,7 @@ class Server:
                 uncaught_exceptions.append((pid, exitcode))
 
             process.close()
-            logging.debug(f"action: close_process | result: success | pid: {pid}")
+            self._log_debug(f"action: close_process | result: success | pid: {pid}")
         return uncaught_exceptions
 
     def _join_non_alive_processes(self) -> None:
@@ -94,50 +94,51 @@ class Server:
                 process.join()
                 pid = process.pid
                 exitcode = process.exitcode
-                logging.info(
+                self._log_info(
                     f"action: join_process | result: success | pid: {pid} | exitcode: {exitcode}"
                 )
 
                 if exitcode != 0:
+                    self._set_server_as_stopped()
                     self._stop()
                 else:
                     process.close()
                     self._spawned_processes.remove(process)
-                    logging.info(
+                    self._log_info(
                         f"action: close_process | result: success | pid: {pid}"
                     )
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
     def _sigchld_signal_handler(self, signum: Any, frame: Any) -> None:
-        logging.info("action: sigchld_signal_handler | result: in_progress")
+        self._log_info("action: sigchld_signal_handler | result: in_progress")
 
         self._join_non_alive_processes()
 
-        logging.info("action: sigchld_signal_handler | result: success")
+        self._log_info("action: sigchld_signal_handler | result: success")
 
     def _stop(self) -> None:
         self._server_socket.close()
-        logging.debug("action: server_socket_close | result: success")
+        self._log_debug("action: server_socket_close | result: success")
 
     def _sigterm_signal_handler(self, signum: Any, frame: Any) -> None:
-        logging.info("action: sigterm_signal_handler | result: in_progress")
+        self._log_info("action: sigterm_signal_handler | result: in_progress")
 
         self._set_server_as_stopped()
         self._stop()
 
-        logging.info("action: sigterm_signal_handler | result: success")
+        self._log_info("action: sigterm_signal_handler | result: success")
 
     # ============================== PRIVATE - ACCEPT CONNECTION ============================== #
 
     def _accept_new_connection(self) -> Optional[socket.socket]:
         client_connection: Optional[socket.socket] = None
         try:
-            logging.info(
+            self._log_info(
                 "action: accept_connections | result: in_progress",
             )
             client_connection, addr = self._server_socket.accept()
-            logging.info(
+            self._log_info(
                 f"action: accept_connections | result: success | ip: {addr[0]}",
             )
             return client_connection
@@ -145,8 +146,8 @@ class Server:
             if client_connection is not None:
                 client_connection.shutdown(socket.SHUT_RDWR)
                 client_connection.close()
-                logging.debug("action: client_connection_close | result: success")
-            logging.error(f"action: accept_connections | result: fail | error: {e}")
+                self._log_debug("action: client_connection_close | result: success")
+            self._log_error(f"action: accept_connections | result: fail | error: {e}")
             return None
 
     # ============================== PRIVATE - HANDLE CLIENT CONNECTION ============================== #
@@ -167,7 +168,7 @@ class Server:
         )
         process.start()
         self._spawned_processes.append(process)
-        logging.info(
+        self._log_info(
             f"action: spawn_client_connection_process | result: success | pid: {process.pid}"
         )
 
@@ -187,14 +188,14 @@ class Server:
         self, exitcode: Optional[int], pid: Optional[int]
     ) -> None:
         if exitcode != 0:
-            logging.error(
+            self._log_error(
                 f"action: process_error | result: error | pid: {pid} | exitcode: {exitcode}"
             )
             raise Exception(f"Process {pid} exited with code {exitcode}")
 
     def _close_all(self) -> None:
         self._server_socket.close()
-        logging.debug("action: server_socket_close | result: success")
+        self._log_debug("action: server_socket_close | result: success")
 
         self._terminate_all_processes()
         self._join_all_processes()
@@ -214,17 +215,17 @@ class Server:
         try:
             callback()
         except Exception as e:
-            logging.error(f"action: server_run | result: fail | error: {e}")
+            self._log_error(f"action: server_run | result: fail | error: {e}")
             raise e
         finally:
             self._close_all()
-            logging.info("action: close_all | result: success")
+            self._log_info("action: close_all | result: success")
 
     # ============================== PUBLIC ============================== #
 
     def run(self) -> None:
-        logging.info("action: server_startup | result: success")
+        self._log_info("action: server_startup | result: success")
 
         self._ensure_connections_close_after_doing(self._run)
 
-        logging.info("action: server_shutdown | result: success")
+        self._log_info("action: server_shutdown | result: success")

@@ -103,7 +103,7 @@ services:
       - STORES_CLN_AMOUNT=1
       - TRANSACTION_ITEMS_CLN_AMOUNT=4
       - TRANSACTIONS_CLN_AMOUNT=4
-      - USERS_CLN_AMOUNT=1
+      - USERS_CLN_AMOUNT=3
       - Q1X_OB_AMOUNT=1
       - Q21_OB_AMOUNT=1
       - Q22_OB_AMOUNT=1
@@ -293,6 +293,38 @@ services:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - NEXT_CONTROLLERS_AMOUNT=2
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  users_cleaner_1:
+    container_name: users_cleaner_1
+    image: users_cleaner:latest
+    entrypoint: python3 -m controllers.cleaners.users_cleaner.main
+    environment:
+      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
+      - LOGGING_LEVEL=${LOGGING_LEVEL}
+      - CONTROLLER_ID=1
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - NEXT_CONTROLLERS_AMOUNT=2
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  users_cleaner_2:
+    container_name: users_cleaner_2
+    image: users_cleaner:latest
+    entrypoint: python3 -m controllers.cleaners.users_cleaner.main
+    environment:
+      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
+      - LOGGING_LEVEL=${LOGGING_LEVEL}
+      - CONTROLLER_ID=2
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - NEXT_CONTROLLERS_AMOUNT=2
     networks:
@@ -811,7 +843,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1
+      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=3
       - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=2
       - NEXT_CONTROLLERS_AMOUNT=2
     networks:
@@ -829,7 +861,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1
+      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=3
       - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=2
       - NEXT_CONTROLLERS_AMOUNT=2
     networks:

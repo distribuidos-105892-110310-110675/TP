@@ -19,7 +19,7 @@ class ProfitSumByItemIdAndYearMonthCreatedAtReducer(Reducer):
         consumers_config: dict[str, Any],
     ) -> MessageMiddleware:
         exchange_name = consumers_config["exchange_name_prefix"]
-        routing_key = f"{consumers_config["routing_key_prefix"]}.*"
+        routing_key = f"{consumers_config["routing_key_prefix"]}.{self._controller_id}"
         return RabbitMQMessageMiddlewareExchange(
             host=rabbitmq_host,
             exchange_name=exchange_name,

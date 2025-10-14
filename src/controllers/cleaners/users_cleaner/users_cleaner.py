@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from controllers.cleaners.cleaner import Cleaner
+from controllers.cleaners.shared.cleaner import Cleaner
 from middleware.middleware import MessageMiddleware
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from shared import communication_protocol
@@ -29,26 +29,28 @@ class UsersCleaner(Cleaner):
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
     def _mom_send_message_to_next(self, message: str) -> None:
-        user_batchs_by_hash: dict[int, list] = {}
+        batchs_by_hash: dict[int, list] = {}
+        # [IMPORTANT] this must consider the next controller's grouping key
+        sharding_key = "user_id"
 
-        message_type = communication_protocol.decode_message_type(message)
+        message_type = communication_protocol.get_message_type(message)
+        session_id = communication_protocol.get_message_session_id(message)
         for batch_item in communication_protocol.decode_batch_message(message):
-            if batch_item["user_id"] == "":
+            if batch_item[sharding_key] == "":
                 logging.warning(
-                    f"action: invalid_user_id | user_id: {batch_item['user_id']} | result: skipped"
+                    f"action: invalid_{sharding_key} | {sharding_key}: {batch_item[sharding_key]} | result: skipped"
                 )
                 continue
-            user_id = int(float(batch_item["user_id"]))
-            batch_item["user_id"] = str(user_id)
+            sharding_value = int(float(batch_item[sharding_key]))
+            batch_item[sharding_key] = str(sharding_value)
 
-            key = user_id % len(self._mom_producers)
-            if key not in user_batchs_by_hash:
-                user_batchs_by_hash[key] = []
-            user_batchs_by_hash[key].append(batch_item)
+            hash = sharding_value % len(self._mom_producers)
+            batchs_by_hash.setdefault(hash, [])
+            batchs_by_hash[hash].append(batch_item)
 
-        for key, user_batch in user_batchs_by_hash.items():
-            mom_producer = self._mom_producers[key]
+        for hash, user_batch in batchs_by_hash.items():
+            mom_producer = self._mom_producers[hash]
             message = communication_protocol.encode_batch_message(
-                message_type, user_batch
+                message_type, session_id, user_batch
             )
             mom_producer.send(message)

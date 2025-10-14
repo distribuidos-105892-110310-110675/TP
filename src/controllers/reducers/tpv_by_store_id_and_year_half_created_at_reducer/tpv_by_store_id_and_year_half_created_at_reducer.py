@@ -1,8 +1,9 @@
 from typing import Any
 
-from controllers.reducers.reducer import Reducer
+from controllers.reducers.shared.reducer import Reducer
 from middleware.middleware import MessageMiddleware
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
+from shared import communication_protocol
 
 
 class TpvByStoreIdAndYearHalfCreatedAtReducer(Reducer):
@@ -35,6 +36,9 @@ class TpvByStoreIdAndYearHalfCreatedAtReducer(Reducer):
 
     def _accumulator_name(self) -> str:
         return "tpv"
+
+    def _message_type(self) -> str:
+        return communication_protocol.TRANSACTIONS_BATCH_MSG_TYPE
 
     # ============================== PRIVATE - HANDLE DATA ============================== #
 

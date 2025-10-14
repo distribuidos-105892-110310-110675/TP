@@ -52,81 +52,81 @@ CLEANED_STR_ROUTING_KEY_PREFIX = "cleaned-stores-routing-key"
 
 # query 1
 
-FILTERED_TRN_BY_YEAR_EXCHANGE_PREFIX = "trn-filtered-transactions-by-year-exchange"
+FILTERED_TRN_BY_YEAR_EXCHANGE_PREFIX = "Q1X__trn-filtered-transactions-by-year-exchange"
 FILTERED_TRN_BY_YEAR_ROUTING_KEY_PREFIX = (
-    "trn-filtered-transactions-by-year-routing-key"
+    "Q1X__trn-filtered-transactions-by-year-routing-key"
 )
 FILTERED_TRN_BY_YEAR__HOUR_EXCHANGE_PREFIX = (
-    "trn-filtered-transactions-by-year-&-hour-exchange"
+    "Q1X__trn-filtered-transactions-by-year-&-hour-exchange"
 )
 FILTERED_TRN_BY_YEAR__HOUR_ROUTING_KEY_PREFIX = (
-    "trn-filtered-transactions-by-year-&-hour-routing-key"
+    "Q1X__trn-filtered-transactions-by-year-&-hour-routing-key"
 )
 FILTERED_TRN_BY_YEAR__HOUR__FINAL_AMOUNT_QUEUE_PREFIX = (
-    "trn-filtered-transactions-by-year-&-time-&-final-amount"
+    "Q1X__trn-filtered-transactions-by-year-&-time-&-final-amount"
 )
 
 # query 2
 
-FILTERED_TIT_BY_YEAR_QUEUE_PREFIX = "tit-filtered-transaction-items-by-year-queue"
+FILTERED_TIT_BY_YEAR_QUEUE_PREFIX = "Q2X__tit-filtered-transaction-items-by-year-queue"
 
 MAPPED_YEAR_MONTH_TIT_EXHCHANGE_PREFIX = (
-    "tit-mapped-year-month-transaction-items-exchange"
+    "Q2X__tit-mapped-year-month-transaction-items-exchange"
 )
 MAPPED_YEAR_MONTH_TIT_ROUTING_KEY_PREFIX = (
-    "tit-mapped-year-month-transaction-items-routing-key"
+    "Q2X__tit-mapped-year-month-transaction-items-routing-key"
 )
 
 # query 2.1
 
 SELLINGS_QTY_BY_YEAR_MONTH_CREATED_AT__ITEM_ID_QUEUE_PREFIX = (
-    "tit-sellings-qty-by-year-month-created-at-&-item-id-queue"
+    "Q21__tit-sellings-qty-by-year-month-created-at-&-item-id-queue"
 )
 SORTED_DESC_SELLINGS_QTY_BY_YEAR_MONTH__ITEM_ID_QUEUE_PREFIX = (
-    "tit-sorted-desc-sellings-qty-by-year-month-&-item-id"
+    "Q21__tit-sorted-desc-sellings-qty-by-year-month-&-item-id"
 )
 SORTED_DESC_SELLINGS_QTY_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX = (
-    "tit-sorted-desc-sellings-qty-by-year-month-&-item-name"
+    "Q21__tit-sorted-desc-sellings-qty-by-year-month-&-item-name"
 )
 
 # query 2.2
 
 PROFIT_SUM_BY_YEAR_MONTH__ITEM_ID_CREATED_AT_QUEUE_PREFIX = (
-    "tit-profit-sum-by-year-month-created-at-&-item-id-queue"
+    "Q22__tit-profit-sum-by-year-month-created-at-&-item-id-queue"
 )
 SORTED_DESC_PROFIT_SUM_BY_YEAR_MONTH__ITEM_ID_QUEUE_PREFIX = (
-    "tit-sorted-desc-profit-sum-by-year-month-&-item-id"
+    "Q22__tit-sorted-desc-profit-sum-by-year-month-&-item-id"
 )
 SORTED_DESC_PROFIT_SUM_BY_YEAR_MONTH__ITEM_NAME_QUEUE_PREFIX = (
-    "tit-sorted-desc-profit-sum-by-year-month-&-item-name"
+    "Q22__tit-sorted-desc-profit-sum-by-year-month-&-item-name"
 )
 
 # query 3
 
-MAPPED_TRN_SEMESTER_QUEUE_PREFIX = "mapped-year-semester-transaction-queue"
+MAPPED_TRN_SEMESTER_QUEUE_PREFIX = "Q3X__mapped-year-semester-transaction-queue"
 
-SUM_TRN_TPV_BY_STORE_QUEUE_PREFIX = "sum-trn-tpv-by-store-queue"
+SUM_TRN_TPV_BY_STORE_QUEUE_PREFIX = "Q3X__sum-trn-tpv-by-store-queue"
 
 TPV_BY_HALF_YEAR_CREATED_AT__STORE_NAME_QUEUE_PREFIX = (
-    "trn-tpv-by-half-year-created-at-&-store-name"
+    "Q3X__trn-tpv-by-half-year-created-at-&-store-name"
 )
 
 # query 4
 
 PURCHASES_QTY_BY_USR_ID__STORE_ID_QUEUE_PREFIX = (
-    "trn-purchases-qty-by-user-id-&-store-id"
+    "Q4X__trn-purchases-qty-by-user-id-&-store-id"
 )
 
 SORTED_DESC_BY_STORE_ID__PURCHASES_QTY_WITH_USER_ID = (
-    "trn-sorted-desc-by-store-id-&-purchases-qty-with-user-id"
+    "Q4X__trn-sorted-desc-by-store-id-&-purchases-qty-with-user-id"
 )
 SORTED_DESC_BY_STORE_ID__PURCHASES_QTY_WITH_USER_BITHDATE = (
-    "trn-sorted-desc-by-store-id-&-purchases-qty-with-user-birthdate"
+    "Q4X__trn-sorted-desc-by-store-id-&-purchases-qty-with-user-birthdate"
 )
 SORTED_DESC_BY_STORE_NAME__PURCHASES_QTY_WITH_USER_BITHDATE = (
-    "trn-sorted-desc-by-store-name-&-purchases-qty-with-user-birthdate"
+    "Q4X__trn-sorted-desc-by-store-name-&-purchases-qty-with-user-birthdate"
 )
 
 # query results
 
-QRS_QUEUE_PREFIX = "query-results-queue"
+QRS_QUEUE_PREFIX = "QXX__query-results-queue"

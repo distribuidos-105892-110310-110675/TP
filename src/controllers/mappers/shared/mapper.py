@@ -2,12 +2,12 @@ import logging
 from abc import abstractmethod
 from typing import Any, Callable
 
-from controllers.controller import Controller
+from controllers.shared.controller import Controller
 from middleware.middleware import MessageMiddleware
 from shared import communication_protocol
 
 
-class Filter(Controller):
+class Mapper(Controller):
 
     # ============================== INITIALIZE ============================== #
 
@@ -24,7 +24,7 @@ class Filter(Controller):
         rabbitmq_host: str,
         consumers_config: dict[str, Any],
     ) -> None:
-        self._eof_recv_from_prev_controllers = 0
+        self._eof_recv_from_prev_controllers = {}
         self._prev_controllers_amount = consumers_config["prev_controllers_amount"]
         self._mom_consumer = self._build_mom_consumer_using(
             rabbitmq_host, consumers_config
@@ -56,14 +56,14 @@ class Filter(Controller):
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
-    def _mom_stop_consuming(self) -> None:
+    def _stop(self) -> None:
         self._mom_consumer.stop_consuming()
-        logging.debug("action: sigterm_mom_stop_consuming | result: success")
+        logging.info("action: sigterm_mom_stop_consuming | result: success")
 
     # ============================== PRIVATE - TRANSFORM DATA ============================== #
 
     @abstractmethod
-    def _should_be_included(self, batch_item: dict[str, str]) -> bool:
+    def _transform_batch_item(self, batch_item: dict[str, str]) -> dict[str, str]:
         raise NotImplementedError("subclass responsibility")
 
     def _transform_batch_message_using(
@@ -72,19 +72,21 @@ class Filter(Controller):
         decoder: Callable,
         encoder: Callable,
         message_type: str,
+        session_id: str,
     ) -> str:
         new_batch = []
         for item in decoder(message):
-            if self._should_be_included(item):
-                new_batch.append(item)
-        return str(encoder(message_type, new_batch))
+            modified_item = self._transform_batch_item(item)
+            new_batch.append(modified_item)
+        return str(encoder(message_type, session_id, new_batch))
 
     def _transform_batch_message(self, message: str) -> str:
         return self._transform_batch_message_using(
             message,
             communication_protocol.decode_batch_message,
             communication_protocol.encode_batch_message,
-            communication_protocol.decode_message_type(message),
+            communication_protocol.get_message_type(message),
+            communication_protocol.get_message_session_id(message),
         )
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
@@ -99,18 +101,31 @@ class Filter(Controller):
 
     def _handle_data_batch_message(self, message: str) -> None:
         output_message = self._transform_batch_message(message)
-        if not communication_protocol.decode_is_empty_message(output_message):
+        if not communication_protocol.message_without_payload(output_message):
             self._mom_send_message_to_next(output_message)
 
     def _handle_data_batch_eof(self, message: str) -> None:
-        self._eof_recv_from_prev_controllers += 1
-        logging.debug(f"action: eof_received | result: success")
+        session_id = communication_protocol.get_message_session_id(message)
+        self._eof_recv_from_prev_controllers.setdefault(session_id, 0)
+        self._eof_recv_from_prev_controllers[session_id] += 1
+        logging.debug(
+            f"action: eof_received | result: success | session_id: {session_id}"
+        )
 
-        if self._eof_recv_from_prev_controllers == self._prev_controllers_amount:
-            logging.info("action: all_eofs_received | result: success")
+        if (
+            self._eof_recv_from_prev_controllers[session_id]
+            == self._prev_controllers_amount
+        ):
+            logging.info(
+                f"action: all_eofs_received | result: success | session_id: {session_id}"
+            )
+
             for mom_producer in self._mom_producers:
                 mom_producer.send(message)
-            logging.info("action: eof_sent | result: success")
+            del self._eof_recv_from_prev_controllers[session_id]
+            logging.info(
+                f"action: eof_sent | result: success | session_id: {session_id}"
+            )
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():
@@ -118,7 +133,7 @@ class Filter(Controller):
             return
 
         message = message_as_bytes.decode("utf-8")
-        message_type = communication_protocol.decode_message_type(message)
+        message_type = communication_protocol.get_message_type(message)
         if message_type != communication_protocol.EOF:
             self._handle_data_batch_message(message)
         else:
@@ -130,9 +145,8 @@ class Filter(Controller):
         super()._run()
         self._mom_consumer.start_consuming(self._handle_received_data)
 
-    def _close_all_mom_connections(self) -> None:
+    def _close_all(self) -> None:
         for mom_producer in self._mom_producers:
-            mom_producer.delete()
             mom_producer.close()
             logging.debug("action: mom_producer_producer_close | result: success")
 

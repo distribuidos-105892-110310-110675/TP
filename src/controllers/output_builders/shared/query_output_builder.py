@@ -2,7 +2,7 @@ import logging
 from abc import abstractmethod
 from typing import Any, Callable
 
-from controllers.controller import Controller
+from controllers.shared.controller import Controller
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
 from shared import communication_protocol
 
@@ -16,7 +16,7 @@ class QueryOutputBuilder(Controller):
         rabbitmq_host: str,
         consumers_config: dict[str, Any],
     ) -> None:
-        self._eof_recv_from_prev_controllers = 0
+        self._eof_recv_from_prev_controllers = {}
         self._prev_controllers_amount = consumers_config["prev_controllers_amount"]
 
         queue_name_prefix = consumers_config["queue_name_prefix"]
@@ -30,10 +30,10 @@ class QueryOutputBuilder(Controller):
         rabbitmq_host: str,
         producers_config: dict[str, Any],
     ) -> None:
-        queue_name = producers_config["queue_name_prefix"]
-        self._mom_producer = RabbitMQMessageMiddlewareQueue(
-            host=rabbitmq_host, queue_name=queue_name
-        )
+        self._rabbitmq_host = rabbitmq_host
+        self._queue_name_prefix = producers_config["queue_name_prefix"]
+
+        self._mom_producers: dict[str, RabbitMQMessageMiddlewareQueue] = {}
 
     # ============================== PRIVATE - INTERFACE ============================== #
 
@@ -47,7 +47,7 @@ class QueryOutputBuilder(Controller):
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
-    def _mom_stop_consuming(self) -> None:
+    def _stop(self) -> None:
         self._mom_consumer.stop_consuming()
         logging.info("action: sigterm_mom_stop_consuming | result: success")
 
@@ -65,12 +65,13 @@ class QueryOutputBuilder(Controller):
         decoder: Callable,
         encoder: Callable,
         message_type: str,
+        session_id: str,
     ) -> str:
         new_batch = []
         for item in decoder(message):
             modified_item = self._transform_batch_item(item)
             new_batch.append(modified_item)
-        return str(encoder(message_type, new_batch))
+        return str(encoder(message_type, session_id, new_batch))
 
     def _transform_batch_message(self, message: str) -> str:
         return self._transform_batch_message_using(
@@ -78,25 +79,53 @@ class QueryOutputBuilder(Controller):
             communication_protocol.decode_batch_message,
             communication_protocol.encode_batch_message,
             self._output_message_type(),
+            communication_protocol.get_message_session_id(message),
         )
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
     def _handle_data_batch_message(self, message: str) -> None:
+        session_id = communication_protocol.get_message_session_id(message)
         output_message = self._transform_batch_message(message)
-        self._mom_producer.send(output_message)
+        self._mom_producers.setdefault(
+            session_id,
+            RabbitMQMessageMiddlewareQueue(
+                self._rabbitmq_host, f"{self._queue_name_prefix}-{session_id}"
+            ),
+        )
+        self._mom_producers[session_id].send(output_message)
 
     def _handle_data_batch_eof(self, message: str) -> None:
-        self._eof_recv_from_prev_controllers += 1
-        logging.debug(f"action: eof_received | result: success")
+        session_id = communication_protocol.get_message_session_id(message)
+        self._eof_recv_from_prev_controllers.setdefault(session_id, 0)
+        self._eof_recv_from_prev_controllers[session_id] += 1
+        logging.debug(
+            f"action: eof_received | result: success | session_id: {session_id}"
+        )
 
-        if self._eof_recv_from_prev_controllers == self._prev_controllers_amount:
-            logging.info("action: all_eofs_received | result: success")
-            message = communication_protocol.encode_eof_message(
-                self._output_message_type()
+        if (
+            self._eof_recv_from_prev_controllers[session_id]
+            == self._prev_controllers_amount
+        ):
+            logging.info(
+                f"action: all_eofs_received | result: success | session_id: {session_id}"
             )
-            self._mom_producer.send(message)
-            logging.info("action: eof_sent | result: success")
+
+            message = communication_protocol.encode_eof_message(
+                session_id, self._output_message_type()
+            )
+            self._mom_producers.setdefault(
+                session_id,
+                RabbitMQMessageMiddlewareQueue(
+                    self._rabbitmq_host, f"{self._queue_name_prefix}-{session_id}"
+                ),
+            )
+            self._mom_producers[session_id].send(message)
+            del self._eof_recv_from_prev_controllers[session_id]
+            # @TODO: should we also delete the producer here
+            logging.info(
+                f"action: eof_sent | result: success | session_id: {session_id}"
+            )
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():
@@ -104,8 +133,10 @@ class QueryOutputBuilder(Controller):
             return
 
         message = message_as_bytes.decode("utf-8")
-        message_type = communication_protocol.decode_message_type(message)
-
+        message_type = communication_protocol.get_message_type(message)
+        logging.debug(
+            f"action: message_received | result: success | type: {message_type}"
+        )
         if message_type != communication_protocol.EOF:
             self._handle_data_batch_message(message)
         else:
@@ -117,10 +148,10 @@ class QueryOutputBuilder(Controller):
         super()._run()
         self._mom_consumer.start_consuming(self._handle_received_data)
 
-    def _close_all_mom_connections(self) -> None:
-        self._mom_producer.delete()
-        self._mom_producer.close()
-        logging.debug("action: mom_producer_close | result: success")
+    def _close_all(self) -> None:
+        for mom_producer in self._mom_producers.values():
+            mom_producer.close()
+            logging.debug("action: mom_producer_close | result: success")
 
         self._mom_consumer.delete()
         self._mom_consumer.close()

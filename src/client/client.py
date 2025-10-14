@@ -286,9 +286,9 @@ class Client:
         # WARNING: do not modify order
         self._send_all_menu_items()
         self._send_all_stores()
+        self._send_all_users()
         self._send_all_transactions()
         self._send_all_transaction_items()
-        self._send_all_users()
         self._log_info(f"action: all_data_sent | result: success")
 
     # ============================== PRIVATE - SEND DATA ============================== #
@@ -297,7 +297,9 @@ class Client:
         self._log_debug(
             f"action: {message_type}_receive_query_result | result: success"
         )
-        file_name = f"client_{self._client_id}_{message_type}_result.txt"
+        file_name = (
+            f"client_{self._client_id}__{self._session_id}__{message_type}_result.txt"
+        )
         for item_batch in communication_protocol.decode_batch_message(message):
             shell_cmd.shell_silent(
                 f"echo '{",".join(item_batch.values())}' >> {self._output_path / file_name}"

@@ -39,6 +39,20 @@ docker-compose-restart:
 
 # ============================== TESTING ============================== #
 
+docker-export-logs:
+	@mkdir -p logs
+	@for service in $$(docker-compose config --services); do \
+		echo "Filtrando logs de $$service..."; \
+		touch logs/$$service.log; \
+		docker-compose logs --no-color $$service 2>&1 | grep 'eof' > logs/$$service.log; \
+		if [ -s logs/$$service.log ]; then \
+			lines=$$(wc -l < logs/$$service.log); \
+		else \
+			rm logs/$$service.log; \
+		fi \
+	done
+
+# Run unit tests using pytest with verbose output (Middleware tests).
 unit-tests:
 	pytest --verbose
 .PHONY: unit-tests

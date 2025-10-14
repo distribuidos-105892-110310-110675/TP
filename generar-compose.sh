@@ -36,7 +36,7 @@ function add-name() {
 function add-rabbitmq-service() {
   local compose_file=$1
   add-line $compose_file '  rabbitmq-message-middleware:'
-  add-line $compose_file '  container_name: rabbitmq-message-middleware'
+  add-line $compose_file '    container_name: rabbitmq-message-middleware'
   add-line $compose_file '    image: "rabbitmq:4-management"'
   add-line $compose_file '    ports:'
   add-line $compose_file '      - "5672:5672"'
@@ -268,7 +268,7 @@ function add-query-1x-output-builder() {
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=' $PYTHONUNBUFFERED
   add-line $compose_file '      - LOGGING_LEVEL=' $LOGGING_LEVEL
-  add-line $compose_file '      - OUTPUT_BUILDER_ID=' $current_id
+  add-line $compose_file '      - CONTROLLER_ID=' $current_id
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $FILTER_TRANSACTIONS_BY_FINAL_AMNT_AMOUNT
   add-line $compose_file '    networks:'
@@ -288,7 +288,7 @@ function add-query-21-output-builder() {
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=' $PYTHONUNBUFFERED
   add-line $compose_file '      - LOGGING_LEVEL=' $LOGGING_LEVEL
-  add-line $compose_file '      - OUTPUT_BUILDER_ID=' $current_id
+  add-line $compose_file '      - CONTROLLER_ID=' $current_id
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q2_JOINERS_AMOUNT
   add-line $compose_file '    networks:'
@@ -301,14 +301,14 @@ function add-query-21-output-builder() {
 function add-query-22-output-builder() {
   local compose_file=$1
   local current_id="$2"
-  add-line $compose_file '  query_22_output_builder_' ':'
+  add-line $compose_file '  query_22_output_builder_' $current_id ':'
   add-line $compose_file '    container_name: query_22_output_builder_' $current_id
   add-line $compose_file '    image: query_22_output_builder:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_22_output_builder.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=' $PYTHONUNBUFFERED
   add-line $compose_file '      - LOGGING_LEVEL=' $LOGGING_LEVEL
-  add-line $compose_file '      - OUTPUT_BUILDER_ID=' $current_id
+  add-line $compose_file '      - CONTROLLER_ID=' $current_id
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q2_JOINERS_AMOUNT
   add-line $compose_file '    networks:'
@@ -328,7 +328,7 @@ function add-query-3x-output-builder() {
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=' $PYTHONUNBUFFERED
   add-line $compose_file '      - LOGGING_LEVEL=' $LOGGING_LEVEL
-  add-line $compose_file '      - OUTPUT_BUILDER_ID=' $current_id
+  add-line $compose_file '      - CONTROLLER_ID=' $current_id
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q3_JOINERS_AMOUNT
   add-line $compose_file '    networks:'
@@ -348,7 +348,7 @@ function add-query-4x-output-builder() {
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=' $PYTHONUNBUFFERED
   add-line $compose_file '      - LOGGING_LEVEL=' $LOGGING_LEVEL
-  add-line $compose_file '      - OUTPUT_BUILDER_ID=' $current_id
+  add-line $compose_file '      - CONTROLLER_ID=' $current_id
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q4_TRANSACTIONS_WITH_STORES_JOINERS_AMOUNT
   add-line $compose_file '    networks:'
@@ -360,23 +360,23 @@ function add-query-4x-output-builder() {
 
 function add-output-builders() {
   local compose_file=$1
-  for ((i=1;i<=$Q1X_OB_AMOUNT;i++)); do
+  for ((i=0;i<$Q1X_OB_AMOUNT;i++)); do
     add-query-1x-output-builder $compose_file $i
     add-empty-line $compose_file 
   done
-  for ((i=1;i<=$Q21_OB_AMOUNT;i++)); do
+  for ((i=0;i<$Q21_OB_AMOUNT;i++)); do
     add-query-21-output-builder $compose_file $i
     add-empty-line $compose_file
   done
-  for ((i=1;i<=$Q22_OB_AMOUNT;i++)); do
+  for ((i=0;i<$Q22_OB_AMOUNT;i++)); do
     add-query-22-output-builder $compose_file $i
     add-empty-line $compose_file
   done
-  for ((i=1;i<=$Q3X_OB_AMOUNT;i++)); do
+  for ((i=0;i<$Q3X_OB_AMOUNT;i++)); do
     add-query-3x-output-builder $compose_file $i
     add-empty-line $compose_file
   done
-  for ((i=1;i<=$Q4X_OB_AMOUNT;i++)); do
+  for ((i=0;i<$Q4X_OB_AMOUNT;i++)); do
     add-query-4x-output-builder $compose_file $i
     add-empty-line $compose_file
   done
@@ -754,7 +754,7 @@ function add-menu-with-items-q21-joiner(){
   add-line $compose_file '  transaction_items_with_menu_items_query_21_joiner_' $current_id ':'
   add-line $compose_file '    container_name: transaction_items_with_menu_items_query_21_joiner_' $current_id
   add-line $compose_file '    image: transaction_items_with_menu_items_query_21_joiner:latest'
-  add-line $compose_file '    entrypoint: python3 -m controllers.joiners.transaction_items_with_menu_items_query_21_joiner.main'
+  add-line $compose_file '    entrypoint: python3 -m controllers.joiners.transaction_items_with_menu_items_joiner.transaction_items_with_menu_items_query_21_joiner.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=' $PYTHONUNBUFFERED
   add-line $compose_file '      - LOGGING_LEVEL=' $LOGGING_LEVEL
@@ -776,7 +776,7 @@ function add-menu-with-items-q22-joiner(){
   add-line $compose_file '  transaction_items_with_menu_items_query_22_joiner_' $current_id ':'
   add-line $compose_file '    container_name: transaction_items_with_menu_items_query_22_joiner_' $current_id
   add-line $compose_file '    image: transaction_items_with_menu_items_query_22_joiner:latest'
-  add-line $compose_file '    entrypoint: python3 -m controllers.joiners.transaction_items_with_menu_items_query_22_joiner.main'
+  add-line $compose_file '    entrypoint: python3 -m controllers.joiners.transaction_items_with_menu_items_joiner.transaction_items_with_menu_items_query_22_joiner.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=' $PYTHONUNBUFFERED
   add-line $compose_file '      - LOGGING_LEVEL=' $LOGGING_LEVEL
@@ -798,7 +798,7 @@ function add-transactions-with-stores-q3x-joiner(){
   add-line $compose_file '  transactions_with_stores_query_3x_joiner_' $current_id ':'
   add-line $compose_file '    container_name: transactions_with_stores_query_3x_joiner_' $current_id
   add-line $compose_file '    image: transactions_with_stores_query_3x_joiner:latest'
-  add-line $compose_file '    entrypoint: python3 -m controllers.joiners.transactions_with_stores_query_3x_joiner.main'
+  add-line $compose_file '    entrypoint: python3 -m controllers.joiners.transactions_with_stores_joiner.transactions_with_stores_query_3x_joiner.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=' $PYTHONUNBUFFERED
   add-line $compose_file '      - LOGGING_LEVEL=' $LOGGING_LEVEL
@@ -820,7 +820,7 @@ function add-transactions-with-stores-q4x-joiner(){
   add-line $compose_file '  transactions_with_stores_query_4x_joiner_' $current_id ':'
   add-line $compose_file '    container_name: transactions_with_stores_query_4x_joiner_' $current_id
   add-line $compose_file '    image: transactions_with_stores_query_4x_joiner:latest'
-  add-line $compose_file '    entrypoint: python3 -m controllers.joiners.transactions_with_stores_query_4x_joiner.main'
+  add-line $compose_file '    entrypoint: python3 -m controllers.joiners.transactions_with_stores_joiner.transactions_with_stores_query_4x_joiner.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=' $PYTHONUNBUFFERED
   add-line $compose_file '      - LOGGING_LEVEL=' $LOGGING_LEVEL

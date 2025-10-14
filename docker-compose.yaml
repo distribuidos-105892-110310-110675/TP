@@ -4,7 +4,7 @@ services:
   # ============================== RABBITMQ SERVICE ============================== #
 
   rabbitmq-message-middleware:
-  container_name: rabbitmq-message-middleware
+    container_name: rabbitmq-message-middleware
     image: "rabbitmq:4-management"
     ports:
       - "5672:5672"
@@ -712,7 +712,7 @@ services:
   transaction_items_with_menu_items_query_21_joiner_0:
     container_name: transaction_items_with_menu_items_query_21_joiner_0
     image: transaction_items_with_menu_items_query_21_joiner:latest
-    entrypoint: python3 -m controllers.joiners.transaction_items_with_menu_items_query_21_joiner.main
+    entrypoint: python3 -m controllers.joiners.transaction_items_with_menu_items_joiner.transaction_items_with_menu_items_query_21_joiner.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
@@ -731,7 +731,7 @@ services:
   transaction_items_with_menu_items_query_22_joiner_0:
     container_name: transaction_items_with_menu_items_query_22_joiner_0
     image: transaction_items_with_menu_items_query_22_joiner:latest
-    entrypoint: python3 -m controllers.joiners.transaction_items_with_menu_items_query_22_joiner.main
+    entrypoint: python3 -m controllers.joiners.transaction_items_with_menu_items_joiner.transaction_items_with_menu_items_query_22_joiner.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
@@ -750,7 +750,7 @@ services:
   transactions_with_stores_query_3x_joiner_0:
     container_name: transactions_with_stores_query_3x_joiner_0
     image: transactions_with_stores_query_3x_joiner:latest
-    entrypoint: python3 -m controllers.joiners.transactions_with_stores_query_3x_joiner.main
+    entrypoint: python3 -m controllers.joiners.transactions_with_stores_joiner.transactions_with_stores_query_3x_joiner.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
@@ -769,7 +769,7 @@ services:
   transactions_with_stores_query_4x_joiner_0:
     container_name: transactions_with_stores_query_4x_joiner_0
     image: transactions_with_stores_query_4x_joiner:latest
-    entrypoint: python3 -m controllers.joiners.transactions_with_stores_query_4x_joiner.main
+    entrypoint: python3 -m controllers.joiners.transactions_with_stores_joiner.transactions_with_stores_query_4x_joiner.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
@@ -788,7 +788,7 @@ services:
   transactions_with_stores_query_4x_joiner_1:
     container_name: transactions_with_stores_query_4x_joiner_1
     image: transactions_with_stores_query_4x_joiner:latest
-    entrypoint: python3 -m controllers.joiners.transactions_with_stores_query_4x_joiner.main
+    entrypoint: python3 -m controllers.joiners.transactions_with_stores_joiner.transactions_with_stores_query_4x_joiner.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
@@ -842,14 +842,14 @@ services:
 
   # ============================== OUTPUT BUILDER SERVICES ============================== #
 
-  query_1x_output_builder_1:
-    container_name: query_1x_output_builder_1
+  query_1x_output_builder_0:
+    container_name: query_1x_output_builder_0
     image: query_1x_output_builder:latest
     entrypoint: python3 -m controllers.output_builders.query_1x_output_builder.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
-      - OUTPUT_BUILDER_ID=1
+      - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=1
     networks:
@@ -858,14 +858,14 @@ services:
       rabbitmq-message-middleware:
         condition: service_healthy
 
-  query_21_output_builder_1:
-    container_name: query_21_output_builder_1
+  query_21_output_builder_0:
+    container_name: query_21_output_builder_0
     image: query_21_output_builder:latest
     entrypoint: python3 -m controllers.output_builders.query_21_output_builder.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
-      - OUTPUT_BUILDER_ID=1
+      - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=1
     networks:
@@ -874,14 +874,14 @@ services:
       rabbitmq-message-middleware:
         condition: service_healthy
 
-  query_22_output_builder_:
-    container_name: query_22_output_builder_1
+  query_22_output_builder_0:
+    container_name: query_22_output_builder_0
     image: query_22_output_builder:latest
     entrypoint: python3 -m controllers.output_builders.query_22_output_builder.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
-      - OUTPUT_BUILDER_ID=1
+      - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=1
     networks:
@@ -890,14 +890,14 @@ services:
       rabbitmq-message-middleware:
         condition: service_healthy
 
-  query_3x_output_builder_1:
-    container_name: query_3x_output_builder_1
+  query_3x_output_builder_0:
+    container_name: query_3x_output_builder_0
     image: query_3x_output_builder:latest
     entrypoint: python3 -m controllers.output_builders.query_3x_output_builder.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
-      - OUTPUT_BUILDER_ID=1
+      - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=1
     networks:
@@ -906,14 +906,14 @@ services:
       rabbitmq-message-middleware:
         condition: service_healthy
 
-  query_4x_output_builder_1:
-    container_name: query_4x_output_builder_1
+  query_4x_output_builder_0:
+    container_name: query_4x_output_builder_0
     image: query_4x_output_builder:latest
     entrypoint: python3 -m controllers.output_builders.query_4x_output_builder.main
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=INFO
-      - OUTPUT_BUILDER_ID=1
+      - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=2
     networks:

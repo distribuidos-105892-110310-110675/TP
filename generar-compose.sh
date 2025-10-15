@@ -256,132 +256,6 @@ function add-cleaners() {
   done
 }
 
-# ============================== PRIVATE - OUTPUT BUILDER ============================== #
-
-function add-query-1x-output-builder() {
-  local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  query_1x_output_builder_' $current_id ':'
-  add-line $compose_file '    container_name: query_1x_output_builder_' $current_id
-  add-line $compose_file '    image: query_1x_output_builder:latest'
-  add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_1x_output_builder.main'
-  add-line $compose_file '    environment:'
-  add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
-  add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
-  add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $FILTER_TRANSACTIONS_BY_FINAL_AMNT_AMOUNT
-  add-line $compose_file '    networks:'
-  add-line $compose_file '      - custom_net'
-  add-line $compose_file '    depends_on:'
-  add-line $compose_file '      rabbitmq-message-middleware:'
-  add-line $compose_file '        condition: service_healthy'
-}
-
-function add-query-21-output-builder() {
-  local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  query_21_output_builder_' $current_id ':'
-  add-line $compose_file '    container_name: query_21_output_builder_' $current_id
-  add-line $compose_file '    image: query_21_output_builder:latest'
-  add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_21_output_builder.main'
-  add-line $compose_file '    environment:'
-  add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
-  add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
-  add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q2_JOINERS_AMOUNT
-  add-line $compose_file '    networks:'
-  add-line $compose_file '      - custom_net'
-  add-line $compose_file '    depends_on:'
-  add-line $compose_file '      rabbitmq-message-middleware:'
-  add-line $compose_file '        condition: service_healthy'
-}
-
-function add-query-22-output-builder() {
-  local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  query_22_output_builder_' $current_id ':'
-  add-line $compose_file '    container_name: query_22_output_builder_' $current_id
-  add-line $compose_file '    image: query_22_output_builder:latest'
-  add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_22_output_builder.main'
-  add-line $compose_file '    environment:'
-  add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
-  add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
-  add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q2_JOINERS_AMOUNT
-  add-line $compose_file '    networks:'
-  add-line $compose_file '      - custom_net'
-  add-line $compose_file '    depends_on:'
-  add-line $compose_file '      rabbitmq-message-middleware:'
-  add-line $compose_file '        condition: service_healthy'
-}
-
-function add-query-3x-output-builder() {
-  local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  query_3x_output_builder_' $current_id ':'
-  add-line $compose_file '    container_name: query_3x_output_builder_' $current_id
-  add-line $compose_file '    image: query_3x_output_builder:latest'
-  add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_3x_output_builder.main'
-  add-line $compose_file '    environment:'
-  add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
-  add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
-  add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q3_JOINERS_AMOUNT
-  add-line $compose_file '    networks:'
-  add-line $compose_file '      - custom_net'
-  add-line $compose_file '    depends_on:'
-  add-line $compose_file '      rabbitmq-message-middleware:'
-  add-line $compose_file '        condition: service_healthy'
-}
-
-function add-query-4x-output-builder() {
-  local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  query_4x_output_builder_' $current_id ':'
-  add-line $compose_file '    container_name: query_4x_output_builder_' $current_id
-  add-line $compose_file '    image: query_4x_output_builder:latest'
-  add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_4x_output_builder.main'
-  add-line $compose_file '    environment:'
-  add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
-  add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
-  add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q4_TRANSACTIONS_WITH_STORES_JOINERS_AMOUNT
-  add-line $compose_file '    networks:'
-  add-line $compose_file '      - custom_net'
-  add-line $compose_file '    depends_on:'
-  add-line $compose_file '      rabbitmq-message-middleware:'
-  add-line $compose_file '        condition: service_healthy'
-}
-
-function add-output-builders() {
-  local compose_file=$1
-  for ((i=0;i<$Q1X_OB_AMOUNT;i++)); do
-    add-query-1x-output-builder $compose_file $i
-    add-empty-line $compose_file 
-  done
-  for ((i=0;i<$Q21_OB_AMOUNT;i++)); do
-    add-query-21-output-builder $compose_file $i
-    add-empty-line $compose_file
-  done
-  for ((i=0;i<$Q22_OB_AMOUNT;i++)); do
-    add-query-22-output-builder $compose_file $i
-    add-empty-line $compose_file
-  done
-  for ((i=0;i<$Q3X_OB_AMOUNT;i++)); do
-    add-query-3x-output-builder $compose_file $i
-    add-empty-line $compose_file
-  done
-  for ((i=0;i<$Q4X_OB_AMOUNT;i++)); do
-    add-query-4x-output-builder $compose_file $i
-    add-empty-line $compose_file
-  done
-}
-
 # ============================== PRIVATE - FILTERS ============================== #
 
 function add-transactions-filter-by-year() {
@@ -881,6 +755,132 @@ function add-joiners() {
     add-transactions-with-users-q4x-joiner $compose_file $i
     add-empty-line $compose_file
   done  
+}
+
+# ============================== PRIVATE - OUTPUT BUILDER ============================== #
+
+function add-query-1x-output-builder() {
+  local compose_file=$1
+  local current_id="$2"
+  add-line $compose_file '  query_1x_output_builder_' $current_id ':'
+  add-line $compose_file '    container_name: query_1x_output_builder_' $current_id
+  add-line $compose_file '    image: query_1x_output_builder:latest'
+  add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_1x_output_builder.main'
+  add-line $compose_file '    environment:'
+  add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
+  add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
+  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
+  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $FILTER_TRANSACTIONS_BY_FINAL_AMNT_AMOUNT
+  add-line $compose_file '    networks:'
+  add-line $compose_file '      - custom_net'
+  add-line $compose_file '    depends_on:'
+  add-line $compose_file '      rabbitmq-message-middleware:'
+  add-line $compose_file '        condition: service_healthy'
+}
+
+function add-query-21-output-builder() {
+  local compose_file=$1
+  local current_id="$2"
+  add-line $compose_file '  query_21_output_builder_' $current_id ':'
+  add-line $compose_file '    container_name: query_21_output_builder_' $current_id
+  add-line $compose_file '    image: query_21_output_builder:latest'
+  add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_21_output_builder.main'
+  add-line $compose_file '    environment:'
+  add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
+  add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
+  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
+  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q2_JOINERS_AMOUNT
+  add-line $compose_file '    networks:'
+  add-line $compose_file '      - custom_net'
+  add-line $compose_file '    depends_on:'
+  add-line $compose_file '      rabbitmq-message-middleware:'
+  add-line $compose_file '        condition: service_healthy'
+}
+
+function add-query-22-output-builder() {
+  local compose_file=$1
+  local current_id="$2"
+  add-line $compose_file '  query_22_output_builder_' $current_id ':'
+  add-line $compose_file '    container_name: query_22_output_builder_' $current_id
+  add-line $compose_file '    image: query_22_output_builder:latest'
+  add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_22_output_builder.main'
+  add-line $compose_file '    environment:'
+  add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
+  add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
+  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
+  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q2_JOINERS_AMOUNT
+  add-line $compose_file '    networks:'
+  add-line $compose_file '      - custom_net'
+  add-line $compose_file '    depends_on:'
+  add-line $compose_file '      rabbitmq-message-middleware:'
+  add-line $compose_file '        condition: service_healthy'
+}
+
+function add-query-3x-output-builder() {
+  local compose_file=$1
+  local current_id="$2"
+  add-line $compose_file '  query_3x_output_builder_' $current_id ':'
+  add-line $compose_file '    container_name: query_3x_output_builder_' $current_id
+  add-line $compose_file '    image: query_3x_output_builder:latest'
+  add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_3x_output_builder.main'
+  add-line $compose_file '    environment:'
+  add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
+  add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
+  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
+  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q3_JOINERS_AMOUNT
+  add-line $compose_file '    networks:'
+  add-line $compose_file '      - custom_net'
+  add-line $compose_file '    depends_on:'
+  add-line $compose_file '      rabbitmq-message-middleware:'
+  add-line $compose_file '        condition: service_healthy'
+}
+
+function add-query-4x-output-builder() {
+  local compose_file=$1
+  local current_id="$2"
+  add-line $compose_file '  query_4x_output_builder_' $current_id ':'
+  add-line $compose_file '    container_name: query_4x_output_builder_' $current_id
+  add-line $compose_file '    image: query_4x_output_builder:latest'
+  add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_4x_output_builder.main'
+  add-line $compose_file '    environment:'
+  add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
+  add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
+  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
+  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q4_TRANSACTIONS_WITH_STORES_JOINERS_AMOUNT
+  add-line $compose_file '    networks:'
+  add-line $compose_file '      - custom_net'
+  add-line $compose_file '    depends_on:'
+  add-line $compose_file '      rabbitmq-message-middleware:'
+  add-line $compose_file '        condition: service_healthy'
+}
+
+function add-output-builders() {
+  local compose_file=$1
+  for ((i=0;i<$Q1X_OB_AMOUNT;i++)); do
+    add-query-1x-output-builder $compose_file $i
+    add-empty-line $compose_file 
+  done
+  for ((i=0;i<$Q21_OB_AMOUNT;i++)); do
+    add-query-21-output-builder $compose_file $i
+    add-empty-line $compose_file
+  done
+  for ((i=0;i<$Q22_OB_AMOUNT;i++)); do
+    add-query-22-output-builder $compose_file $i
+    add-empty-line $compose_file
+  done
+  for ((i=0;i<$Q3X_OB_AMOUNT;i++)); do
+    add-query-3x-output-builder $compose_file $i
+    add-empty-line $compose_file
+  done
+  for ((i=0;i<$Q4X_OB_AMOUNT;i++)); do
+    add-query-4x-output-builder $compose_file $i
+    add-empty-line $compose_file
+  done
 }
 
 # ============================== PRIVATE - SERVICES ============================== #

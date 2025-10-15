@@ -400,7 +400,7 @@ services:
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
-      - NEXT_CONTROLLERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=2
       - MIN_HOUR=6
       - MAX_HOUR=23
     networks:
@@ -419,7 +419,7 @@ services:
       - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
-      - NEXT_CONTROLLERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=2
       - MIN_HOUR=6
       - MAX_HOUR=23
     networks:
@@ -436,6 +436,24 @@ services:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=2
+      - NEXT_CONTROLLERS_AMOUNT=1
+      - MIN_FINAL_AMOUNT=75.0
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  filter_transactions_by_final_amount_1:
+    container_name: filter_transactions_by_final_amount_1
+    image: filter_transactions_by_final_amount:latest
+    entrypoint: python3 -m controllers.filters.filter_transactions_by_final_amount.main
+    environment:
+      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
+      - LOGGING_LEVEL=${LOGGING_LEVEL}
+      - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=2
       - NEXT_CONTROLLERS_AMOUNT=1
@@ -512,7 +530,7 @@ services:
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
-      - NEXT_CONTROLLERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=2
     networks:
       - custom_net
     depends_on:
@@ -529,7 +547,7 @@ services:
       - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
-      - NEXT_CONTROLLERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=2
     networks:
       - custom_net
     depends_on:
@@ -546,7 +564,7 @@ services:
       - CONTROLLER_ID=2
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
-      - NEXT_CONTROLLERS_AMOUNT=1
+      - NEXT_CONTROLLERS_AMOUNT=2
     networks:
       - custom_net
     depends_on:
@@ -561,6 +579,23 @@ services:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=2
+      - NEXT_CONTROLLERS_AMOUNT=1
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  year_half_created_at_transactions_mapper_1:
+    container_name: year_half_created_at_transactions_mapper_1
+    image: year_half_created_at_transactions_mapper:latest
+    entrypoint: python3 -m controllers.mappers.year_half_created_at_transactions_mapper.main
+    environment:
+      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
+      - LOGGING_LEVEL=${LOGGING_LEVEL}
+      - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=2
       - NEXT_CONTROLLERS_AMOUNT=1
@@ -590,6 +625,24 @@ services:
       rabbitmq-message-middleware:
         condition: service_healthy
 
+  sellings_qty_by_item_id_and_year_month_created_at_reducer_1:
+    container_name: sellings_qty_by_item_id_and_year_month_created_at_reducer_1
+    image: sellings_qty_by_item_id_and_year_month_created_at_reducer:latest
+    entrypoint: python3 -m controllers.reducers.sellings_qty_by_item_id_and_year_month_created_at_reducer.main
+    environment:
+      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
+      - LOGGING_LEVEL=${LOGGING_LEVEL}
+      - CONTROLLER_ID=1
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=3
+      - NEXT_CONTROLLERS_AMOUNT=1
+      - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
   profit_sum_by_item_id_and_year_month_created_at_reducer_0:
     container_name: profit_sum_by_item_id_and_year_month_created_at_reducer_0
     image: profit_sum_by_item_id_and_year_month_created_at_reducer:latest
@@ -598,6 +651,24 @@ services:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
+      - RABBITMQ_HOST=rabbitmq-message-middleware
+      - PREV_CONTROLLERS_AMOUNT=3
+      - NEXT_CONTROLLERS_AMOUNT=1
+      - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}
+    networks:
+      - custom_net
+    depends_on:
+      rabbitmq-message-middleware:
+        condition: service_healthy
+
+  profit_sum_by_item_id_and_year_month_created_at_reducer_1:
+    container_name: profit_sum_by_item_id_and_year_month_created_at_reducer_1
+    image: profit_sum_by_item_id_and_year_month_created_at_reducer:latest
+    entrypoint: python3 -m controllers.reducers.profit_sum_by_item_id_and_year_month_created_at_reducer.main
+    environment:
+      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
+      - LOGGING_LEVEL=${LOGGING_LEVEL}
+      - CONTROLLER_ID=1
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - PREV_CONTROLLERS_AMOUNT=3
       - NEXT_CONTROLLERS_AMOUNT=1
@@ -617,7 +688,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=1
+      - PREV_CONTROLLERS_AMOUNT=2
       - NEXT_CONTROLLERS_AMOUNT=1
       - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}
     networks:
@@ -673,7 +744,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=1
+      - PREV_CONTROLLERS_AMOUNT=2
       - NEXT_CONTROLLERS_AMOUNT=1
       - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}
       - AMOUNT_PER_GROUP=1
@@ -692,7 +763,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=1
+      - PREV_CONTROLLERS_AMOUNT=2
       - NEXT_CONTROLLERS_AMOUNT=1
       - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}
       - AMOUNT_PER_GROUP=1
@@ -753,7 +824,7 @@ services:
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - OUTPUT_BUILDERS_AMOUNT=1
       - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1
-      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=1
+      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=2
       - NEXT_CONTROLLERS_AMOUNT=1
     networks:
       - custom_net
@@ -772,7 +843,7 @@ services:
       - RABBITMQ_HOST=rabbitmq-message-middleware
       - OUTPUT_BUILDERS_AMOUNT=1
       - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1
-      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=1
+      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=2
       - NEXT_CONTROLLERS_AMOUNT=1
     networks:
       - custom_net
@@ -882,7 +953,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - PREV_CONTROLLERS_AMOUNT=1
+      - PREV_CONTROLLERS_AMOUNT=2
     networks:
       - custom_net
     depends_on:

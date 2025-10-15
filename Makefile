@@ -40,6 +40,7 @@ docker-compose-restart:
 # ============================== TESTING ============================== #
 
 docker-export-logs:
+	@rm -rf logs
 	@mkdir -p logs
 	@for service in $$(docker-compose config --services); do \
 		echo "Filtrando logs de $$service..."; \
@@ -51,6 +52,9 @@ docker-export-logs:
 			rm logs/$$service.log; \
 		fi \
 	done
+
+test-all-eof-received: docker-export-logs
+	@python3 eof_test.py
 
 # Run unit tests using pytest with verbose output (Middleware tests).
 unit-tests:

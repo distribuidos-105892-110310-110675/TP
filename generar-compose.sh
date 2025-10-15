@@ -134,8 +134,8 @@ function add-server-service() {
 
 function add-menu-cleaner() {
   local compose_file=$1
-  add-line $compose_file '  menu_items_cleaner_items_0:'
-  add-line $compose_file '    container_name: menu_items_cleaner_items_0'
+  add-line $compose_file '  menu_items_cleaner_0:'
+  add-line $compose_file '    container_name: menu_items_cleaner_0'
   add-line $compose_file '    image: menu_items_cleaner:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.cleaners.menu_items_cleaner.main'
   add-line $compose_file '    environment:'
@@ -153,8 +153,8 @@ function add-menu-cleaner() {
 
 function add-stores-cleaner() {
   local compose_file=$1
-  add-line $compose_file '  stores_cleaner_items_0:'
-  add-line $compose_file '    container_name: stores_cleaner_items_0'
+  add-line $compose_file '  stores_cleaner_0:'
+  add-line $compose_file '    container_name: stores_cleaner_0'
   add-line $compose_file '    image: stores_cleaner:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.cleaners.stores_cleaner.main'
   add-line $compose_file '    environment:'

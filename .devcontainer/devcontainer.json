@@ -10,8 +10,8 @@
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 	// Forward ports from inside the container.
 	"forwardPorts": [
-		5672,
-		15672
+		// 5672,
+		// 15672
 	],
 	// Run commands after the container is started.
 	"postStartCommand": "pip3 install --no-cache-dir --upgrade -r .devcontainer/requirements.txt",

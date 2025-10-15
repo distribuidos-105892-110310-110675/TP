@@ -2,7 +2,8 @@ import logging
 from abc import abstractmethod
 from typing import Any
 
-from controllers.controller import Controller
+from controllers.shared.controller import Controller
+from controllers.sorters.shared.sorted_desc_data import SortedDescData
 from middleware.middleware import MessageMiddleware
 from shared import communication_protocol
 
@@ -24,7 +25,7 @@ class Sorter(Controller):
         rabbitmq_host: str,
         consumers_config: dict[str, Any],
     ) -> None:
-        self._eof_recv_from_prev_controllers = 0
+        self._eof_recv_from_prev_controllers = {}
         self._prev_controllers_amount = consumers_config["prev_controllers_amount"]
         self._mom_consumer = self._build_mom_consumer_using(
             rabbitmq_host, consumers_config
@@ -72,13 +73,13 @@ class Sorter(Controller):
 
         self._batch_max_size = batch_max_size
         self._amount_per_group = amount_per_group
-        self._sorted_desc_by_grouping_key: dict[str, list[dict[str, str]]] = {}
+        self._sorted_desc_data_by_session_id: dict[str, SortedDescData] = {}
 
     # ============================== PRIVATE - SIGNAL HANDLER ============================== #
 
-    def _mom_stop_consuming(self) -> None:
+    def _stop(self) -> None:
         self._mom_consumer.stop_consuming()
-        logging.debug("action: sigterm_mom_stop_consuming | result: success")
+        logging.info("action: sigterm_mom_stop_consuming | result: success")
 
     # ============================== PRIVATE - ACCESSING ============================== #
 
@@ -94,53 +95,46 @@ class Sorter(Controller):
     def _secondary_sort_key(self) -> str:
         raise NotImplementedError("subclass responsibility")
 
+    @abstractmethod
+    def _message_type(self) -> str:
+        raise NotImplementedError("subclass responsibility")
+
     # ============================== PRIVATE - HANDLE DATA ============================== #
 
-    def _add_batch_item_keeping_sort_desc(self, batch_item: dict[str, str]) -> None:
-        grouping_key_value = batch_item[self._grouping_key()]
-        primary_sort_value = batch_item[self._primary_sort_key()]
-        secondary_sort_value = batch_item[self._secondary_sort_key()]
+    def _add_batch_item_keeping_sort_desc(
+        self, session_id: str, batch_item: dict[str, str]
+    ) -> None:
+        self._sorted_desc_data_by_session_id.setdefault(
+            session_id,
+            SortedDescData(
+                self._grouping_key(),
+                self._primary_sort_key(),
+                self._secondary_sort_key(),
+                self._amount_per_group,
+            ),
+        ).add_batch_item_keeping_sort_desc(batch_item)
 
-        if grouping_key_value not in self._sorted_desc_by_grouping_key:
-            self._sorted_desc_by_grouping_key[grouping_key_value] = []
-        sorted_desc_batch_items = self._sorted_desc_by_grouping_key[grouping_key_value]
+    def _pop_next_batch_item(self, session_id: str) -> dict[str, str]:
+        return self._sorted_desc_data_by_session_id[session_id].pop_next_batch_item()
 
-        index = 0
-        while index < len(sorted_desc_batch_items):
-            current_batch_item = sorted_desc_batch_items[index]
-            current_primary_sort_value = current_batch_item[self._primary_sort_key()]
-            current_secondary_sort_value = current_batch_item[
-                self._secondary_sort_key()
-            ]
-
-            if primary_sort_value > current_primary_sort_value:
-                break
-            if primary_sort_value == current_primary_sort_value:
-                if secondary_sort_value > current_secondary_sort_value:
-                    break
-            index += 1
-
-        sorted_desc_batch_items.insert(index, batch_item)
-        if len(sorted_desc_batch_items) > self._amount_per_group:
-            sorted_desc_batch_items.pop()
-
-    def _pop_next_batch_item(self) -> dict[str, str]:
-        key = next(iter(self._sorted_desc_by_grouping_key))
-        batch_item = self._sorted_desc_by_grouping_key[key].pop(0)
-        if not self._sorted_desc_by_grouping_key[key]:
-            del self._sorted_desc_by_grouping_key[key]
-        return batch_item
-
-    def _take_next_batch(self) -> list[dict[str, str]]:
+    def _take_next_batch(self, session_id: str) -> list[dict[str, str]]:
         batch: list[dict[str, str]] = []
+        sorted_desc_by_grouping_key = self._sorted_desc_data_by_session_id.get(
+            session_id
+        )
+        if sorted_desc_by_grouping_key is None:
+            logging.warning(
+                f"action: no_sorted_data_for_session_id | result: warning | session_id: {session_id}"
+            )
+            return batch
 
         all_batchs_taken = False
         while not all_batchs_taken and len(batch) < self._batch_max_size:
-            if not self._sorted_desc_by_grouping_key:
+            if sorted_desc_by_grouping_key.is_empty():
                 all_batchs_taken = True
                 break
 
-            batch_item = self._pop_next_batch_item()
+            batch_item = self._pop_next_batch_item(session_id)
             batch.append(batch_item)
 
         return batch
@@ -151,31 +145,58 @@ class Sorter(Controller):
     def _mom_send_message_to_next(self, message: str) -> None:
         raise NotImplementedError("subclass responsibility")
 
-    def _send_all_data_using_batchs(self) -> None:
-        batch = self._take_next_batch()
+    def _send_all_data_using_batchs(self, session_id: str) -> None:
+        logging.debug(
+            f"action: all_data_sent | result: in_progress | session_id: {session_id}"
+        )
+
+        batch = self._take_next_batch(session_id)
         while len(batch) != 0 and self._is_running():
-            message = communication_protocol.encode_transactions_batch_message(batch)
+            message_type = self._message_type()
+            message = communication_protocol.encode_batch_message(
+                message_type, session_id, batch
+            )
             self._mom_send_message_to_next(message)
-            batch = self._take_next_batch()
+            logging.debug(
+                f"action: batch_sent | result: success | session_id: {session_id} | batch_size: {len(batch)}"
+            )
+            batch = self._take_next_batch(session_id)
+
+        del self._sorted_desc_data_by_session_id[session_id]
+        logging.info(
+            f"action: all_data_sent | result: success | session_id: {session_id}"
+        )
 
     def _handle_data_batch_message(self, message: str) -> None:
+        session_id = communication_protocol.get_message_session_id(message)
         batch = communication_protocol.decode_batch_message(message)
         for batch_item in batch:
-            self._add_batch_item_keeping_sort_desc(batch_item)
+            self._add_batch_item_keeping_sort_desc(session_id, batch_item)
 
     def _handle_data_batch_eof(self, message: str) -> None:
-        self._eof_recv_from_prev_controllers += 1
-        logging.debug(f"action: eof_received | result: success")
+        session_id = communication_protocol.get_message_session_id(message)
+        self._eof_recv_from_prev_controllers.setdefault(session_id, 0)
+        self._eof_recv_from_prev_controllers[session_id] += 1
+        logging.info(
+            f"action: eof_received | result: success | session_id: {session_id}"
+        )
 
-        if self._eof_recv_from_prev_controllers == self._prev_controllers_amount:
-            logging.info("action: all_eofs_received | result: success")
+        if (
+            self._eof_recv_from_prev_controllers[session_id]
+            == self._prev_controllers_amount
+        ):
+            logging.info(
+                f"action: all_eofs_received | result: success | session_id: {session_id}"
+            )
 
-            self._send_all_data_using_batchs()
-            logging.info("action: all_data_sent | result: success")
+            self._send_all_data_using_batchs(session_id)
 
             for mom_producer in self._mom_producers:
                 mom_producer.send(message)
-            logging.info("action: eof_sent | result: success")
+            del self._eof_recv_from_prev_controllers[session_id]
+            logging.info(
+                f"action: eof_sent | result: success | session_id: {session_id}"
+            )
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():
@@ -183,7 +204,7 @@ class Sorter(Controller):
             return
 
         message = message_as_bytes.decode("utf-8")
-        message_type = communication_protocol.decode_message_type(message)
+        message_type = communication_protocol.get_message_type(message)
         if message_type != communication_protocol.EOF:
             self._handle_data_batch_message(message)
         else:
@@ -195,9 +216,8 @@ class Sorter(Controller):
         super()._run()
         self._mom_consumer.start_consuming(self._handle_received_data)
 
-    def _close_all_mom_connections(self) -> None:
+    def _close_all(self) -> None:
         for mom_producer in self._mom_producers:
-            mom_producer.delete()
             mom_producer.close()
             logging.debug("action: mom_producer_producer_close | result: success")
 

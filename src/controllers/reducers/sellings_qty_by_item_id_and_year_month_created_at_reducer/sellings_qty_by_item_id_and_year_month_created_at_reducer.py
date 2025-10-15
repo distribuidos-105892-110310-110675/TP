@@ -1,11 +1,12 @@
 from typing import Any
 
-from controllers.reducers.reducer import Reducer
+from controllers.reducers.shared.reducer import Reducer
 from middleware.middleware import MessageMiddleware
 from middleware.rabbitmq_message_middleware_exchange import (
     RabbitMQMessageMiddlewareExchange,
 )
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
+from shared import communication_protocol
 
 
 class SellingsQtyByItemIdAndYearMonthCreatedAtReducer(Reducer):
@@ -18,7 +19,7 @@ class SellingsQtyByItemIdAndYearMonthCreatedAtReducer(Reducer):
         consumers_config: dict[str, Any],
     ) -> MessageMiddleware:
         exchange_name = consumers_config["exchange_name_prefix"]
-        routing_key = f"{consumers_config["routing_key_prefix"]}.*"
+        routing_key = f"{consumers_config["routing_key_prefix"]}.{self._controller_id}"
         return RabbitMQMessageMiddlewareExchange(
             host=rabbitmq_host,
             exchange_name=exchange_name,
@@ -42,6 +43,9 @@ class SellingsQtyByItemIdAndYearMonthCreatedAtReducer(Reducer):
 
     def _accumulator_name(self) -> str:
         return "sellings_qty"
+
+    def _message_type(self) -> str:
+        return communication_protocol.TRANSACTION_ITEMS_BATCH_MSG_TYPE
 
     # ============================== PRIVATE - HANDLE DATA ============================== #
 

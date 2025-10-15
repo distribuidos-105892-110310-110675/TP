@@ -1,8 +1,9 @@
 from typing import Any
 
-from controllers.sorters.sorter import Sorter
+from controllers.sorters.shared.sorter import Sorter
 from middleware.middleware import MessageMiddleware
 from middleware.rabbitmq_message_middleware_queue import RabbitMQMessageMiddlewareQueue
+from shared import communication_protocol
 
 
 class DescByYearMonthCreatedAtAndSellingsQtySorter(Sorter):
@@ -38,6 +39,9 @@ class DescByYearMonthCreatedAtAndSellingsQtySorter(Sorter):
 
     def _secondary_sort_key(self) -> str:
         return "sellings_qty"
+
+    def _message_type(self) -> str:
+        return communication_protocol.TRANSACTION_ITEMS_BATCH_MSG_TYPE
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 

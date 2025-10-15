@@ -53,3 +53,41 @@ class ProfitSumByItemIdAndYearMonthCreatedAtReducer(Reducer):
         self, current_value: float, batch_item: dict[str, str]
     ) -> float:
         return current_value + float(batch_item["subtotal"])
+
+    # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
+
+    def _simple_hash(self, value: str) -> int:
+        hash_value = 0
+        prime_multiplier = 31
+        for char in value:
+            char_value = ord(char)
+            hash_value = (hash_value * prime_multiplier) + char_value
+        return hash_value
+
+    def _mom_send_message_to_next(self, message: str) -> None:
+        batchs_by_hash: dict[int, list] = {}
+        # [IMPORTANT] this must consider the next controller's grouping key
+        sharding_key = "year_month_created_at"
+
+        message_type = communication_protocol.get_message_type(message)
+        session_id = communication_protocol.get_message_session_id(message)
+        for batch_item in communication_protocol.decode_batch_message(message):
+            if batch_item[sharding_key] == "":
+                # [IMPORTANT] If sharding value is empty, the hash will fail
+                # but we are going to assign it to the first reducer anyway
+                hash = 0
+                batchs_by_hash.setdefault(hash, [])
+                batchs_by_hash[hash].append(batch_item)
+                continue
+            sharding_value = self._simple_hash(batch_item[sharding_key])
+
+            hash = sharding_value % len(self._mom_producers)
+            batchs_by_hash.setdefault(hash, [])
+            batchs_by_hash[hash].append(batch_item)
+
+        for hash, user_batch in batchs_by_hash.items():
+            mom_producer = self._mom_producers[hash]
+            message = communication_protocol.encode_batch_message(
+                message_type, session_id, user_batch
+            )
+            mom_producer.send(message)

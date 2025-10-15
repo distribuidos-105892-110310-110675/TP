@@ -9,6 +9,15 @@ class ReducedData:
 
         self._reduced_data: dict[tuple, float] = {}
 
+        self._logging_counter = 0
+
+    def _logging_warning_when_count_reached(self) -> None:
+        if self._logging_counter >= 1000:
+            logging.warning(
+                f"action: empty_key_in_batch_item | result: skipped | total: {self._logging_counter}"
+            )
+            self._logging_counter = 0
+
     def reduce_using(
         self,
         batch_item: dict[str, str],
@@ -16,7 +25,8 @@ class ReducedData:
     ) -> None:
         for k in self._keys:
             if batch_item[k] == "":
-                logging.warning(f"action: empty_{k} | result: skipped")
+                self._logging_counter += 1
+                self._logging_warning_when_count_reached()
                 return
 
         key = tuple(batch_item[k] for k in self._keys)

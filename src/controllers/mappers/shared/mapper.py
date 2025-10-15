@@ -91,13 +91,9 @@ class Mapper(Controller):
 
     # ============================== PRIVATE - MOM SEND/RECEIVE MESSAGES ============================== #
 
+    @abstractmethod
     def _mom_send_message_to_next(self, message: str) -> None:
-        mom_producer = self._mom_producers[self._current_producer_id]
-        mom_producer.send(message)
-
-        self._current_producer_id += 1
-        if self._current_producer_id >= len(self._mom_producers):
-            self._current_producer_id = 0
+        raise NotImplementedError("subclass responsibility")
 
     def _handle_data_batch_message(self, message: str) -> None:
         output_message = self._transform_batch_message(message)

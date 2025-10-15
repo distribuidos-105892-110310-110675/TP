@@ -50,7 +50,6 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
             self._channel.exchange_declare(
                 exchange=self._exchange_name,
                 exchange_type="topic",  # type: ignore
-                durable=True,
             )
         except Exception as e:
             raise MessageMiddlewareDisconnectedError(
@@ -110,7 +109,7 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
 
     def _start_consuming(self, on_message_callback: Callable) -> None:
         result = self._channel.queue_declare(
-            queue=self._queue_name, exclusive=True, auto_delete=True, durable=True
+            queue=self._queue_name, exclusive=True, auto_delete=True
         )
         queue_name = str(result.method.queue)
         self._bind_queue_to_routing_keys(queue_name)
@@ -131,7 +130,7 @@ class RabbitMQMessageMiddlewareExchange(MessageMiddlewareExchange):
                 exchange=self._exchange_name,
                 routing_key=routing_key,
                 body=message,
-                properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent),  # type: ignore
+                properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Transient),  # type: ignore
             )
 
     # ============================== PUBLIC - INTERFACE ============================== #

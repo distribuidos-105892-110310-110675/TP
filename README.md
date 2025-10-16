@@ -116,7 +116,7 @@ make docker-compose-logs | grep 'filter'
 
 ### 🧪 Testing
 
-El Makefile también incluye herramientas de testing para verificar el correcto funcionamiento del sistema distribuido.
+El Makefile incluye un conjunto de herramientas de testing para verificar el correcto funcionamiento del sistema distribuido.
 
 #### 🧱 Tests unitarios de funcionamiento del Middleware
 
@@ -161,11 +161,39 @@ make integration-tests EXPECTED_VARIANT=<output_a_validar>
 
 ```
 
-🧩 Compara las salidas generadas por el sistema '.results/query_results/' contra las salidas esperadas definidas en 'integration-tests/data/expected_output/'.
+🧩 Este comando ejecuta el conjunto de tests de integración, comparando las salidas generadas por el sistema contra los resultados esperados.
 
-Se debe asignar el valor de la variable 'EXPECTED_VARIANT' segun el directorio dentro de 'integratión-tests/data/expected_output/' de donde se deben obtener los outputs esperados.
+El proceso incluye los siguientes pasos:
 
-##### Ejemplo
+1. Copia y normaliza (mediante ordenamiento) los archivos generados por el sistema en '.results/query_results/'.
+
+2. Guarda los resultados actuales en 'integration-tests/data/query_results/'.
+
+3. Compara los resultados normalizados con los outputs esperados definidos en:
+
+```bash
+
+integration-tests/data/expected_output/<EXPECTED_VARIANT>/
+
+```
+
+4. Reporta las diferencias detectadas (si es que las hay) para cada consulta.
+
+Observación: Los tests de integración deben de ser ejecutados luego de haber utilizado el Sistema Distribuido con un único cliente.
+
+Esto para garantizar la correcta validación de la respuesta generada a cada una de las consultas de un único usuario.
+
+##### Ejemplo con 'reduced_data'
+
+```bash
+
+make integration-tests
+
+```
+
+Observación: No hace falta asignar la variable, se pasa el valor 'reduced_data' por defecto.
+
+##### Ejemplo con 'full_data'
 
 ```bash
 
@@ -175,15 +203,33 @@ make integration-tests EXPECTED_VARIANT=full_data
 
 #### 🧪 Tests de propagación EOF
 
+El sistema cuenta con una batería de tests para verificar la correcta propagación de los EOF entre los nodos, asegurando un cierre coordinado del flujo de datos en escenarios multi-cliente.
+
+##### Paso 1 - Exportar logs
+
 ```bash
 
-make eof-propagation-tests
+make docker-export-logs
 
 ```
 
-Estos tests se encargan de validar la correcta propagación de los EOF a lo largo del funcionamiento del sistema distribuido.
+📂 Este comando genera un directorio 'logs/' en el cual se almacenan los logs de cada servicio que contengan el término eof.
 
-De este modo se puede corroborar la implementación adecuada del mecanismo de finalización de procesamientos, asegurando que el modelo de concurrencia y comunicación elegido resulta óptimo para el esquema multi-cliente implementado.
+Cada archivo tiene el formato 'logs/<servicio>.log' y permite validar el flujo de finalización de datos en los componentes distribuidos.
+
+Una vez hecho este paso se debe realizar una ejecución completa de uno o mas clientes en el Sistema Distribuido. Para luego avanzar al siguiente paso.
+
+##### Paso 2 - Ejecutar validación de EOF
+
+```bash
+
+make test-all-eof-received
+
+```
+
+✅ Ejecuta el script 'eof_test.py', encargado de analizar los logs exportados y verificar que todos los nodos hayan recibido correctamente las señales de finalización (EOF).
+
+De este modo, se puede corroborar la correcta implementación del mecanismo de finalización y la sincronización entre los distintos componentes del Sistema Distribuido.
 
 ## 📡 Monitorear RabbitMQ
 
@@ -213,13 +259,13 @@ A continuación se pasa a detallar el funcionamiento al trabajar con el dataset 
 
 ### Archivos de entrada
 
-Residen en el directorio ".data/full_data", estos son los que envía el cliente junto con las queries, y le brindan al sistema los datos para realizar el procesamiento pedido.
+Residen en el directorio ".data", estos son los que envía el cliente junto con las queries, y le brindan al sistema los datos para realizar el procesamiento pedido.
 
 Por motivos de tamaño excesivo no se pueden cargas los datasets directamente en el repositorio, por lo que deben cargarse manualmente.
 
-Estos mismos pueden ser encontrados en el siguiente: [🔗 Link al dataset completo](https://www.kaggle.com/datasets/geraldooizx/g-coffee-shop-transaction-202307-to-202506/data)
+Para descargar el dataset completo se debe ingresar al siguiente link: [🔗 Link al dataset completo](https://www.kaggle.com/datasets/geraldooizx/g-coffee-shop-transaction-202307-to-202506/data)
 
-También generamos nuestro propio dataset reducido: [🔗 Link al dataset reducido](https://drive.google.com/drive/folders/1Zx6vl8iXw10OIUKS5Iz3qadV2ro_gW3f?usp=sharing)
+También generamos nuestro propio dataset reducido (30%): [🔗 Link al dataset reducido](https://drive.google.com/drive/folders/1Zx6vl8iXw10OIUKS5Iz3qadV2ro_gW3f?usp=sharing)
 
 ### Archivos de salida
 
@@ -237,6 +283,16 @@ A fin de optimizar y modularizar el funcionamiento del sistema, se utiliza la he
 - LOGGING LEVEL.
 
 Con esto se consiguió desacoplar el sistema lo máximo posible, y conseguir una óptima abstracción y separación de responsabilidades en la implementación.
+
+Además, se elaboró un script que permite generar de forma automática el archivo 'docker-compose.yaml' en base a las variables de entorno definidas en el archivo.
+
+Para ejecutar el mismo se debe utilizar el siguente comando:
+
+```bash
+
+./generar-compose.sh docker-compose.yaml
+
+```
 
 ## 🎥 Desmotración de funcionamiento
 

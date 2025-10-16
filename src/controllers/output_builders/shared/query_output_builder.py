@@ -95,6 +95,22 @@ class QueryOutputBuilder(Controller):
         )
         self._mom_producers[session_id].send(output_message)
 
+    def _clean_session_data_of(self, session_id: str) -> None:
+        logging.info(
+            f"action: clean_session_data | result: in_progress | session_id: {session_id}"
+        )
+
+        del self._eof_recv_from_prev_controllers[session_id]
+
+        mom_producer = self._mom_producers.pop(session_id, None)
+        if mom_producer:
+            mom_producer.close()
+            logging.debug("action: mom_producer_close | result: success")
+
+        logging.info(
+            f"action: clean_session_data | result: success | session_id: {session_id}"
+        )
+
     def _handle_data_batch_eof(self, message: str) -> None:
         session_id = communication_protocol.get_message_session_id(message)
         self._eof_recv_from_prev_controllers.setdefault(session_id, 0)
@@ -121,11 +137,11 @@ class QueryOutputBuilder(Controller):
                 ),
             )
             self._mom_producers[session_id].send(message)
-            del self._eof_recv_from_prev_controllers[session_id]
-            # @TODO: should we also delete the producer here
             logging.info(
                 f"action: eof_sent | result: success | session_id: {session_id}"
             )
+
+            self._clean_session_data_of(session_id)
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():

@@ -40,7 +40,7 @@ services:
       - custom_net
     volumes:
       - type: bind
-        source: ${LOCAL_DATA_PATH}
+        source: ${LOCAL_DATA_PATH_0}
         target: /data
         read_only: true
       - type: bind
@@ -73,7 +73,40 @@ services:
       - custom_net
     volumes:
       - type: bind
-        source: ${LOCAL_DATA_PATH}
+        source: ${LOCAL_DATA_PATH_1}
+        target: /data
+        read_only: true
+      - type: bind
+        source: ${LOCAL_RESULTS_PATH}
+        target: /results
+        read_only: false
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 1
+    depends_on:
+      server:
+        condition: service_started
+
+  client_2:
+    container_name: client_2
+    image: client:latest
+    entrypoint: python3 -m client.main
+    environment:
+      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
+      - LOGGING_LEVEL=${LOGGING_LEVEL}
+      - CLIENT_ID=2
+      - SERVER_HOST=server
+      - SERVER_PORT=5000
+      - DATA_PATH=/data
+      - RESULTS_PATH=/results
+      - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}
+    networks:
+      - custom_net
+    volumes:
+      - type: bind
+        source: ${LOCAL_DATA_PATH_2}
         target: /data
         read_only: true
       - type: bind
@@ -822,9 +855,8 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - OUTPUT_BUILDERS_AMOUNT=1
       - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1
-      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=2
+      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=1
       - NEXT_CONTROLLERS_AMOUNT=1
     networks:
       - custom_net
@@ -841,9 +873,8 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - CONTROLLER_ID=0
       - RABBITMQ_HOST=rabbitmq-message-middleware
-      - OUTPUT_BUILDERS_AMOUNT=1
       - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1
-      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=2
+      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=1
       - NEXT_CONTROLLERS_AMOUNT=1
     networks:
       - custom_net

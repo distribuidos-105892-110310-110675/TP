@@ -97,14 +97,26 @@ class Cleaner(Controller):
         filtered_message = self._transform_batch_message(message)
         self._mom_send_message_to_next(filtered_message)
 
+    def _clean_session_data_of(self, session_id: str) -> None:
+        logging.info(
+            f"action: clean_session_data | result: in_progress | session_id: {session_id}"
+        )
+
+        logging.info(
+            f"action: clean_session_data | result: success | session_id: {session_id}"
+        )
+
     def _handle_data_batch_eof(self, message: str) -> None:
         session_id = communication_protocol.get_message_session_id(message)
-        logging.info(f"action: eof_received | result: success | session_id: {session_id}")
+        logging.info(
+            f"action: eof_received | result: success | session_id: {session_id}"
+        )
 
         for mom_producer in self._mom_producers:
             mom_producer.send(message)
-
         logging.info(f"action: eof_sent | result: success | session_id: {session_id}")
+
+        self._clean_session_data_of(session_id)
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():

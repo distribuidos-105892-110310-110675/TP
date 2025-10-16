@@ -1,0 +1,20 @@
+2024-H1,G Coffee @ Kondominium Putra,3981904.5
+2024-H1,G Coffee @ PJS8,3982123.0
+2024-H1,G Coffee @ Alam Tun Hussein Onn,3983887.0
+2024-H1,G Coffee @ Seksyen 21,4001861.5
+2024-H1,G Coffee @ Damansara Saujana,3988416.0
+2024-H1,G Coffee @ Bandar Seri Mulia,3998050.5
+2024-H1,G Coffee @ USJ 57W,3992823.0
+2024-H1,G Coffee @ Kampung Changkat,3997763.0
+2024-H1,G Coffee @ Taman Damansara,4007446.5
+2024-H1,G Coffee @ USJ 89q,3977569.5
+2025-H1,G Coffee @ Alam Tun Hussein Onn,3933748.5
+2025-H1,G Coffee @ Kondominium Putra,3943068.5
+2025-H1,G Coffee @ PJS8,3930009.5
+2025-H1,G Coffee @ Bandar Seri Mulia,3916665.5
+2025-H1,G Coffee @ USJ 89q,3912600.5
+2025-H1,G Coffee @ Damansara Saujana,3912534.5
+2025-H1,G Coffee @ Taman Damansara,3914299.0
+2025-H1,G Coffee @ Kampung Changkat,3942525.0
+2025-H1,G Coffee @ Seksyen 21,3931317.5
+2025-H1,G Coffee @ USJ 57W,3940833.0

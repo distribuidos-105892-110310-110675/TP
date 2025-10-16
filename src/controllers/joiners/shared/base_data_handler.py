@@ -85,7 +85,15 @@ class BaseDataHandler:
                 self._base_data_by_session_id[session_id].append(item_batch)
 
     def _clean_session_data_of(self, session_id: str) -> None:
+        logging.info(
+            f"action: clean_session_data | result: in_progress | session_id: {session_id}"
+        )
+
         del self._eof_recv_from_prev_controllers[session_id]
+
+        logging.info(
+            f"action: clean_session_data | result: success | session_id: {session_id}"
+        )
 
     def _handle_base_data_batch_eof(self, message: str) -> None:
         session_id = communication_protocol.get_message_session_id(message)

@@ -4,11 +4,8 @@
 
 function add-line() {
   local compose_file=$1
-  local fixed_text="$2"
-  local variable_text="$3"
-  local extra="$4"
-
-  echo "$fixed_text$variable_text$extra" >> "$compose_file"
+  local text="$2"
+  echo "$text" >> "$compose_file"
 }
 
 function add-empty-line() {
@@ -58,15 +55,15 @@ function add-rabbitmq-service() {
 
 function add-client-service() {
   local compose_file=$1
-  local client="$2"
-  add-line $compose_file '  client_' $client ':'
-  add-line $compose_file '    container_name: client_' $client
+  local client=$2
+  add-line $compose_file "  client_$client:"
+  add-line $compose_file "    container_name: client_$client"
   add-line $compose_file '    image: client:latest'
   add-line $compose_file '    entrypoint: python3 -m client.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CLIENT_ID=' $client
+  add-line $compose_file "      - CLIENT_ID=$client"
   add-line $compose_file '      - SERVER_HOST=server'
   add-line $compose_file '      - SERVER_PORT=5000'
   add-line $compose_file '      - DATA_PATH=/data'
@@ -76,7 +73,7 @@ function add-client-service() {
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    volumes:'
   add-line $compose_file '      - type: bind'
-  add-line $compose_file '        source: ${LOCAL_DATA_PATH}'
+  add-line $compose_file "        source: \${LOCAL_DATA_PATH_$client}"
   add-line $compose_file '        target: /data'
   add-line $compose_file '        read_only: true'
   add-line $compose_file '      - type: bind'
@@ -93,6 +90,15 @@ function add-client-service() {
   add-line $compose_file '        condition: service_started'
 }
 
+function add-client-services() {
+  local compose_file=$1
+  
+  for ((i=0;i<$CLIENTS_AMOUNT;i++)); do
+    add-client-service $compose_file $i
+    add-empty-line $compose_file
+  done
+}
+
 function add-server-service() {
   local compose_file=$1
   add-line $compose_file '  server:'
@@ -107,14 +113,14 @@ function add-server-service() {
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_file '      - MENU_ITEMS_CLN_AMOUNT=1'
   add-line $compose_file '      - STORES_CLN_AMOUNT=1'
-  add-line $compose_file '      - TRANSACTION_ITEMS_CLN_AMOUNT=' $TRANSACTION_ITEMS_CLN_AMOUNT
-  add-line $compose_file '      - TRANSACTIONS_CLN_AMOUNT=' $TRANSACTIONS_CLN_AMOUNT
-  add-line $compose_file '      - USERS_CLN_AMOUNT=' $USERS_CLN_AMOUNT
-  add-line $compose_file '      - Q1X_OB_AMOUNT=' $Q1X_OB_AMOUNT
-  add-line $compose_file '      - Q21_OB_AMOUNT=' $Q21_OB_AMOUNT
-  add-line $compose_file '      - Q22_OB_AMOUNT=' $Q22_OB_AMOUNT
-  add-line $compose_file '      - Q3X_OB_AMOUNT=' $Q3X_OB_AMOUNT
-  add-line $compose_file '      - Q4X_OB_AMOUNT=' $Q4X_OB_AMOUNT
+  add-line $compose_file "      - TRANSACTION_ITEMS_CLN_AMOUNT=$TRANSACTION_ITEMS_CLN_AMOUNT"
+  add-line $compose_file "      - TRANSACTIONS_CLN_AMOUNT=$TRANSACTIONS_CLN_AMOUNT"
+  add-line $compose_file "      - USERS_CLN_AMOUNT=$USERS_CLN_AMOUNT"
+  add-line $compose_file "      - Q1X_OB_AMOUNT=$Q1X_OB_AMOUNT"
+  add-line $compose_file "      - Q21_OB_AMOUNT=$Q21_OB_AMOUNT"
+  add-line $compose_file "      - Q22_OB_AMOUNT=$Q22_OB_AMOUNT"
+  add-line $compose_file "      - Q3X_OB_AMOUNT=$Q3X_OB_AMOUNT"
+  add-line $compose_file "      - Q4X_OB_AMOUNT=$Q4X_OB_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -143,7 +149,7 @@ function add-menu-cleaner() {
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
   add-line $compose_file '      - CONTROLLER_ID=0'
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q2_JOINERS_AMOUNT
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q2_JOINERS_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -168,7 +174,7 @@ function add-stores-cleaner() {
   else 
     greater_join_amount=$Q4_TRANSACTIONS_WITH_STORES_JOINERS_AMOUNT
   fi
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $greater_join_amount
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$greater_join_amount"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -178,17 +184,17 @@ function add-stores-cleaner() {
 
 function add-transaction-items-cleaner() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  transaction_items_cleaner_' $current_id ':'
-  add-line $compose_file '    container_name: transaction_items_cleaner_' $current_id
+  local current_id=$2
+  add-line $compose_file "  transaction_items_cleaner_$current_id:"
+  add-line $compose_file "    container_name: transaction_items_cleaner_$current_id"
   add-line $compose_file '    image: transaction_items_cleaner:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.cleaners.transaction_items_cleaner.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $FILTER_TRANSACTION_ITEMS_BY_YEAR_AMOUNT
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$FILTER_TRANSACTION_ITEMS_BY_YEAR_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -198,17 +204,17 @@ function add-transaction-items-cleaner() {
 
 function add-transactions-cleaner() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  transactions_cleaner_' $current_id ':'
-  add-line $compose_file '    container_name: transactions_cleaner_' $current_id
+  local current_id=$2
+  add-line $compose_file "  transactions_cleaner_$current_id:"
+  add-line $compose_file "    container_name: transactions_cleaner_$current_id"
   add-line $compose_file '    image: transactions_cleaner:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.cleaners.transactions_cleaner.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $FILTER_TRANSACTIONS_BY_YEAR_AMOUNT
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$FILTER_TRANSACTIONS_BY_YEAR_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -218,17 +224,17 @@ function add-transactions-cleaner() {
 
 function add-users-cleaner() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  users_cleaner_' $current_id ':'
-  add-line $compose_file '    container_name: users_cleaner_' $current_id
+  local current_id=$2
+  add-line $compose_file "  users_cleaner_$current_id:"
+  add-line $compose_file "    container_name: users_cleaner_$current_id"
   add-line $compose_file '    image: users_cleaner:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.cleaners.users_cleaner.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q4_TRANSACTIONS_WITH_USERS_JOINERS_AMOUNT
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q4_TRANSACTIONS_WITH_USERS_JOINERS_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -238,18 +244,23 @@ function add-users-cleaner() {
 
 function add-cleaners() {
   local compose_file=$1
+  
   add-menu-cleaner $compose_file
   add-empty-line $compose_file
+  
   add-stores-cleaner $compose_file
   add-empty-line $compose_file
+  
   for ((i=0;i<$TRANSACTION_ITEMS_CLN_AMOUNT;i++)); do
     add-transaction-items-cleaner $compose_file $i
     add-empty-line $compose_file
   done
+  
   for ((i=0;i<$TRANSACTIONS_CLN_AMOUNT;i++)); do
     add-transactions-cleaner $compose_file $i
     add-empty-line $compose_file
   done
+  
   for ((i=0;i<$USERS_CLN_AMOUNT;i++)); do
     add-users-cleaner $compose_file $i
     add-empty-line $compose_file
@@ -260,19 +271,19 @@ function add-cleaners() {
 
 function add-transactions-filter-by-year() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  filter_transactions_by_year_' $current_id ':'
-  add-line $compose_file '    container_name: filter_transactions_by_year_' $current_id
+  local current_id=$2
+  add-line $compose_file "  filter_transactions_by_year_$current_id:"
+  add-line $compose_file "    container_name: filter_transactions_by_year_$current_id"
   add-line $compose_file '    image: filter_transactions_by_year:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.filters.filter_transactions_by_year.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $TRANSACTIONS_CLN_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $FILTER_TRANSACTIONS_BY_HOUR_AMOUNT
-  add-line $compose_file '      - YEARS_TO_KEEP=' $YEARS_TO_KEEP
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$TRANSACTIONS_CLN_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$FILTER_TRANSACTIONS_BY_HOUR_AMOUNT"
+  add-line $compose_file "      - YEARS_TO_KEEP=$YEARS_TO_KEEP"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -282,20 +293,20 @@ function add-transactions-filter-by-year() {
 
 function add-transactions-filter-by-hour() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  filter_transactions_by_hour_' $current_id ':'
-  add-line $compose_file '    container_name: filter_transactions_by_hour_' $current_id
+  local current_id=$2
+  add-line $compose_file "  filter_transactions_by_hour_$current_id:"
+  add-line $compose_file "    container_name: filter_transactions_by_hour_$current_id"
   add-line $compose_file '    image: filter_transactions_by_hour:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.filters.filter_transactions_by_hour.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $FILTER_TRANSACTIONS_BY_YEAR_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $FILTER_TRANSACTIONS_BY_FINAL_AMNT_AMOUNT
-  add-line $compose_file '      - MIN_HOUR=' $MIN_HOUR
-  add-line $compose_file '      - MAX_HOUR=' $MAX_HOUR
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$FILTER_TRANSACTIONS_BY_YEAR_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$FILTER_TRANSACTIONS_BY_FINAL_AMNT_AMOUNT"
+  add-line $compose_file "      - MIN_HOUR=$MIN_HOUR"
+  add-line $compose_file "      - MAX_HOUR=$MAX_HOUR"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -305,19 +316,19 @@ function add-transactions-filter-by-hour() {
 
 function add-transactions-filter-by-amount() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  filter_transactions_by_final_amount_' $current_id ':'
-  add-line $compose_file '    container_name: filter_transactions_by_final_amount_' $current_id
+  local current_id=$2
+  add-line $compose_file "  filter_transactions_by_final_amount_$current_id:"
+  add-line $compose_file "    container_name: filter_transactions_by_final_amount_$current_id"
   add-line $compose_file '    image: filter_transactions_by_final_amount:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.filters.filter_transactions_by_final_amount.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $FILTER_TRANSACTIONS_BY_HOUR_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q1X_OB_AMOUNT
-  add-line $compose_file '      - MIN_FINAL_AMOUNT=' $MIN_FINAL_AMOUNT
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$FILTER_TRANSACTIONS_BY_HOUR_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q1X_OB_AMOUNT"
+  add-line $compose_file "      - MIN_FINAL_AMOUNT=$MIN_FINAL_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -327,19 +338,19 @@ function add-transactions-filter-by-amount() {
 
 function add-transaction-items-filter-by-year() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  filter_transaction_items_by_year_' $current_id ':'
-  add-line $compose_file '    container_name: filter_transaction_items_by_year_' $current_id
+  local current_id=$2
+  add-line $compose_file "  filter_transaction_items_by_year_$current_id:"
+  add-line $compose_file "    container_name: filter_transaction_items_by_year_$current_id"
   add-line $compose_file '    image: filter_transaction_items_by_year:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.filters.filter_transaction_items_by_year.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $TRANSACTION_ITEMS_CLN_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $YEAR_MONTH_CREATED_AT_TRANSACTION_ITEMS_MAPPERS_AMOUNT
-  add-line $compose_file '      - YEARS_TO_KEEP=' $YEARS_TO_KEEP
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$TRANSACTION_ITEMS_CLN_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$YEAR_MONTH_CREATED_AT_TRANSACTION_ITEMS_MAPPERS_AMOUNT"
+  add-line $compose_file "      - YEARS_TO_KEEP=$YEARS_TO_KEEP"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -349,18 +360,22 @@ function add-transaction-items-filter-by-year() {
 
 function add-filters() {
   local compose_file=$1
+  
   for((i=0;i<$FILTER_TRANSACTIONS_BY_YEAR_AMOUNT;i++)); do
     add-transactions-filter-by-year $compose_file $i
     add-empty-line $compose_file
   done
+  
   for((i=0;i<$FILTER_TRANSACTIONS_BY_HOUR_AMOUNT;i++)); do
     add-transactions-filter-by-hour $compose_file $i
     add-empty-line $compose_file
   done
+  
   for((i=0;i<$FILTER_TRANSACTIONS_BY_FINAL_AMNT_AMOUNT;i++)); do
     add-transactions-filter-by-amount $compose_file $i
     add-empty-line $compose_file
   done
+  
   for((i=0;i<$FILTER_TRANSACTION_ITEMS_BY_YEAR_AMOUNT;i++)); do
     add-transaction-items-filter-by-year $compose_file $i
     add-empty-line $compose_file
@@ -371,18 +386,18 @@ function add-filters() {
 
 function add-year-month-created-at-mapper() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  year_month_created_at_transaction_items_mapper_' $current_id ':'
-  add-line $compose_file '    container_name: year_month_created_at_transaction_items_mapper_' $current_id
+  local current_id=$2
+  add-line $compose_file "  year_month_created_at_transaction_items_mapper_$current_id:"
+  add-line $compose_file "    container_name: year_month_created_at_transaction_items_mapper_$current_id"
   add-line $compose_file '    image: year_month_created_at_transaction_items_mapper:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.mappers.year_month_created_at_transaction_items_mapper.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $FILTER_TRANSACTION_ITEMS_BY_YEAR_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q2_REDUCERS_AMOUNT
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$FILTER_TRANSACTION_ITEMS_BY_YEAR_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q2_REDUCERS_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -392,18 +407,18 @@ function add-year-month-created-at-mapper() {
 
 function add-year-half-created-at-mapper() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  year_half_created_at_transactions_mapper_' $current_id ':'
-  add-line $compose_file '    container_name: year_half_created_at_transactions_mapper_' $current_id
+  local current_id=$2
+  add-line $compose_file "  year_half_created_at_transactions_mapper_$current_id:"
+  add-line $compose_file "    container_name: year_half_created_at_transactions_mapper_$current_id"
   add-line $compose_file '    image: year_half_created_at_transactions_mapper:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.mappers.year_half_created_at_transactions_mapper.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $FILTER_TRANSACTIONS_BY_HOUR_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q3_REDUCERS_AMOUNT
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$FILTER_TRANSACTIONS_BY_HOUR_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q3_REDUCERS_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -413,10 +428,12 @@ function add-year-half-created-at-mapper() {
 
 function add-mappers() {
   local compose_file=$1
+  
   for ((i=0;i<$YEAR_MONTH_CREATED_AT_TRANSACTION_ITEMS_MAPPERS_AMOUNT;i++)); do
     add-year-month-created-at-mapper $compose_file $i
     add-empty-line $compose_file
   done
+  
   for ((i=0;i<$YEAR_HALF_CREATED_AT_TRANSACTIONS_MAPPERS_AMOUNT;i++)); do
     add-year-half-created-at-mapper $compose_file $i
     add-empty-line $compose_file
@@ -427,18 +444,18 @@ function add-mappers() {
 
 function add-selling-qty-reducer() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  sellings_qty_by_item_id_and_year_month_created_at_reducer_' $current_id ':'
-  add-line $compose_file '    container_name: sellings_qty_by_item_id_and_year_month_created_at_reducer_' $current_id
+  local current_id=$2
+  add-line $compose_file "  sellings_qty_by_item_id_and_year_month_created_at_reducer_$current_id:"
+  add-line $compose_file "    container_name: sellings_qty_by_item_id_and_year_month_created_at_reducer_$current_id"
   add-line $compose_file '    image: sellings_qty_by_item_id_and_year_month_created_at_reducer:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.reducers.sellings_qty_by_item_id_and_year_month_created_at_reducer.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $YEAR_MONTH_CREATED_AT_TRANSACTION_ITEMS_MAPPERS_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q2_SORTERS_AMOUNT
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$YEAR_MONTH_CREATED_AT_TRANSACTION_ITEMS_MAPPERS_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q2_SORTERS_AMOUNT"
   add-line $compose_file '      - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}'
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
@@ -449,18 +466,18 @@ function add-selling-qty-reducer() {
 
 function add-profit-sum-reducer() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  profit_sum_by_item_id_and_year_month_created_at_reducer_' $current_id ':'
-  add-line $compose_file '    container_name: profit_sum_by_item_id_and_year_month_created_at_reducer_' $current_id
+  local current_id=$2
+  add-line $compose_file "  profit_sum_by_item_id_and_year_month_created_at_reducer_$current_id:"
+  add-line $compose_file "    container_name: profit_sum_by_item_id_and_year_month_created_at_reducer_$current_id"
   add-line $compose_file '    image: profit_sum_by_item_id_and_year_month_created_at_reducer:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.reducers.profit_sum_by_item_id_and_year_month_created_at_reducer.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $YEAR_MONTH_CREATED_AT_TRANSACTION_ITEMS_MAPPERS_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q2_SORTERS_AMOUNT
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$YEAR_MONTH_CREATED_AT_TRANSACTION_ITEMS_MAPPERS_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q2_SORTERS_AMOUNT"
   add-line $compose_file '      - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}'
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
@@ -471,18 +488,18 @@ function add-profit-sum-reducer() {
 
 function add-tpv-by-store-reducer() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  tpv_by_store_id_and_year_half_created_at_reducer_' $current_id ':'
-  add-line $compose_file '    container_name: tpv_by_store_id_and_year_half_created_at_reducer_' $current_id
+  local current_id=$2
+  add-line $compose_file "  tpv_by_store_id_and_year_half_created_at_reducer_$current_id:"
+  add-line $compose_file "    container_name: tpv_by_store_id_and_year_half_created_at_reducer_$current_id"
   add-line $compose_file '    image: tpv_by_store_id_and_year_half_created_at_reducer:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.reducers.tpv_by_store_id_and_year_half_created_at_reducer.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $YEAR_HALF_CREATED_AT_TRANSACTIONS_MAPPERS_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q3_JOINERS_AMOUNT
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$YEAR_HALF_CREATED_AT_TRANSACTIONS_MAPPERS_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q3_JOINERS_AMOUNT"
   add-line $compose_file '      - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}'
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
@@ -493,18 +510,18 @@ function add-tpv-by-store-reducer() {
 
 function add-user-purchase-by-store-reducer() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  purchases_qty_by_store_id_and_user_id_reducer_' $current_id ':'
-  add-line $compose_file '    container_name: purchases_qty_by_store_id_and_user_id_reducer_' $current_id
+  local current_id=$2
+  add-line $compose_file "  purchases_qty_by_store_id_and_user_id_reducer_$current_id:"
+  add-line $compose_file "    container_name: purchases_qty_by_store_id_and_user_id_reducer_$current_id"
   add-line $compose_file '    image: purchases_qty_by_store_id_and_user_id_reducer:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.reducers.purchases_qty_by_store_id_and_user_id_reducer.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $FILTER_TRANSACTIONS_BY_YEAR_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q4_SORTERS_AMOUNT
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$FILTER_TRANSACTIONS_BY_YEAR_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q4_SORTERS_AMOUNT"
   add-line $compose_file '      - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}'
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
@@ -515,18 +532,22 @@ function add-user-purchase-by-store-reducer() {
 
 function add-reducers() {
   local compose_file=$1
+
   for ((i=0;i<$Q2_REDUCERS_AMOUNT;i++)); do
     add-selling-qty-reducer $compose_file $i
     add-empty-line $compose_file
   done
+
   for ((i=0;i<$Q2_REDUCERS_AMOUNT;i++)); do
     add-profit-sum-reducer $compose_file $i
     add-empty-line $compose_file
   done
+
   for ((i=0;i<$Q3_REDUCERS_AMOUNT;i++)); do
     add-tpv-by-store-reducer $compose_file $i
     add-empty-line $compose_file
   done
+
   for ((i=0;i<$Q4_REDUCERS_AMOUNT;i++)); do
     add-user-purchase-by-store-reducer $compose_file $i
     add-empty-line $compose_file
@@ -537,18 +558,18 @@ function add-reducers() {
 
 function add-selling-qty-sorter(){
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  desc_by_year_month_created_at_and_sellings_qty_sorter_' $current_id ':'
-  add-line $compose_file '    container_name: desc_by_year_month_created_at_and_sellings_qty_sorter_' $current_id
+  local current_id=$2
+  add-line $compose_file "  desc_by_year_month_created_at_and_sellings_qty_sorter_$current_id:"
+  add-line $compose_file "    container_name: desc_by_year_month_created_at_and_sellings_qty_sorter_$current_id"
   add-line $compose_file '    image: desc_by_year_month_created_at_and_sellings_qty_sorter:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.sorters.desc_by_year_month_created_at_and_sellings_qty_sorter.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q2_REDUCERS_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q2_JOINERS_AMOUNT
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$Q2_REDUCERS_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q2_JOINERS_AMOUNT"
   add-line $compose_file '      - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}'
   add-line $compose_file '      - AMOUNT_PER_GROUP=1'
   add-line $compose_file '    networks:'
@@ -560,18 +581,18 @@ function add-selling-qty-sorter(){
 
 function add-profit-sum-sorter(){
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  desc_by_year_month_created_at_and_profit_sum_sorter_' $current_id ':'
-  add-line $compose_file '    container_name: desc_by_year_month_created_at_and_profit_sum_sorter_' $current_id
+  local current_id=$2
+  add-line $compose_file "  desc_by_year_month_created_at_and_profit_sum_sorter_$current_id:"
+  add-line $compose_file "    container_name: desc_by_year_month_created_at_and_profit_sum_sorter_$current_id"
   add-line $compose_file '    image: desc_by_year_month_created_at_and_profit_sum_sorter:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.sorters.desc_by_year_month_created_at_and_profit_sum_sorter.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q2_REDUCERS_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q2_JOINERS_AMOUNT
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$Q2_REDUCERS_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q2_JOINERS_AMOUNT"
   add-line $compose_file '      - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}'
   add-line $compose_file '      - AMOUNT_PER_GROUP=1'
   add-line $compose_file '    networks:'
@@ -583,18 +604,18 @@ function add-profit-sum-sorter(){
 
 function add-user-purchase-by-store-sorter(){
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  desc_by_store_id_and_purchases_qty_sorter_' $current_id ':'
-  add-line $compose_file '    container_name: desc_by_store_id_and_purchases_qty_sorter_' $current_id
+  local current_id=$2
+  add-line $compose_file "  desc_by_store_id_and_purchases_qty_sorter_$current_id:"
+  add-line $compose_file "    container_name: desc_by_store_id_and_purchases_qty_sorter_$current_id"
   add-line $compose_file '    image: desc_by_store_id_and_purchases_qty_sorter:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.sorters.desc_by_store_id_and_purchases_qty_sorter.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q4_REDUCERS_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q4_TRANSACTIONS_WITH_USERS_JOINERS_AMOUNT
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$Q4_REDUCERS_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q4_TRANSACTIONS_WITH_USERS_JOINERS_AMOUNT"
   add-line $compose_file '      - BATCH_MAX_SIZE=${BATCH_MAX_SIZE}'
   add-line $compose_file '      - AMOUNT_PER_GROUP=3'
   add-line $compose_file '    networks:'
@@ -606,14 +627,17 @@ function add-user-purchase-by-store-sorter(){
 
 function add-sorters() {
   local compose_file=$1
+
   for ((i=0;i<$Q2_SORTERS_AMOUNT;i++)); do
     add-selling-qty-sorter $compose_file $i
     add-empty-line $compose_file
   done
+
   for ((i=0;i<$Q2_SORTERS_AMOUNT;i++)); do
     add-profit-sum-sorter $compose_file $i
     add-empty-line $compose_file
   done
+
   for ((i=0;i<$Q4_SORTERS_AMOUNT;i++)); do
     add-user-purchase-by-store-sorter $compose_file $i
     add-empty-line $compose_file
@@ -624,20 +648,19 @@ function add-sorters() {
 
 function add-menu-with-items-q21-joiner(){
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  transaction_items_with_menu_items_query_21_joiner_' $current_id ':'
-  add-line $compose_file '    container_name: transaction_items_with_menu_items_query_21_joiner_' $current_id
+  local current_id=$2
+  add-line $compose_file "  transaction_items_with_menu_items_query_21_joiner_$current_id:"
+  add-line $compose_file "    container_name: transaction_items_with_menu_items_query_21_joiner_$current_id"
   add-line $compose_file '    image: transaction_items_with_menu_items_query_21_joiner:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.joiners.transaction_items_with_menu_items_joiner.transaction_items_with_menu_items_query_21_joiner.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - OUTPUT_BUILDERS_AMOUNT=' $Q21_OB_AMOUNT
   add-line $compose_file '      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1'
-  add-line $compose_file '      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=' $Q2_REDUCERS_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q21_OB_AMOUNT
+  add-line $compose_file "      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=$Q2_SORTERS_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q21_OB_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -647,20 +670,19 @@ function add-menu-with-items-q21-joiner(){
 
 function add-menu-with-items-q22-joiner(){
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  transaction_items_with_menu_items_query_22_joiner_' $current_id ':'
-  add-line $compose_file '    container_name: transaction_items_with_menu_items_query_22_joiner_' $current_id
+  local current_id=$2
+  add-line $compose_file "  transaction_items_with_menu_items_query_22_joiner_$current_id:"
+  add-line $compose_file "    container_name: transaction_items_with_menu_items_query_22_joiner_$current_id"
   add-line $compose_file '    image: transaction_items_with_menu_items_query_22_joiner:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.joiners.transaction_items_with_menu_items_joiner.transaction_items_with_menu_items_query_22_joiner.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - OUTPUT_BUILDERS_AMOUNT=' $Q22_OB_AMOUNT
   add-line $compose_file '      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1'
-  add-line $compose_file '      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=' $Q2_REDUCERS_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q22_OB_AMOUNT
+  add-line $compose_file "      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=$Q2_SORTERS_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q22_OB_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -670,20 +692,20 @@ function add-menu-with-items-q22-joiner(){
 
 function add-transactions-with-stores-q3x-joiner(){
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  transactions_with_stores_query_3x_joiner_' $current_id ':'
-  add-line $compose_file '    container_name: transactions_with_stores_query_3x_joiner_' $current_id
+  local current_id=$2
+  add-line $compose_file "  transactions_with_stores_query_3x_joiner_$current_id:"
+  add-line $compose_file "    container_name: transactions_with_stores_query_3x_joiner_$current_id"
   add-line $compose_file '    image: transactions_with_stores_query_3x_joiner:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.joiners.transactions_with_stores_joiner.transactions_with_stores_query_3x_joiner.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - OUTPUT_BUILDERS_AMOUNT=' $Q3X_OB_AMOUNT
+  add-line $compose_file "      - OUTPUT_BUILDERS_AMOUNT=$Q3X_OB_AMOUNT"
   add-line $compose_file '      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1' 
-  add-line $compose_file '      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=' $Q3_REDUCERS_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q3X_OB_AMOUNT
+  add-line $compose_file "      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=$Q3_REDUCERS_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q3X_OB_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -693,64 +715,71 @@ function add-transactions-with-stores-q3x-joiner(){
 
 function add-transactions-with-stores-q4x-joiner(){
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  transactions_with_stores_query_4x_joiner_' $current_id ':'
-  add-line $compose_file '    container_name: transactions_with_stores_query_4x_joiner_' $current_id
+  local current_id=$2
+  add-line $compose_file "  transactions_with_stores_query_4x_joiner_$current_id:"
+  add-line $compose_file "    container_name: transactions_with_stores_query_4x_joiner_$current_id"
   add-line $compose_file '    image: transactions_with_stores_query_4x_joiner:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.joiners.transactions_with_stores_joiner.transactions_with_stores_query_4x_joiner.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
   add-line $compose_file '      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=1' 
-  add-line $compose_file '      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=' $Q4_TRANSACTIONS_WITH_USERS_JOINERS_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q4X_OB_AMOUNT
+  add-line $compose_file "      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=$Q4_TRANSACTIONS_WITH_USERS_JOINERS_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q4X_OB_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
   add-line $compose_file '      rabbitmq-message-middleware:'
   add-line $compose_file '        condition: service_healthy'
 }
+
 function add-transactions-with-users-q4x-joiner(){
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  transactions_with_users_joiner_' $current_id ':'
-  add-line $compose_file '    container_name: transactions_with_users_joiner_' $current_id
+  local current_id=$2
+  add-line $compose_file "  transactions_with_users_joiner_$current_id:"
+  add-line $compose_file "    container_name: transactions_with_users_joiner_$current_id"
   add-line $compose_file '    image: transactions_with_users_joiner:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.joiners.transactions_with_users_joiner.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=' $USERS_CLN_AMOUNT
-  add-line $compose_file '      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=' $Q4_REDUCERS_AMOUNT
-  add-line $compose_file '      - NEXT_CONTROLLERS_AMOUNT=' $Q4_TRANSACTIONS_WITH_STORES_JOINERS_AMOUNT
+  add-line $compose_file "      - BASE_DATA_PREV_CONTROLLERS_AMOUNT=$USERS_CLN_AMOUNT"
+  add-line $compose_file "      - STREAM_DATA_PREV_CONTROLLERS_AMOUNT=$Q4_REDUCERS_AMOUNT"
+  add-line $compose_file "      - NEXT_CONTROLLERS_AMOUNT=$Q4_TRANSACTIONS_WITH_STORES_JOINERS_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
   add-line $compose_file '      rabbitmq-message-middleware:'
   add-line $compose_file '        condition: service_healthy'
 }
+
 function add-joiners() {
   local compose_file=$1
+  
   for ((i=0;i<$Q2_JOINERS_AMOUNT;i++)); do
     add-menu-with-items-q21-joiner $compose_file $i
     add-empty-line $compose_file
   done
+  
   for ((i=0;i<$Q2_JOINERS_AMOUNT;i++)); do
     add-menu-with-items-q22-joiner $compose_file $i
     add-empty-line $compose_file
   done
+  
   for ((i=0;i<$Q3_JOINERS_AMOUNT;i++)); do
     add-transactions-with-stores-q3x-joiner $compose_file $i
     add-empty-line $compose_file
   done
+  
   for ((i=0;i<$Q4_TRANSACTIONS_WITH_STORES_JOINERS_AMOUNT;i++)); do
     add-transactions-with-stores-q4x-joiner $compose_file $i
     add-empty-line $compose_file
   done
+  
   for ((i=0;i<$Q4_TRANSACTIONS_WITH_USERS_JOINERS_AMOUNT;i++)); do
     add-transactions-with-users-q4x-joiner $compose_file $i
     add-empty-line $compose_file
@@ -761,17 +790,17 @@ function add-joiners() {
 
 function add-query-1x-output-builder() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  query_1x_output_builder_' $current_id ':'
-  add-line $compose_file '    container_name: query_1x_output_builder_' $current_id
+  local current_id=$2
+  add-line $compose_file "  query_1x_output_builder_$current_id:"
+  add-line $compose_file "    container_name: query_1x_output_builder_$current_id"
   add-line $compose_file '    image: query_1x_output_builder:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_1x_output_builder.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $FILTER_TRANSACTIONS_BY_FINAL_AMNT_AMOUNT
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$FILTER_TRANSACTIONS_BY_FINAL_AMNT_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -781,17 +810,17 @@ function add-query-1x-output-builder() {
 
 function add-query-21-output-builder() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  query_21_output_builder_' $current_id ':'
-  add-line $compose_file '    container_name: query_21_output_builder_' $current_id
+  local current_id=$2
+  add-line $compose_file "  query_21_output_builder_$current_id:"
+  add-line $compose_file "    container_name: query_21_output_builder_$current_id"
   add-line $compose_file '    image: query_21_output_builder:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_21_output_builder.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q2_JOINERS_AMOUNT
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$Q2_JOINERS_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -801,17 +830,17 @@ function add-query-21-output-builder() {
 
 function add-query-22-output-builder() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  query_22_output_builder_' $current_id ':'
-  add-line $compose_file '    container_name: query_22_output_builder_' $current_id
+  local current_id=$2
+  add-line $compose_file "  query_22_output_builder_$current_id:"
+  add-line $compose_file "    container_name: query_22_output_builder_$current_id"
   add-line $compose_file '    image: query_22_output_builder:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_22_output_builder.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q2_JOINERS_AMOUNT
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$Q2_JOINERS_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -821,17 +850,17 @@ function add-query-22-output-builder() {
 
 function add-query-3x-output-builder() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  query_3x_output_builder_' $current_id ':'
-  add-line $compose_file '    container_name: query_3x_output_builder_' $current_id
+  local current_id=$2
+  add-line $compose_file "  query_3x_output_builder_$current_id:"
+  add-line $compose_file "    container_name: query_3x_output_builder_$current_id"
   add-line $compose_file '    image: query_3x_output_builder:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_3x_output_builder.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q3_JOINERS_AMOUNT
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$Q3_JOINERS_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -841,17 +870,17 @@ function add-query-3x-output-builder() {
 
 function add-query-4x-output-builder() {
   local compose_file=$1
-  local current_id="$2"
-  add-line $compose_file '  query_4x_output_builder_' $current_id ':'
-  add-line $compose_file '    container_name: query_4x_output_builder_' $current_id
+  local current_id=$2
+  add-line $compose_file "  query_4x_output_builder_$current_id:"
+  add-line $compose_file "    container_name: query_4x_output_builder_$current_id"
   add-line $compose_file '    image: query_4x_output_builder:latest'
   add-line $compose_file '    entrypoint: python3 -m controllers.output_builders.query_4x_output_builder.main'
   add-line $compose_file '    environment:'
   add-line $compose_file '      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}'
   add-line $compose_file '      - LOGGING_LEVEL=${LOGGING_LEVEL}'
-  add-line $compose_file '      - CONTROLLER_ID=' $current_id
+  add-line $compose_file "      - CONTROLLER_ID=$current_id"
   add-line $compose_file '      - RABBITMQ_HOST=rabbitmq-message-middleware'
-  add-line $compose_file '      - PREV_CONTROLLERS_AMOUNT=' $Q4_TRANSACTIONS_WITH_STORES_JOINERS_AMOUNT
+  add-line $compose_file "      - PREV_CONTROLLERS_AMOUNT=$Q4_TRANSACTIONS_WITH_STORES_JOINERS_AMOUNT"
   add-line $compose_file '    networks:'
   add-line $compose_file '      - custom_net'
   add-line $compose_file '    depends_on:'
@@ -861,22 +890,27 @@ function add-query-4x-output-builder() {
 
 function add-output-builders() {
   local compose_file=$1
+  
   for ((i=0;i<$Q1X_OB_AMOUNT;i++)); do
     add-query-1x-output-builder $compose_file $i
     add-empty-line $compose_file 
   done
+  
   for ((i=0;i<$Q21_OB_AMOUNT;i++)); do
     add-query-21-output-builder $compose_file $i
     add-empty-line $compose_file
   done
+  
   for ((i=0;i<$Q22_OB_AMOUNT;i++)); do
     add-query-22-output-builder $compose_file $i
     add-empty-line $compose_file
   done
+  
   for ((i=0;i<$Q3X_OB_AMOUNT;i++)); do
     add-query-3x-output-builder $compose_file $i
     add-empty-line $compose_file
   done
+  
   for ((i=0;i<$Q4X_OB_AMOUNT;i++)); do
     add-query-4x-output-builder $compose_file $i
     add-empty-line $compose_file
@@ -887,6 +921,7 @@ function add-output-builders() {
 
 function add-services() {
   local compose_file=$1
+  
   add-line $compose_file 'services:'
   add-empty-line $compose_file
 
@@ -895,10 +930,7 @@ function add-services() {
   add-empty-line $compose_file
   
   add-comment $compose_file 'CLIENT & SERVER SERVICES'
-  for ((i=0;i<$CLIENTS_AMOUNT;i++)); do
-    add-client-service $compose_file $i
-    add-empty-line $compose_file
-  done
+  add-client-services $compose_file
   add-server-service $compose_file
   add-empty-line $compose_file
 
@@ -929,6 +961,7 @@ function add-services() {
 
 function add-networks() {
   local compose_file=$1
+  
   add-line $compose_file 'networks:'
   add-line $compose_file '  custom_net:'
   add-line $compose_file '    ipam:'
@@ -941,6 +974,7 @@ function add-networks() {
 
 function build-docker-compose-file() {
   local compose_file=$1
+  
   echo "Generando archivo $compose_file ..."
   
   add-name $compose_file

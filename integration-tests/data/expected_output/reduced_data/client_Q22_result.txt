@@ -1,0 +1,4 @@
+2025-02,Matcha Latte,2804010.0
+2025-01,Matcha Latte,3104830.0
+2024-02,Matcha Latte,2902660.0
+2024-01,Matcha Latte,3098440.0

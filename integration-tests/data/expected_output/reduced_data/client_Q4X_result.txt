@@ -1,0 +1,30 @@
+G Coffee @ Damansara Saujana,1982-04-17,4
+G Coffee @ Damansara Saujana,1994-12-17,4
+G Coffee @ PJS8,1974-10-13,5
+G Coffee @ PJS8,1999-07-11,4
+G Coffee @ USJ 57W,2009-01-09,4
+G Coffee @ USJ 89q,1992-04-01,4
+G Coffee @ USJ 89q,2005-11-06,4
+G Coffee @ USJ 89q,1995-10-21,4
+G Coffee @ Damansara Saujana,2004-12-09,4
+G Coffee @ PJS8,1976-08-29,4
+G Coffee @ USJ 57W,1978-01-25,4
+G Coffee @ USJ 57W,1964-11-15,4
+G Coffee @ Seksyen 21,2003-08-11,4
+G Coffee @ Seksyen 21,1966-02-08,4
+G Coffee @ Seksyen 21,1985-02-07,4
+G Coffee @ Kondominium Putra,1989-06-28,4
+G Coffee @ Kampung Changkat,1987-10-06,4
+G Coffee @ Bandar Seri Mulia,1965-02-07,5
+G Coffee @ Bandar Seri Mulia,1969-12-15,4
+G Coffee @ Alam Tun Hussein Onn,1999-04-23,4
+G Coffee @ Taman Damansara,2004-11-10,4
+G Coffee @ Kondominium Putra,2007-03-28,5
+G Coffee @ Kondominium Putra,1978-01-08,4
+G Coffee @ Kampung Changkat,2002-02-12,4
+G Coffee @ Kampung Changkat,1979-05-08,4
+G Coffee @ Bandar Seri Mulia,2004-07-08,5
+G Coffee @ Alam Tun Hussein Onn,1980-12-12,4
+G Coffee @ Alam Tun Hussein Onn,2006-08-18,4
+G Coffee @ Taman Damansara,1969-04-29,4
+G Coffee @ Taman Damansara,1997-12-28,4

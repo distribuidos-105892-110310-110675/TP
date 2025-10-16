@@ -29,7 +29,6 @@ docker-compose-logs:
 	docker compose --file $(DOCKER_COMPOSE_FILE) logs --follow
 .PHONY: docker-compose-logs
 
-# Stops and removes certain services defined in the docker-compose file, and recreates them
 docker-compose-restart:
 	docker compose -f $(DOCKER_COMPOSE_FILE) stop $(if $(SERVICES),$(SERVICES))
 	docker compose -f $(DOCKER_COMPOSE_FILE) rm -f $(if $(SERVICES),$(SERVICES))
@@ -56,45 +55,46 @@ docker-export-logs:
 test-all-eof-received: docker-export-logs
 	@python3 eof_test.py
 
-# Run unit tests using pytest with verbose output (Middleware tests).
 unit-tests:
 	pytest --verbose
 .PHONY: unit-tests
 
-# Run integration tests by comparing sorted query results with expected output.
-# ifndef EXPECTED_VARIANT
-# $(error Debes especificar EXPECTED_VARIANT. Ejemplo: make integration-tests EXPECTED_VARIANT=full_data)
-# endif
+EXPECTED_VARIANT ?= reduced_data
 EXPECTED_BASE := ./integration-tests/data/expected_output
 EXPECTED_PATH := $(EXPECTED_BASE)/$(EXPECTED_VARIANT)
+
 ACTUAL_DIR ?= ./integration-tests/data/query_results
-QUERY_RESULTS := \
-    client_0_Q1X_result \
-    client_0_Q21_result \
-    client_0_Q22_result \
-    client_0_Q3X_result \
-    client_0_Q4X_result
+
+ACTUAL_GLOB_DIR := ./.results/query_results
+
+QUERY_IDS := 1X 21 22 3X 4X
+
 RESULT_SUFFIX := _result.txt
+
 integration-tests:
 	@echo "==> Ejecutando tests de integración con variante: $(EXPECTED_VARIANT)"
 	@echo "==> Usando expected outputs desde: $(EXPECTED_PATH)"
-	@echo "==> Copiando resultados actuales a: $(ACTUAL_DIR)"
+	@echo "==> Copiando resultados actuales normalizados a: $(ACTUAL_DIR)"
 	@mkdir -p $(ACTUAL_DIR)
-	@for result in $(QUERY_RESULTS); do \
-		if [ ! -f .results/query_results/$$result.txt ]; then \
-			echo "[ADVERTENCIA] No existe .results/query_results/$$result.txt"; \
-		else \
-			sort .results/query_results/$$result.txt > $(ACTUAL_DIR)/$$result.txt; \
-		fi \
+	@set -e; \
+	for id in $(QUERY_IDS); do \
+		pattern="$(ACTUAL_GLOB_DIR)/client_0__*__Q$${id}_result.txt"; \
+		count=$$(ls -1 $$pattern 2>/dev/null | wc -l | tr -d ' ' || true); \
+		if [ "$$count" = "0" ]; then \
+			echo "[ADVERTENCIA] No se encontró ningún archivo para Q$${id} con patrón: $$pattern"; \
+			continue; \
+		fi; \
+		if [ "$$count" -gt 1 ]; then \
+			echo "[ADVERTENCIA] Se encontraron $$count archivos para Q$${id}; se usará el más reciente."; \
+		fi; \
+		file=$$(ls -t $$pattern 2>/dev/null | head -n1); \
+		dest="$(ACTUAL_DIR)/client_Q$${id}_result.txt"; \
+		echo "   - Q$${id}: $$file -> $$dest"; \
+		sort "$$file" > "$$dest"; \
 	done
-	python3 ./integration-tests/compare_results.py \
-		--expected $(EXPECTED_PATH) \
-		--actual   $(ACTUAL_DIR) \
+	@python3 ./integration-tests/compare_results.py \
+		--expected "$(EXPECTED_PATH)" \
+		--actual   "$(ACTUAL_DIR)" \
 		--suffix   "$(RESULT_SUFFIX)"
+
 .PHONY: integration-tests
-
-# End-of-file propagation tests.
-eof-propagation-tests:
-	@echo "🧪 Tests en proceso"
-
-.PHONY: eof-propagatio

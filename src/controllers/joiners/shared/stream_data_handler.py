@@ -173,8 +173,12 @@ class StreamDataHandler:
                 )
 
     def _clean_session_data_of(self, session_id: str) -> None:
+        logging.info(
+            f"action: clean_session_data | result: in_progress | session_id: {session_id}"
+        )
+
         del self._eof_recv_from_prev_controllers[session_id]
-        
+
         if session_id in self._stream_data_buffer_by_session_id:
             del self._stream_data_buffer_by_session_id[session_id]
 
@@ -182,6 +186,10 @@ class StreamDataHandler:
             del self._all_base_data_received[session_id]
         with self._base_data_by_session_id_lock:
             del self._base_data_by_session_id[session_id]
+
+        logging.info(
+            f"action: clean_session_data | result: success | session_id: {session_id}"
+        )
 
     def _handle_batch_eof(self, message: str) -> None:
         session_id = communication_protocol.get_message_session_id(message)

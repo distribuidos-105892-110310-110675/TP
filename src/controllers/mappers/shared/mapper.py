@@ -100,6 +100,17 @@ class Mapper(Controller):
         if not communication_protocol.message_without_payload(output_message):
             self._mom_send_message_to_next(output_message)
 
+    def _clean_session_data_of(self, session_id: str) -> None:
+        logging.info(
+            f"action: clean_session_data | result: in_progress | session_id: {session_id}"
+        )
+
+        del self._eof_recv_from_prev_controllers[session_id]
+
+        logging.info(
+            f"action: clean_session_data | result: success | session_id: {session_id}"
+        )
+
     def _handle_data_batch_eof(self, message: str) -> None:
         session_id = communication_protocol.get_message_session_id(message)
         self._eof_recv_from_prev_controllers.setdefault(session_id, 0)
@@ -118,10 +129,11 @@ class Mapper(Controller):
 
             for mom_producer in self._mom_producers:
                 mom_producer.send(message)
-            del self._eof_recv_from_prev_controllers[session_id]
             logging.info(
                 f"action: eof_sent | result: success | session_id: {session_id}"
             )
+
+            self._clean_session_data_of(session_id)
 
     def _handle_received_data(self, message_as_bytes: bytes) -> None:
         if not self._is_running():

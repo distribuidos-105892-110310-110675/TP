@@ -246,6 +246,7 @@ class Client:
             self._session_id, message_type
         )
         self._socket_send_message(self._client_socket, eof_message)
+        self._log_info(f"action: {folder_name}_all_files_sent | result: success")
 
     def _send_all_menu_items(self) -> None:
         self._send_data_from_all_files_using_batchs(
